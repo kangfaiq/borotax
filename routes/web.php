@@ -1,0 +1,185 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Web\WebAuthController;
+use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\BillingController;
+use App\Http\Controllers\Web\HistoryController;
+use App\Http\Controllers\Web\SelfAssessmentController;
+use App\Http\Controllers\Web\PublicMenuController;
+use App\Http\Controllers\Web\AirTanahController;
+use App\Http\Controllers\Web\ReklameController;
+use App\Http\Controllers\BillingDocumentController;
+use App\Http\Controllers\DocumentPreviewController;
+use App\Http\Controllers\SkpdReklameDocumentController;
+use App\Http\Controllers\SkpdAirTanahDocumentController;
+use App\Http\Controllers\StpdManualDocumentController;
+use App\Http\Controllers\TaxAssessmentLetterDocumentController;
+
+use App\Http\Controllers\Web\PembetulanController;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// =============================================
+// PUBLIC ROUTES
+// =============================================
+
+// Landing page
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Cek Billing (public)
+Route::get('/cek-billing', [BillingController::class, 'check'])->name('billing.check');
+
+// Menu Publik
+Route::get('/produk-hukum', [PublicMenuController::class, 'legalProducts'])->name('publik.produk-hukum');
+Route::get('/kalkulator-sanksi', [PublicMenuController::class, 'penaltyCalculator'])->name('publik.kalkulator-sanksi');
+Route::get('/kalkulator-air-tanah', [PublicMenuController::class, 'waterTaxCalculator'])->name('publik.kalkulator-air-tanah');
+Route::get('/kalkulator-reklame', [PublicMenuController::class, 'reklameTaxCalculator'])->name('publik.kalkulator-reklame');
+Route::get('/sewa-reklame', [PublicMenuController::class, 'sewaReklame'])->name('publik.sewa-reklame');
+Route::get('/destinasi', [PublicMenuController::class, 'destinations'])->name('publik.destinasi');
+Route::get('/destinasi/{destination:slug}', [PublicMenuController::class, 'destinationDetail'])->name('publik.destinasi.show');
+Route::get('/berita', [PublicMenuController::class, 'newsList'])->name('publik.berita');
+Route::get('/berita/{news:slug}', [PublicMenuController::class, 'newsDetail'])->name('publik.berita.show');
+
+// =============================================
+// SEWA REKLAME (Public — tanpa login)
+// =============================================
+Route::prefix('sewa-reklame')->name('sewa-reklame.')->group(function () {
+    Route::get('/cek', [ReklameController::class, 'sewaCekTiket'])->name('cek');
+    Route::get('/ajukan/{asetId}', [ReklameController::class, 'sewaForm'])->name('form');
+    Route::post('/ajukan/{asetId}', [ReklameController::class, 'sewaStore'])->name('store');
+    Route::get('/detail/{nomorTiket}', [ReklameController::class, 'sewaDetail'])->name('detail');
+    Route::get('/edit/{nomorTiket}', [ReklameController::class, 'sewaEdit'])->name('edit');
+    Route::put('/edit/{nomorTiket}', [ReklameController::class, 'sewaUpdate'])->name('update');
+    Route::get('/skpd/{skpdId}/cetak', [SkpdReklameDocumentController::class, 'showPublic'])->name('skpd.cetak')->middleware('signed');
+    Route::get('/skpd/{skpdId}/unduh', [SkpdReklameDocumentController::class, 'downloadPublic'])->name('skpd.unduh')->middleware('signed');
+});
+
+// =============================================
+// AUTHENTICATION (Guest only)
+// =============================================
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [WebAuthController::class, 'showLogin'])->name('portal.login');
+    Route::post('/login', [WebAuthController::class, 'login'])->name('portal.login.submit');
+});
+
+// Logout (needs auth)
+Route::post('/logout', [WebAuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('portal.logout');
+
+if (app()->environment(['local', 'testing'])) {
+    Route::middleware('auth')->group(function () {
+        Route::get('/document-previews', [DocumentPreviewController::class, 'index'])->name('document-previews.index');
+        Route::get('/document-previews/{preview}', [DocumentPreviewController::class, 'show'])->name('document-previews.show');
+    });
+}
+
+// =============================================
+// AUTHENTICATED PORTAL (Wajib Pajak)
+// =============================================
+
+Route::middleware('auth')->prefix('portal')->name('portal.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Transaction History
+    Route::get('/riwayat', [HistoryController::class, 'transactions'])->name('history');
+
+    // Cek Billing (portal — sidebar layout)
+    Route::get('/cek-billing', [BillingController::class, 'portalCheck'])->name('billing');
+
+    // Self Assessment
+    Route::get('/self-assessment', [SelfAssessmentController::class, 'index'])->name('self-assessment.index');
+    Route::get('/self-assessment/{jenisPajakId}/create', [SelfAssessmentController::class, 'create'])->name('self-assessment.create');
+    Route::post('/self-assessment', [SelfAssessmentController::class, 'store'])->name('self-assessment.store');
+    Route::get('/self-assessment/{taxId}/success', [SelfAssessmentController::class, 'success'])->name('self-assessment.success');
+    Route::get('/self-assessment/mblb-submissions/{submissionId}/success', [SelfAssessmentController::class, 'submissionSuccess'])->name('self-assessment.submission-success');
+
+    // Pembetulan (Koreksi Billing)
+    Route::get('/pembetulan/{taxId}', [PembetulanController::class, 'create'])->name('pembetulan.create');
+    Route::post('/pembetulan', [PembetulanController::class, 'store'])->name('pembetulan.store');
+
+    // Air Tanah
+    Route::get('/air-tanah', [AirTanahController::class, 'index'])->name('air-tanah.index');
+    Route::get('/air-tanah/objek', [AirTanahController::class, 'objects'])->name('air-tanah.objects');
+    Route::get('/air-tanah/skpd', [AirTanahController::class, 'skpdList'])->name('air-tanah.skpd-list');
+    Route::get('/air-tanah/skpd/{skpdId}', [AirTanahController::class, 'skpdDetail'])->name('air-tanah.skpd-detail');
+
+    // Reklame
+    Route::get('/reklame', [ReklameController::class, 'index'])->name('reklame.index');
+    Route::get('/reklame/objek', [ReklameController::class, 'objects'])->name('reklame.objects');
+    Route::get('/reklame/objek/{objectId}', [ReklameController::class, 'objectDetail'])->name('reklame.object-detail');
+    Route::get('/reklame/objek/{objectId}/perpanjangan', [ReklameController::class, 'requestExtension'])->name('reklame.request-extension');
+    Route::post('/reklame/objek/{objectId}/perpanjangan', [ReklameController::class, 'storeExtension'])->name('reklame.store-extension');
+    Route::get('/reklame/skpd', [ReklameController::class, 'skpdList'])->name('reklame.skpd-list');
+    Route::get('/reklame/skpd/{skpdId}', [ReklameController::class, 'skpdDetail'])->name('reklame.skpd-detail');
+
+    // Sewa Reklame Aset Pemkab (authenticated — only for logged-in portal users)
+    // Note: Public sewa reklame routes are outside auth group (see below)
+
+    // Billing Documents
+    Route::get('/billing/{taxId}/status', [BillingDocumentController::class, 'checkStatus'])->name('billing.check-status');
+    Route::get('/billing/{taxId}/document', [BillingDocumentController::class, 'show'])->name('billing.document.show');
+    Route::get('/billing/{taxId}/download', [BillingDocumentController::class, 'download'])->name('billing.document.download');
+    Route::get('/billing/{taxId}/sptpd', [BillingDocumentController::class, 'downloadSptpd'])->name('sptpd.download');
+    Route::get('/billing/{taxId}/sptpd/view', [BillingDocumentController::class, 'showSptpd'])->name('sptpd.show');
+    Route::get('/billing/{taxId}/stpd', [BillingDocumentController::class, 'downloadStpd'])->name('stpd.download');
+    Route::get('/billing/{taxId}/stpd/view', [BillingDocumentController::class, 'showStpd'])->name('stpd.show');
+
+    // Notifications (portal bell icon)
+    Route::get('/notifications', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\V1\NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+});
+
+// =============================================
+// ADMIN: TOGGLE NAVIGATION MODE
+// =============================================
+Route::get('/admin/toggle-navigation', function () {
+    $user = auth()->user();
+    $user->navigation_mode = $user->usesTopNavigation() ? 'sidebar' : 'topbar';
+    $user->save();
+
+    return redirect()->back();
+})->middleware('auth')->name('filament.toggle-navigation');
+
+// =============================================
+// SKPD REKLAME DOCUMENTS (auth, no portal prefix)
+// =============================================
+use App\Http\Controllers\PermohonanSewaFileController;
+Route::middleware('auth')->group(function () {
+    Route::get('/skpd-reklame/{skpdId}/download', [SkpdReklameDocumentController::class, 'download'])->name('skpd-reklame.download');
+    Route::get('/skpd-reklame/{skpdId}/view', [SkpdReklameDocumentController::class, 'show'])->name('skpd-reklame.show');
+
+    // Serve permohonan sewa reklame files (KTP, NPWP, Desain)
+    Route::get('/permohonan-sewa/{id}/file/{field}', PermohonanSewaFileController::class)->name('permohonan-sewa.file');
+});
+
+// =============================================
+// SKPD AIR TANAH DOCUMENTS (auth, no portal prefix)
+// =============================================
+Route::middleware('auth')->group(function () {
+    Route::get('/skpd-air-tanah/{skpdId}/download', [SkpdAirTanahDocumentController::class, 'download'])->name('skpd-air-tanah.download');
+    Route::get('/skpd-air-tanah/{skpdId}/view', [SkpdAirTanahDocumentController::class, 'show'])->name('skpd-air-tanah.show');
+});
+
+// =============================================
+// STPD MANUAL DOCUMENTS (auth, no portal prefix)
+// =============================================
+Route::middleware('auth')->group(function () {
+    Route::get('/stpd-manual/{stpdId}/download', [StpdManualDocumentController::class, 'download'])->name('stpd-manual.download');
+    Route::get('/stpd-manual/{stpdId}/view', [StpdManualDocumentController::class, 'show'])->name('stpd-manual.show');
+
+    Route::get('/surat-ketetapan/{letterId}/download', [TaxAssessmentLetterDocumentController::class, 'download'])->name('tax-assessment-letters.download');
+    Route::get('/surat-ketetapan/{letterId}/view', [TaxAssessmentLetterDocumentController::class, 'show'])->name('tax-assessment-letters.show');
+});
+
+
