@@ -37,6 +37,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxObjectResource extends Resource
 {
@@ -520,6 +524,8 @@ class TaxObjectResource extends Resource
                         ->pluck('nama', 'id')),
                 TernaryFilter::make('is_active')
                     ->label('Status Aktif'),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 ViewAction::make(),
@@ -541,5 +547,13 @@ class TaxObjectResource extends Resource
             'view' => ViewTaxObject::route('/{record}'),
             'edit' => EditTaxObject::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

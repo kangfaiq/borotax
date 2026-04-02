@@ -25,6 +25,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Filters\Filter;
 use League\Csv\Writer;
 use SplTempFileObject;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxResource extends Resource
 {
@@ -213,6 +217,8 @@ class TaxResource extends Resource
                         }
                         return $indicators;
                     }),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 // — SKPD Document (untuk official_assessment: Reklame, Air Tanah) —

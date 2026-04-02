@@ -5,6 +5,8 @@ namespace App\Filament\Resources\TaxAssessmentLetterResource\Pages;
 use App\Domain\Tax\Services\TaxAssessmentLetterService;
 use App\Filament\Resources\TaxAssessmentLetterResource;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditTaxAssessmentLetter extends EditRecord
@@ -32,6 +34,8 @@ class EditTaxAssessmentLetter extends EditRecord
     {
         return [
             DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
         ];
     }
 }

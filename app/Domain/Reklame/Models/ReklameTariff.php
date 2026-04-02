@@ -4,6 +4,7 @@ namespace App\Domain\Reklame\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -19,8 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ReklameTariff extends Model
 {
-    use HasUuids;
-
+    use SoftDeletes, HasUuids;
     protected $table = 'reklame_tariffs';
 
     protected $fillable = [

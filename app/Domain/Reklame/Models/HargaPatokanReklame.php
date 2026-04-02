@@ -5,13 +5,13 @@ namespace App\Domain\Reklame\Models;
 use App\Domain\Master\Models\SubJenisPajak;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HargaPatokanReklame extends Model
 {
-    use HasUuids;
-
+    use SoftDeletes, HasUuids;
     protected $table = 'harga_patokan_reklame';
 
     protected $fillable = [

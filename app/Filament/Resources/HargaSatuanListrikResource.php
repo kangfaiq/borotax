@@ -24,6 +24,11 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class HargaSatuanListrikResource extends Resource
 {
@@ -122,6 +127,8 @@ class HargaSatuanListrikResource extends Resource
             ->filters([
                 TernaryFilter::make('is_active')
                     ->label('Status Aktif'),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -130,6 +137,9 @@ class HargaSatuanListrikResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                
+                    RestoreBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -141,5 +151,13 @@ class HargaSatuanListrikResource extends Resource
             'create' => CreateHargaSatuanListrik::route('/create'),
             'edit' => EditHargaSatuanListrik::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

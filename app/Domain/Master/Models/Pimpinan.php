@@ -7,12 +7,12 @@ use App\Domain\AirTanah\Models\SkpdAirTanah;
 use App\Domain\Reklame\Models\SkpdReklame;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pimpinan extends Model
 {
-    use HasUuids;
-
+    use SoftDeletes, HasUuids;
     protected $table = 'pimpinan';
 
     protected $fillable = [

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\TaxObjectResource\Pages;
 
 use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\TaxObjectResource;
 use App\Filament\Resources\TaxObjectResource\Concerns\HandlesFotoUpload;
@@ -53,6 +55,8 @@ class EditTaxObject extends EditRecord
     {
         return [
             DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
         ];
     }
 

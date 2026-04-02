@@ -20,6 +20,11 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class PimpinanResource extends Resource
 {
@@ -127,6 +132,8 @@ class PimpinanResource extends Resource
                         ->pluck('jabatan', 'jabatan')
                         ->toArray()
                     ),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -135,6 +142,9 @@ class PimpinanResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                
+                    RestoreBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -153,5 +163,13 @@ class PimpinanResource extends Resource
             'create' => CreatePimpinan::route('/create'),
             'edit' => EditPimpinan::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

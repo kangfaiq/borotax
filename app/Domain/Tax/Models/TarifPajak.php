@@ -5,6 +5,7 @@ namespace App\Domain\Tax\Models;
 use App\Domain\Master\Models\SubJenisPajak;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,8 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class TarifPajak extends Model
 {
-    use HasUuids;
-
+    use SoftDeletes, HasUuids;
     protected $table = 'tarif_pajak';
 
     protected $fillable = [

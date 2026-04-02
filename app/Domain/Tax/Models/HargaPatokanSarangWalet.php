@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HargaPatokanSarangWalet extends Model
 {
-    use HasFactory, HasUuids, HasEncryptedAttributes;
-
+    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes;
     protected $table = 'harga_patokan_sarang_walet';
 
     protected array $encryptedAttributes = [

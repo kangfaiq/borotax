@@ -21,6 +21,11 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class KelompokLokasiJalanResource extends Resource
 {
@@ -101,6 +106,8 @@ class KelompokLokasiJalanResource extends Resource
             ->filters([
                 SelectFilter::make('kelompok')
                     ->options(KelompokLokasiJalan::getKelompokOptions()),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -109,6 +116,9 @@ class KelompokLokasiJalanResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                
+                    RestoreBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -120,5 +130,13 @@ class KelompokLokasiJalanResource extends Resource
             'create' => CreateKelompokLokasiJalan::route('/create'),
             'edit' => EditKelompokLokasiJalan::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Domain\Reklame\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Referensi daftar jalan per kelompok lokasi reklame.
@@ -19,8 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class KelompokLokasiJalan extends Model
 {
-    use HasUuids;
-
+    use SoftDeletes, HasUuids;
     protected $table = 'kelompok_lokasi_jalan';
 
     protected $fillable = [

@@ -9,6 +9,8 @@ use App\Domain\Shared\Models\DataChangeRequest;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
 
 class EditWajibPajak extends EditRecord
 {

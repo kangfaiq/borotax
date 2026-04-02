@@ -13,6 +13,11 @@ use Filament\Notifications\Notification;
 use Filament\Infolists;
 use Illuminate\Support\HtmlString;
 use App\Domain\Shared\Services\NotificationService;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class DataChangeRequestResource extends Resource
 {
@@ -247,6 +252,8 @@ class DataChangeRequestResource extends Resource
                         'wajib_pajak' => 'Wajib Pajak',
                         'tax_objects' => 'Objek Pajak',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
@@ -343,5 +350,13 @@ class DataChangeRequestResource extends Resource
             'index' => Pages\ListDataChangeRequests::route('/'),
             'view' => Pages\ViewDataChangeRequest::route('/{record}'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class NpaAirTanah extends Model
 {
-    use HasFactory, HasUuids, HasEncryptedAttributes;
-
+    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes;
     protected $table = 'npa_air_tanah';
 
     // npa_tiers dihapus dulu dari encrypt secara otomatis karena MySQL butuh valid JSON sebelum encrypt (karena tipe datanya DB adalah JSON). 

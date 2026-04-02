@@ -8,12 +8,12 @@ use App\Domain\Tax\Models\TaxAssessmentLetter;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TaxAssessmentCompensation extends Model
 {
-    use HasFactory, HasUuids, HasEncryptedAttributes;
-
+    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes;
     protected $table = 'tax_assessment_compensations';
 
     protected array $encryptedAttributes = [

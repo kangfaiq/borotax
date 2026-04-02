@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\PimpinanResource\Pages;
 
 use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
 use App\Filament\Resources\PimpinanResource;
 use App\Domain\Shared\Models\ActivityLog;
 use Filament\Actions;
@@ -16,6 +18,8 @@ class EditPimpinan extends EditRecord
     {
         return [
             DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
         ];
     }
 

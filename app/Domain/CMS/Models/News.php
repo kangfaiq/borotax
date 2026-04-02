@@ -5,11 +5,11 @@ namespace App\Domain\CMS\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class News extends Model
 {
-    use HasFactory, HasUuids;
-
+    use SoftDeletes, HasFactory, HasUuids;
     protected $table = 'news';
 
     protected $fillable = [

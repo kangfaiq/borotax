@@ -13,6 +13,11 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Validation\ValidationException;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class PortalMblbSubmissionResource extends Resource
 {
@@ -95,6 +100,8 @@ class PortalMblbSubmissionResource extends Resource
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 \Filament\Actions\Action::make('detail')
@@ -198,5 +205,13 @@ class PortalMblbSubmissionResource extends Resource
         return [
             'index' => Pages\ListPortalMblbSubmissions::route('/'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

@@ -1396,8 +1396,36 @@ Semua data PII (Personally Identifiable Information) dienkripsi pada level kolom
 - **CSRF protection** pada semua form web
 
 ### 17.4 Soft Delete
-Model berikut menggunakan soft delete (data tidak dihapus permanen):
-- `User`, `Tax`, `TaxPayment`, `JenisPajak`, `SubJenisPajak`
+**Seluruh** model yang berhubungan dengan data CRUD menggunakan soft delete (data tidak dihapus permanen dari database):
+
+| Kategori | Model |
+|----------|-------|
+| Auth | `User` |
+| Master | `JenisPajak`, `SubJenisPajak`, `Pimpinan` |
+| Wajib Pajak | `WajibPajak` |
+| Pajak | `Tax`, `TaxPayment`, `TaxObject`, `TaxMblbDetail`, `TaxSarangWaletDetail`, `TaxPpjDetail`, `TarifPajak` |
+| Harga Patokan | `HargaPatokanMblb`, `HargaPatokanSarangWalet`, `HargaSatuanListrik`, `HargaPatokanReklame` |
+| Reklame | `ReklameRequest`, `SkpdReklame`, `AsetReklamePemkab`, `PermohonanSewaReklame`, `PeminjamanAsetReklame`, `KelompokLokasiJalan`, `ReklameTariff`, `ReklameNilaiStrategis`, `ReklameObject` |
+| Air Tanah | `WaterObject`, `MeterReport`, `SkpdAirTanah`, `NpaAirTanah` |
+| Surat Ketetapan | `TaxAssessmentLetter`, `TaxAssessmentCompensation` |
+| STPD | `StpdManual` |
+| Pembetulan | `PembetulanRequest` |
+| CMS | `News`, `Destination` |
+| Gebyar | `GebyarSubmission` |
+| MBLB Portal | `PortalMblbSubmission` |
+| Wilayah | `District`, `Village` |
+| Utilitas | `Notification`, `AppVersion`, `DataChangeRequest` |
+
+**Pengecualian** (tanpa soft delete):
+- `VerificationCode` — token sementara, dibersihkan otomatis
+- `ActivityLog` — audit trail, tidak boleh dihapus
+- `Province`, `Regency` — data referensi statis (seed data)
+- `DatObjekPajak`, `DatSptpdAt` — data read-only dari Simpadu
+
+Fitur di Filament admin panel:
+- TrashedFilter untuk melihat data yang sudah dihapus
+- RestoreBulkAction & ForceDeleteBulkAction untuk restore/hapus permanen
+- RestoreAction & ForceDeleteAction di halaman edit
 - Kode billing dan SKPD number cek uniqueness termasuk data yang soft-deleted (`withTrashed()`)
 
 ---

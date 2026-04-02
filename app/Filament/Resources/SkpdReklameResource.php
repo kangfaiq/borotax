@@ -19,6 +19,11 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class SkpdReklameResource extends Resource
 {
@@ -107,6 +112,8 @@ class SkpdReklameResource extends Resource
                         'disetujui' => 'Disetujui',
                         'ditolak' => 'Ditolak',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 ActionGroup::make([
@@ -424,5 +431,13 @@ class SkpdReklameResource extends Resource
         return [
             'index' => Pages\ListSkpdReklames::route('/'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

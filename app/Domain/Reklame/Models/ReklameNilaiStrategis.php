@@ -4,6 +4,7 @@ namespace App\Domain\Reklame\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Tarif nilai strategis reklame.
@@ -18,8 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ReklameNilaiStrategis extends Model
 {
-    use HasUuids;
-
+    use SoftDeletes, HasUuids;
     protected $table = 'reklame_nilai_strategis';
 
     protected $fillable = [

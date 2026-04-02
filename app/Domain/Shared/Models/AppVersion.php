@@ -5,11 +5,11 @@ namespace App\Domain\Shared\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AppVersion extends Model
 {
-    use HasFactory, HasUuids;
-
+    use SoftDeletes, HasFactory, HasUuids;
     protected $table = 'app_versions';
 
     protected $fillable = [

@@ -21,6 +21,11 @@ use Filament\Actions\ActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class SkpdAirTanahResource extends Resource
 {
@@ -188,6 +193,8 @@ class SkpdAirTanahResource extends Resource
                         false: fn($query) => $query->whereNull('lampiran_path'),
                         blank: fn($query) => $query,
                     ),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 ViewAction::make(),
@@ -496,5 +503,13 @@ class SkpdAirTanahResource extends Resource
             'index' => Pages\ListSkpdAirTanahs::route('/'),
             'view' => Pages\ViewSkpdAirTanah::route('/{record}'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

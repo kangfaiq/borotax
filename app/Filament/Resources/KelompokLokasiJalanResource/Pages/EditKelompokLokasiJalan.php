@@ -4,6 +4,8 @@ namespace App\Filament\Resources\KelompokLokasiJalanResource\Pages;
 
 use App\Filament\Resources\KelompokLokasiJalanResource;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditKelompokLokasiJalan extends EditRecord
@@ -14,6 +16,8 @@ class EditKelompokLokasiJalan extends EditRecord
     {
         return [
             DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
         ];
     }
 }

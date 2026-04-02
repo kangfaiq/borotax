@@ -26,6 +26,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class AsetReklamePemkabResource extends Resource
 {
@@ -214,6 +219,8 @@ class AsetReklamePemkabResource extends Resource
                         'tidak_aktif'  => 'Tidak Aktif',
                         'dipinjam_opd' => 'Dipinjam OPD',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -352,5 +359,13 @@ class AsetReklamePemkabResource extends Resource
             'create' => CreateAsetReklamePemkab::route('/create'),
             'edit'   => EditAsetReklamePemkab::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

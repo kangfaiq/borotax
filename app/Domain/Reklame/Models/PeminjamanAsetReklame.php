@@ -5,12 +5,12 @@ namespace App\Domain\Reklame\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PeminjamanAsetReklame extends Model
 {
-    use HasFactory, HasUuids;
-
+    use SoftDeletes, HasFactory, HasUuids;
     protected $table = 'peminjaman_aset_reklame';
 
     protected $fillable = [

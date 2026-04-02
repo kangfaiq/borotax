@@ -40,6 +40,11 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Hash;
 use App\Domain\Shared\Services\NotificationService;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class PermohonanSewaReklameResource extends Resource
 {
@@ -181,6 +186,8 @@ class PermohonanSewaReklameResource extends Resource
                         'disetujui'    => 'Disetujui',
                         'ditolak'      => 'Ditolak',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 Action::make('lihat_detail')
@@ -738,5 +745,13 @@ class PermohonanSewaReklameResource extends Resource
             'index' => ListPermohonanSewaReklame::route('/'),
             'view'  => ViewPermohonanSewaReklame::route('/{record}'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

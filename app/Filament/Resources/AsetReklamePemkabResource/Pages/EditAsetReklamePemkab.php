@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\AsetReklamePemkabResource\Pages;
 
 use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ForceDeleteAction;
 use App\Filament\Resources\AsetReklamePemkabResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -15,6 +17,8 @@ class EditAsetReklamePemkab extends EditRecord
     {
         return [
             DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
         ];
     }
 

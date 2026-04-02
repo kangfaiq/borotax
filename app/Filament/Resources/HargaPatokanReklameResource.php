@@ -24,6 +24,11 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class HargaPatokanReklameResource extends Resource
 {
@@ -174,6 +179,8 @@ class HargaPatokanReklameResource extends Resource
             ->filters([
                 TernaryFilter::make('is_active')
                     ->label('Status Aktif'),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -182,6 +189,9 @@ class HargaPatokanReklameResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                
+                    RestoreBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -193,5 +203,13 @@ class HargaPatokanReklameResource extends Resource
             'create' => CreateHargaPatokanReklame::route('/create'),
             'edit' => EditHargaPatokanReklame::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

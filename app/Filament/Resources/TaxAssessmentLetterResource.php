@@ -23,6 +23,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxAssessmentLetterResource extends Resource
 {
@@ -221,6 +225,8 @@ class TaxAssessmentLetterResource extends Resource
                     ]),
                 Tables\Filters\SelectFilter::make('letter_type')
                     ->options(collect(TaxAssessmentLetterType::cases())->mapWithKeys(fn (TaxAssessmentLetterType $type) => [$type->value => $type->getLabel()])->all()),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 ActionGroup::make([

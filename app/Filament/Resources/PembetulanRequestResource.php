@@ -15,6 +15,11 @@ use Filament\Notifications\Notification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Domain\Shared\Services\NotificationService;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class PembetulanRequestResource extends Resource
 {
@@ -121,6 +126,8 @@ class PembetulanRequestResource extends Resource
                         'selesai' => 'Selesai',
                         'ditolak' => 'Ditolak',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 // Lihat detail alasan
@@ -334,5 +341,13 @@ class PembetulanRequestResource extends Resource
         return [
             'index' => Pages\ListPembetulanRequests::route('/'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

@@ -26,6 +26,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WajibPajakResource extends Resource
 {
@@ -247,6 +251,8 @@ class WajibPajakResource extends Resource
                         'perorangan' => 'Perorangan (P1)',
                         'perusahaan' => 'Perusahaan (P2)',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 ViewAction::make(),
@@ -379,5 +385,13 @@ class WajibPajakResource extends Resource
             'view' => ViewWajibPajak::route('/{record}'),
             'edit' => EditWajibPajak::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

@@ -21,6 +21,11 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use App\Domain\Shared\Services\NotificationService;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
 
 class GebyarSubmissionResource extends Resource
 {
@@ -127,6 +132,8 @@ class GebyarSubmissionResource extends Resource
                         'approved' => 'Sah (Valid)',
                         'rejected' => 'Ditolak (Invalid)',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 Action::make('verify')
@@ -210,5 +217,13 @@ class GebyarSubmissionResource extends Resource
         return [
             'index' => ListGebyarSubmissions::route('/'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

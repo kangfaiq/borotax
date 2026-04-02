@@ -18,6 +18,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StpdManualResource extends Resource
 {
@@ -132,6 +136,8 @@ class StpdManualResource extends Resource
                         'pokok_sanksi' => 'Pokok & Sanksi',
                         'sanksi_saja' => 'Sanksi Saja',
                     ]),
+            
+                TrashedFilter::make(),
             ])
             ->actions([
                 // Document actions
@@ -349,5 +355,13 @@ class StpdManualResource extends Resource
         return [
             'index' => Pages\ListStpdManuals::route('/'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

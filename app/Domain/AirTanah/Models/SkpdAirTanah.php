@@ -12,6 +12,7 @@ use App\Domain\Shared\Traits\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
@@ -60,8 +61,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class SkpdAirTanah extends Model
 {
-    use HasFactory, HasUuids, HasEncryptedAttributes, CalculatesJatuhTempo;
-
+    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes, CalculatesJatuhTempo;
     protected $table = 'skpd_air_tanah';
 
     /**

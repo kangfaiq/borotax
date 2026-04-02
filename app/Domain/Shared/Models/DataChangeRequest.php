@@ -2,7 +2,6 @@
 
 namespace App\Domain\Shared\Models;
 
-use Exception;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Domain\Tax\Models\TaxObject;
 use InvalidArgumentException;
@@ -10,13 +9,14 @@ use App\Domain\Auth\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 class DataChangeRequest extends Model
 {
-    use HasFactory, HasUuids;
+    use SoftDeletes, HasFactory, HasUuids;
 
     protected $table = 'data_change_requests';
 
