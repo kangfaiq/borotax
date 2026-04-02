@@ -3,26 +3,31 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('news', 'slug')) {
+            return;
+        }
+
         Schema::table('news', function (Blueprint $table) {
             $table->string('slug')->nullable()->unique()->after('title');
         });
 
         // Generate slugs for existing records
-        $news = \App\Domain\CMS\Models\News::all();
+        $news = DB::table('news')->get();
         foreach ($news as $item) {
             $slug = Str::slug($item->title);
             $originalSlug = $slug;
             $counter = 1;
-            while (\App\Domain\CMS\Models\News::where('slug', $slug)->where('id', '!=', $item->id)->exists()) {
+            while (DB::table('news')->where('slug', $slug)->where('id', '!=', $item->id)->exists()) {
                 $slug = $originalSlug . '-' . $counter++;
             }
-            $item->update(['slug' => $slug]);
+            DB::table('news')->where('id', $item->id)->update(['slug' => $slug]);
         }
     }
 
