@@ -25,6 +25,12 @@
 
 ## Latest Validation
 
+- Additional local smoke validation on 2026-04-03 against the active app instance (`http://borotax.test`):
+  - HTTP portal login page responded `200` and exposed CSRF token
+  - HTTP admin login page responded `200`
+  - HTTP portal login using a temporary valid Wajib Pajak account reached the authenticated dashboard successfully, then the account was cleaned up
+  - Focused smoke bundle covering registration, verification, SKPD creation, STPD flow, and PDF access: `OK (24 tests, 194 assertions)`
+
 - Full feature suite sesudah fix guard API dan hash kepemilikan: `OK (149 tests, 1314 assertions)`
 - Final focused regression bundle sesudah hardening dokumen, STPD, policy-resource sync, dan helper seed reklame: `OK (88 tests, 613 assertions)`
 - Verifikasi ulang direct phpunit untuk kasus yang sebelumnya sempat flaky: `php vendor/bin/phpunit tests/Feature/TaxStpdWorkflowTest.php --stop-on-error --testdox` → `OK (8 tests, 79 assertions)`
