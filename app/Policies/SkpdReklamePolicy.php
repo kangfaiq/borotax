@@ -34,8 +34,10 @@ class SkpdReklamePolicy
         return $user->isAdmin();
     }
 
-    public function verify(User $user): bool
+    public function verify(User $user, SkpdReklame $skpdReklame): bool
     {
-        return $user->hasRole(['admin', 'verifikator']);
+        return $user->hasRole(['admin', 'verifikator'])
+            && $skpdReklame->status === 'draft'
+            && $skpdReklame->petugas_id !== $user->id;
     }
 }

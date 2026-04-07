@@ -91,6 +91,10 @@ class TaxAssessmentLetterService
             throw new InvalidArgumentException('Hanya draft yang dapat diterbitkan.');
         }
 
+        if ($letter->created_by === $verifier->id) {
+            throw new InvalidArgumentException('Dokumen tidak dapat diverifikasi oleh pembuat draft yang sama.');
+        }
+
         return DB::transaction(function () use ($letter, $verifier, $verificationNotes) {
             $letter->loadMissing(['sourceTax.jenisPajak', 'sourceTax.taxObject', 'user']);
 
@@ -136,6 +140,10 @@ class TaxAssessmentLetterService
     {
         if (!$letter->isDraft()) {
             throw new InvalidArgumentException('Hanya draft yang dapat ditolak.');
+        }
+
+        if ($letter->created_by === $verifier->id) {
+            throw new InvalidArgumentException('Dokumen tidak dapat diverifikasi oleh pembuat draft yang sama.');
         }
 
         $letter->update([

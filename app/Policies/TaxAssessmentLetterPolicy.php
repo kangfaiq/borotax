@@ -34,7 +34,9 @@ class TaxAssessmentLetterPolicy
 
     public function review(User $user, TaxAssessmentLetter $letter): bool
     {
-        return $user->hasRole(['admin', 'verifikator']) && $letter->isDraft();
+        return $user->hasRole(['admin', 'verifikator'])
+            && $letter->isDraft()
+            && $letter->created_by !== $user->id;
     }
 
     public function allocate(User $user, TaxAssessmentLetter $letter): bool

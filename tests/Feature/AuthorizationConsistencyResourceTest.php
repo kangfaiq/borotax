@@ -6,6 +6,7 @@ use App\Domain\Auth\Models\User;
 use App\Domain\Region\Models\District;
 use App\Domain\Region\Models\Village;
 use App\Domain\Master\Models\Pimpinan;
+use App\Domain\Reklame\Models\ReklameNilaiStrategis;
 use App\Domain\Shared\Models\ActivityLog;
 use App\Domain\Tax\Models\HargaPatokanMblb;
 use App\Domain\Tax\Models\HargaPatokanSarangWalet;
@@ -20,6 +21,7 @@ use App\Filament\Resources\HargaPatokanMblbResource;
 use App\Filament\Resources\HargaPatokanSarangWaletResource;
 use App\Filament\Resources\HargaSatuanListrikResource;
 use App\Filament\Resources\PimpinanResource;
+use App\Filament\Resources\ReklameNilaiStrategisResource;
 use App\Filament\Resources\TaxObjectResource;
 use App\Filament\Resources\PimpinanResource\Pages\ListPimpinans;
 use App\Filament\Resources\VillageResource;
@@ -152,6 +154,7 @@ class AuthorizationConsistencyResourceTest extends TestCase
             'harga-patokan-mblb' => [HargaPatokanMblbResource::class, HargaPatokanMblb::class],
             'harga-patokan-sarang-walet' => [HargaPatokanSarangWaletResource::class, HargaPatokanSarangWalet::class],
             'harga-satuan-listrik' => [HargaSatuanListrikResource::class, HargaSatuanListrik::class],
+            'reklame-nilai-strategis' => [ReklameNilaiStrategisResource::class, ReklameNilaiStrategis::class],
         ];
 
         $roles = [

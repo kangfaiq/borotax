@@ -223,7 +223,7 @@ class UserResource extends Resource
                             $record->update([
                                 'password' => Hash::make($data['new_password']),
                                 'must_change_password' => true,
-                                'password_changed_at' => now(),
+                                'password_changed_at' => null,
                             ]);
                         }),
                     Action::make('toggleStatus')

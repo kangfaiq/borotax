@@ -32,8 +32,10 @@ class StpdManualPolicy
         return $user->isAdmin();
     }
 
-    public function verify(User $user): bool
+    public function verify(User $user, StpdManual $stpdManual): bool
     {
-        return $user->hasRole(['admin', 'verifikator']);
+        return $user->hasRole(['admin', 'verifikator'])
+            && $stpdManual->isDraft()
+            && $stpdManual->petugas_id !== $user->id;
     }
 }

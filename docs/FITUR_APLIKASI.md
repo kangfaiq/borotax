@@ -118,6 +118,7 @@ Catatan: tabel berikut menggambarkan akses halaman utama. Untuk beberapa modul, 
 | Kelola User Backoffice | ✅ | ❌ | ❌ |
 | Data Master (Jenis Pajak, Pimpinan, dll) | ✅ | ❌ | ❌ |
 | Harga Patokan (MBLB, Walet, Listrik, Reklame) | ✅ | ❌ | ❌ |
+| Nilai Strategis Reklame | ✅ | ❌ | ❌ |
 | NPA Air Tanah | ✅ | ❌ | ❌ |
 | Kecamatan & Desa | ✅ | ❌ | ❌ |
 | Data Wajib Pajak | ✅ | ✅ | ✅ |
@@ -275,6 +276,7 @@ TOTAL_PAJAK        = DASAR_PENGENAAN + NILAI_STRATEGIS
 - Hanya untuk luas **≥ 10 m²**
 - Hanya untuk satuan waktu **perTahun** atau **perBulan**
 - Didapat dari tabel `reklame_nilai_strategis` berdasarkan kelas kelompok (A/B/C) dan range luas
+- Admin dapat mengelola tarif ini melalui menu **Master Data > Nilai Strategis Reklame**
 
 **Penyesuaian khusus:**
 - Dalam ruangan: diskon 75% (×0.25)
@@ -555,6 +557,9 @@ Dashboard menampilkan:
 | Laporan Meter | Laporan submitted | Proses → Buat Draft SKPD |
 | Data Change Request | Request pending | Setujui (apply changes) / Tolak |
 
+Catatan pemisahan peran verifikasi:
+- Pembuat draft dokumen tidak boleh memverifikasi dokumennya sendiri. Draft SKPD Reklame, SKPD Air Tanah, STPD manual, dan surat ketetapan harus diverifikasi oleh user admin/verifikator yang berbeda dari pembuat draft.
+
 Catatan implementasi saat ini:
 - Edit data identitas Wajib Pajak oleh admin/petugas tidak langsung mengubah entity, tetapi membuat `DataChangeRequest` berstatus `pending`.
 - Verifikator/admin kemudian mereview request tersebut dari modul `Data Change Request` untuk `approve` atau `reject`.
@@ -643,6 +648,13 @@ Catatan implementasi saat ini:
 ---
 
 ## 7. Fitur Portal Wajib Pajak (Web)
+
+- **Wajib ganti password saat login pertama:** user wajib pajak yang dibuat atau di-reset dari backoffice dengan flag `must_change_password = true` akan diarahkan paksa ke halaman ubah password pertama kali sebelum bisa mengakses halaman portal lain.
+- **Route first-login password change:** `/portal/password/change-first`
+- **Route ubah password reguler:** `/portal/password/change`
+- **Indikator status password di portal:** header dan sidebar menampilkan waktu terakhir password diubah; bila password belum pernah diubah, portal menampilkan badge warning yang lebih tegas, tooltip ajakan untuk segera memperbarui password, serta animasi pulse halus dan ikon penanda khusus di mobile agar lebih cepat tertangkap.
+- **Konsistensi CTA di halaman ubah password:** halaman `/portal/password/change` juga menampilkan ringkasan status password dan warning card yang selaras dengan indikator portal ketika password belum pernah diubah.
+- **Bahasa visual first-login konsisten:** halaman `/portal/password/change-first` memakai status banner dan warning card yang sama agar alur first-login dan settings reguler tetap terasa satu sistem.
 
 ### 7.1 Dashboard Portal
 - Total tagihan pending (IDR)
@@ -744,6 +756,10 @@ Wajib pajak dapat melihat dan mengunduh:
 - `POST /api/v1/auth/verify-otp` memakai `otp_id` + `code` 6 digit; maksimal 3 percobaan gagal sebelum user harus meminta OTP baru
 - `POST /api/v1/register` membutuhkan `verification_token` hasil verifikasi OTP serta data identitas lengkap, termasuk kode wilayah dan `password_confirmation`; user baru dibuat dengan role default `user`
 - `POST /api/v1/login` memakai field `email`, tetapi nilainya boleh berupa email atau NIK
+- Respons login dan profile juga mengembalikan flag `must_change_password` dan `password_changed_at`
+- Jika `must_change_password = true`, token login tetap diterbitkan, tetapi sampai password diganti akses API dibatasi hanya ke `GET /api/v1/profile`, `POST /api/v1/update-password`, dan `POST /api/v1/logout`
+- Respons login, profile, dan error blokir API memuat kontrak `auth_requirements` dengan `error_code = PASSWORD_CHANGE_REQUIRED`, `required_action`, dan `allowed_actions` agar aplikasi mobile bisa langsung menampilkan layar wajib ganti password
+- Copywriting warning mobile mengikuti portal web agar konsisten lintas kanal: status `Belum pernah diubah`, CTA `Aksi wajib sekarang`, dan pesan aksi `Password harus diganti sebelum melanjutkan.`
 - Endpoint profil terproteksi Sanctum: `profile`, `update-profile`, `update-password`, `update-pin`, `verify-pin`, `logout`
 
 ### 8.2 Self-Assessment

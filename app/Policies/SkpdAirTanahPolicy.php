@@ -34,8 +34,10 @@ class SkpdAirTanahPolicy
         return $user->isAdmin();
     }
 
-    public function verify(User $user): bool
+    public function verify(User $user, SkpdAirTanah $skpdAirTanah): bool
     {
-        return $user->hasRole(['admin', 'verifikator']);
+        return $user->hasRole(['admin', 'verifikator'])
+            && $skpdAirTanah->status === 'draft'
+            && $skpdAirTanah->petugas_id !== $user->id;
     }
 }

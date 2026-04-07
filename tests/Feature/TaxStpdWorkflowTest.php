@@ -243,6 +243,28 @@ class TaxStpdWorkflowTest extends TestCase
         $this->assertNull($tax->stpd_number);
     }
 
+    public function test_document_creator_cannot_verify_own_stpd_draft(): void
+    {
+        $this->seedStpdWorkflowRequirements();
+
+        $draft = $this->createDraftStpd();
+        $admin = $this->createAdminPanelUser('admin', Pimpinan::firstOrFail()->id);
+
+        $draft->update([
+            'petugas_id' => $admin->id,
+            'petugas_nama' => $admin->nama_lengkap,
+        ]);
+
+        $this->actingAs($admin);
+
+        $this->assertFalse($admin->can('verify', $draft));
+
+        Livewire::test(ListStpdManuals::class)
+            ->assertCanSeeTableRecords([$draft])
+            ->assertTableActionHidden('approve', $draft)
+            ->assertTableActionHidden('reject', $draft);
+    }
+
     private function seedStpdWorkflowRequirements(): void
     {
         $this->seed([

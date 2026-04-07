@@ -96,6 +96,26 @@ class SkpdAirTanahVerificationWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_document_creator_cannot_verify_own_skpd_air_tanah_draft(): void
+    {
+        $draft = $this->createDraftSkpdAirTanah();
+        $admin = $this->createAdminPanelUser('admin', Pimpinan::firstOrFail()->id);
+
+        $draft->update([
+            'petugas_id' => $admin->id,
+            'petugas_nama' => $admin->nama_lengkap,
+        ]);
+
+        $this->actingAs($admin);
+
+        $this->assertFalse($admin->can('verify', $draft));
+
+        Livewire::test(ListSkpdAirTanahs::class)
+            ->assertCanSeeTableRecords([$draft])
+            ->assertTableActionHidden('approve', $draft)
+            ->assertTableActionHidden('reject', $draft);
+    }
+
     private function createDraftSkpdAirTanah(): SkpdAirTanah
     {
         $this->seed([

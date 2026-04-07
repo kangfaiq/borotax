@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
+use InvalidArgumentException;
 
 class TaxAssessmentLetterWorkflowTest extends TestCase
 {
@@ -243,6 +244,44 @@ class TaxAssessmentLetterWorkflowTest extends TestCase
         $this->actingAs($otherPortalUser)
             ->get(route('tax-assessment-letters.show', $letter->id))
             ->assertNotFound();
+    }
+
+    public function test_document_creator_cannot_review_own_tax_assessment_letter_draft(): void
+    {
+        $this->seedTaxReferences();
+        $this->seedPimpinanReferences();
+
+        $wajibPajak = $this->createApprovedWajibPajakFixture();
+        $sourceTax = $this->createTaxFixture(
+            $this->createTaxObjectFixture($wajibPajak, '41102'),
+            User::findOrFail($wajibPajak->user_id),
+        );
+        $creator = $this->createAdminPanelUser('admin', true);
+
+        $letter = TaxAssessmentLetter::create(
+            app(TaxAssessmentLetterService::class)->prepareDraftPayload([
+                'source_tax_id' => $sourceTax->id,
+                'letter_type' => TaxAssessmentLetterType::SKPDKB->value,
+                'issuance_reason' => TaxAssessmentReason::Pemeriksaan->value,
+                'issue_date' => now()->toDateString(),
+                'base_amount' => 750_000,
+                'interest_months' => 2,
+            ], $creator)
+        );
+
+        $this->actingAs($creator);
+
+        $this->assertFalse($creator->can('review', $letter));
+
+        Livewire::test(ListTaxAssessmentLetters::class)
+            ->assertCanSeeTableRecords([$letter])
+            ->assertTableActionHidden('approve', $letter)
+            ->assertTableActionHidden('reject', $letter);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Dokumen tidak dapat diverifikasi oleh pembuat draft yang sama.');
+
+        app(TaxAssessmentLetterService::class)->approve($letter, $creator, 'Tidak boleh lolos.');
     }
 
     public static function verificationRoleProvider(): array

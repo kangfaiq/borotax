@@ -272,6 +272,64 @@
             color: var(--sidebar-text);
         }
 
+        .sidebar-password-meta {
+            margin-top: 7px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .password-status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            width: max-content;
+            padding: 4px 8px;
+            border-radius: var(--radius-full);
+            font-size: 0.64rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .password-status-chip.safe {
+            background: rgba(108, 172, 207, 0.18);
+            color: #D7ECF6;
+        }
+
+        .password-status-chip.warning {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.92), rgba(245, 158, 11, 0.95));
+            border-color: rgba(255, 255, 255, 0.14);
+            box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.22), 0 8px 18px rgba(239, 68, 68, 0.22);
+            color: #FFF7ED;
+            position: relative;
+        }
+
+        .password-status-chip.warning i {
+            color: #FFFFFF;
+        }
+
+        .password-status-chip.warning::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
+        }
+
+        .sidebar-password-time {
+            font-size: 0.68rem;
+            color: var(--sidebar-text);
+            line-height: 1.35;
+        }
+
+        .sidebar-password-time.warning {
+            color: #FDE68A;
+        }
+
         .sidebar-logout {
             background: none;
             border: none;
@@ -366,6 +424,143 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .topbar-password-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border);
+            background: var(--bg-main);
+            color: inherit;
+            text-decoration: none;
+            transition: all var(--transition);
+        }
+
+        .topbar-password-indicator:hover {
+            border-color: var(--primary);
+            background: var(--primary-50);
+        }
+
+        .topbar-password-indicator.warning {
+            border-color: rgba(239, 68, 68, 0.28);
+            background: linear-gradient(180deg, rgba(254, 242, 242, 0.98), rgba(255, 247, 237, 0.98));
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.1);
+        }
+
+        .topbar-password-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(var(--primary-rgb), 0.12);
+            color: var(--primary-dark);
+            font-size: 0.92rem;
+            flex-shrink: 0;
+        }
+
+        .topbar-password-indicator.warning .topbar-password-icon {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.18));
+            color: #B91C1C;
+        }
+
+        .topbar-password-icon.warning-marker {
+            position: relative;
+        }
+
+        .topbar-password-icon.warning-marker::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            opacity: 0;
+        }
+
+        .topbar-password-mobile-flag {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            margin-left: 2px;
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, #DC2626, #F59E0B);
+            color: #FFFFFF;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            box-shadow: 0 8px 18px rgba(220, 38, 38, 0.2);
+        }
+
+        .topbar-password-copy {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .topbar-password-label {
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        .topbar-password-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .topbar-password-hint {
+            display: none;
+            margin-top: 3px;
+            width: max-content;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            background: rgba(239, 68, 68, 0.12);
+            color: #B91C1C;
+            font-size: 0.64rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .topbar-password-indicator.warning .topbar-password-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        @keyframes passwordWarningPulse {
+            0% {
+                opacity: 0;
+                transform: scale(0.92);
+            }
+
+            35% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.28);
+            }
+        }
+
+        @keyframes passwordWarningFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-2px);
+            }
         }
 
         .topbar-btn {
@@ -588,6 +783,45 @@
         @media (max-width: 640px) {
             .topbar { padding: 0 16px; }
             .topbar-date { display: none; }
+            .topbar-password-indicator {
+                padding: 8px 10px;
+            }
+
+            .topbar-password-label {
+                display: none;
+            }
+
+            .topbar-password-value {
+                max-width: 132px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 0.74rem;
+            }
+
+            .topbar-password-indicator.warning {
+                animation: passwordWarningFloat 2.2s ease-in-out infinite;
+            }
+
+            .topbar-password-indicator.warning .topbar-password-icon.warning-marker::after {
+                animation: passwordWarningPulse 1.8s ease-out infinite;
+            }
+
+            .topbar-password-mobile-flag {
+                display: inline-flex;
+            }
+
+            .password-status-chip.warning {
+                animation: passwordWarningFloat 2.6s ease-in-out infinite;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .topbar-password-indicator.warning,
+            .password-status-chip.warning,
+            .topbar-password-indicator.warning .topbar-password-icon.warning-marker::after {
+                animation: none !important;
+            }
         }
     </style>
 
@@ -595,6 +829,17 @@
 </head>
 
 <body>
+    @php
+        $portalUser = auth()->user();
+        $passwordChangedAt = $portalUser?->password_changed_at?->timezone(config('app.timezone'));
+        $passwordChangedLabel = $passwordChangedAt
+            ? $passwordChangedAt->translatedFormat('d M Y, H:i')
+            : 'Belum pernah diubah';
+        $passwordStatusTooltip = $passwordChangedAt
+            ? 'Password akun terakhir diperbarui pada ' . $passwordChangedLabel
+            : 'Password akun belum pernah diubah. Segera perbarui untuk meningkatkan keamanan akun.';
+    @endphp
+
     {{-- Sidebar --}}
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
@@ -647,16 +892,32 @@
                     Gebyar Pajak
                 </a>
             </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">Akun</div>
+                <a href="{{ route('portal.password.edit') }}"
+                   class="nav-item {{ request()->routeIs('portal.password.*') ? 'active' : '' }}">
+                    <i class="bi bi-shield-lock"></i>
+                    Ubah Password
+                </a>
+            </div>
         </nav>
 
         <div class="sidebar-footer">
             <div class="sidebar-user">
                 <div class="sidebar-avatar">
-                    {{ strtoupper(substr(Auth::user()->nama_lengkap ?? 'U', 0, 1)) }}
+                    {{ strtoupper(substr($portalUser->nama_lengkap ?? 'U', 0, 1)) }}
                 </div>
                 <div class="sidebar-user-info">
-                    <div class="sidebar-user-name">{{ Auth::user()->nama_lengkap }}</div>
+                    <div class="sidebar-user-name">{{ $portalUser->nama_lengkap }}</div>
                     <div class="sidebar-user-role">Wajib Pajak</div>
+                    <div class="sidebar-password-meta">
+                        <span class="password-status-chip {{ $passwordChangedAt ? 'safe' : 'warning' }}" title="{{ $passwordStatusTooltip }}">
+                            <i class="bi {{ $passwordChangedAt ? 'bi-shield-check' : 'bi-exclamation-diamond-fill' }}"></i>
+                            {{ $passwordChangedAt ? 'Password aktif' : 'Belum pernah diubah' }}
+                        </span>
+                        <span class="sidebar-password-time {{ $passwordChangedAt ? '' : 'warning' }}">Terakhir diubah: {{ $passwordChangedLabel }}</span>
+                    </div>
                 </div>
                 <form method="POST" action="{{ route('portal.logout') }}" style="margin:0;">
                     @csrf
@@ -690,6 +951,25 @@
                     <i class="bi bi-calendar3"></i>
                     {{ now()->isoFormat('dddd, D MMMM Y') }}
                 </div>
+                <a href="{{ route('portal.password.edit') }}" class="topbar-password-indicator {{ $passwordChangedAt ? '' : 'warning' }}" title="{{ $passwordStatusTooltip }}">
+                    <span class="topbar-password-icon {{ $passwordChangedAt ? '' : 'warning-marker' }}">
+                        <i class="bi {{ $passwordChangedAt ? 'bi-shield-lock' : 'bi-shield-exclamation' }}"></i>
+                    </span>
+                    <span class="topbar-password-copy">
+                        <span class="topbar-password-label">Password terakhir</span>
+                        <span class="topbar-password-value">{{ $passwordChangedLabel }}</span>
+                        @if (! $passwordChangedAt)
+                            <span class="topbar-password-mobile-flag">
+                                <i class="bi bi-bell-fill"></i>
+                                Aksi
+                            </span>
+                            <span class="topbar-password-hint">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                                Perlu diperbarui
+                            </span>
+                        @endif
+                    </span>
+                </a>
                 <button class="topbar-btn" title="Notifikasi" onclick="toggleNotifDropdown()" id="notifBtn" style="position:relative;">
                     <i class="bi bi-bell"></i>
                     <span class="notif-badge" id="notifBadge" style="display:none;"></span>

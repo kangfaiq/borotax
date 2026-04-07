@@ -22,8 +22,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -236,6 +234,7 @@ class SkpdAirTanahResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn(SkpdAirTanah $record) => $record->status === 'draft' && auth()->user()->can('verify', $record))
+                    ->authorize(fn(SkpdAirTanah $record) => auth()->user()?->can('verify', $record) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Terbitkan SKPD ABT?')
                     ->modalDescription('System akan generate Billing ID.')
@@ -316,6 +315,7 @@ class SkpdAirTanahResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn(SkpdAirTanah $record) => $record->status === 'draft' && auth()->user()->can('verify', $record))
+                    ->authorize(fn(SkpdAirTanah $record) => auth()->user()?->can('verify', $record) ?? false)
                     ->schema([
                         Forms\Components\Textarea::make('catatan_verifikasi')->required(),
                     ])
@@ -344,17 +344,21 @@ class SkpdAirTanahResource extends Resource
                     ->label('Setujui Terpilih')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn () => auth()->user()->can('verify', new SkpdAirTanah))
+                    ->visible(fn () => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
+                    ->authorize(fn () => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Setujui SKPD ABT Terpilih?')
                     ->modalDescription('Semua SKPD ABT draft yang dipilih akan diterbitkan dengan Kode Pembayaran Aktif masing-masing.')
                     ->deselectRecordsAfterCompletion()
                     ->action(function (Collection $records): void {
-                        $draftRecords = $records->where('status', 'draft');
+                        $draftRecords = $records
+                            ->where('status', 'draft')
+                            ->filter(fn (SkpdAirTanah $record) => auth()->user()->can('verify', $record));
 
                         if ($draftRecords->isEmpty()) {
                             Notification::make()
-                                ->title('Tidak ada SKPD draft yang dipilih')
+                                ->title('Tidak ada SKPD draft yang dapat diverifikasi')
+                                ->body('Dokumen yang Anda buat sendiri tidak dapat diverifikasi oleh akun yang sama.')
                                 ->warning()
                                 ->send();
                             return;
@@ -445,7 +449,8 @@ class SkpdAirTanahResource extends Resource
                     ->label('Tolak Terpilih')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn () => auth()->user()->can('verify', new SkpdAirTanah))
+                    ->visible(fn () => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
+                    ->authorize(fn () => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Tolak SKPD ABT Terpilih?')
                     ->schema([
@@ -455,11 +460,14 @@ class SkpdAirTanahResource extends Resource
                     ])
                     ->deselectRecordsAfterCompletion()
                     ->action(function (Collection $records, array $data): void {
-                        $draftRecords = $records->where('status', 'draft');
+                        $draftRecords = $records
+                            ->where('status', 'draft')
+                            ->filter(fn (SkpdAirTanah $record) => auth()->user()->can('verify', $record));
 
                         if ($draftRecords->isEmpty()) {
                             Notification::make()
-                                ->title('Tidak ada SKPD draft yang dipilih')
+                                ->title('Tidak ada SKPD draft yang dapat diverifikasi')
+                                ->body('Dokumen yang Anda buat sendiri tidak dapat diverifikasi oleh akun yang sama.')
                                 ->warning()
                                 ->send();
                             return;

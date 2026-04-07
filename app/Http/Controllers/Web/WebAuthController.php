@@ -19,6 +19,11 @@ class WebAuthController extends Controller
             if (in_array(auth()->user()->role, ['admin', 'verifikator', 'petugas'])) {
                 return redirect('/admin');
             }
+
+            if (auth()->user()->must_change_password) {
+                return redirect()->route('portal.force-password.form');
+            }
+
             return redirect()->route('portal.dashboard');
         }
 
@@ -113,7 +118,106 @@ class WebAuthController extends Controller
 
         $request->session()->regenerate();
 
+        if ($user->must_change_password) {
+            return redirect()->route('portal.force-password.form')
+                ->with('status', 'Password awal harus diganti sebelum Anda dapat menggunakan portal.');
+        }
+
         return redirect()->intended(route('portal.dashboard'));
+    }
+
+    /**
+     * Show the forced password change form.
+     */
+    public function showForceChangePassword()
+    {
+        if (! auth()->check()) {
+            return redirect()->route('portal.login');
+        }
+
+        if (! auth()->user()->must_change_password) {
+            return redirect()->route('portal.dashboard');
+        }
+
+        return view('portal.auth.force-change-password');
+    }
+
+    /**
+     * Update password for first-login flow.
+     */
+    public function updateForceChangePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'current_password.required' => 'Password saat ini wajib diisi.',
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password baru minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
+        ]);
+
+        $user = $request->user();
+
+        if (! $user || ! $user->must_change_password) {
+            return redirect()->route('portal.dashboard');
+        }
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return back()
+                ->withInput($request->except(['current_password', 'password', 'password_confirmation']))
+                ->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+            'password_changed_at' => now(),
+            'must_change_password' => false,
+        ]);
+
+        return redirect()->route('portal.dashboard')
+            ->with('status', 'Password berhasil diperbarui. Anda sekarang dapat menggunakan portal.');
+    }
+
+    /**
+     * Show regular password change form.
+     */
+    public function showChangePassword()
+    {
+        return view('portal.auth.change-password');
+    }
+
+    /**
+     * Update password from portal settings page.
+     */
+    public function updateChangePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'current_password.required' => 'Password saat ini wajib diisi.',
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password baru minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return back()
+                ->withInput($request->except(['current_password', 'password', 'password_confirmation']))
+                ->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+            'password_changed_at' => now(),
+            'must_change_password' => false,
+        ]);
+
+        return redirect()->route('portal.password.edit')
+            ->with('status', 'Password berhasil diperbarui.');
     }
 
     /**

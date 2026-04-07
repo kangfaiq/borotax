@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\OtpController;
@@ -55,39 +54,42 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('profile', [AuthController::class, 'profile']);
-        Route::post('update-profile', [AuthController::class, 'updateProfile']);
         Route::post('update-password', [AuthController::class, 'updatePassword']);
-        Route::post('update-pin', [AuthController::class, 'updatePin']);
-        Route::post('verify-pin', [AuthController::class, 'verifyPin']);
 
-        // Water Tax
-        Route::get('water-objects', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'getObjects']);
-        Route::post('water-objects', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'registerObject']);
-        Route::post('water-reports', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'submitReport']);
-        Route::get('water-reports/history', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'getHistory']);
+        Route::middleware('password.changed')->group(function () {
+            Route::post('update-profile', [AuthController::class, 'updateProfile']);
+            Route::post('update-pin', [AuthController::class, 'updatePin']);
+            Route::post('verify-pin', [AuthController::class, 'verifyPin']);
 
-        // Reklame
-        Route::get('reklame-objects', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getObjects']);
-        Route::post('reklame-extensions', [\App\Http\Controllers\Api\V1\ReklameController::class, 'submitExtension']);
-        Route::get('reklame-requests', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getRequests']);
+            // Water Tax
+            Route::get('water-objects', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'getObjects']);
+            Route::post('water-objects', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'registerObject']);
+            Route::post('water-reports', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'submitReport']);
+            Route::get('water-reports/history', [\App\Http\Controllers\Api\V1\WaterTaxController::class, 'getHistory']);
 
-        // Sewa Reklame Aset Pemkab
-        Route::get('reklame-aset-pemkab', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getAsetPemkab']);
-        Route::post('reklame-sewa', [\App\Http\Controllers\Api\V1\ReklameController::class, 'submitSewa']);
-        Route::get('reklame-sewa', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getSewaList']);
+            // Reklame
+            Route::get('reklame-objects', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getObjects']);
+            Route::post('reklame-extensions', [\App\Http\Controllers\Api\V1\ReklameController::class, 'submitExtension']);
+            Route::get('reklame-requests', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getRequests']);
 
-        // Transactions / Self Assessment
-        Route::post('taxes/self-assessment', [\App\Http\Controllers\Api\V1\TransactionController::class, 'createSelfAssessment']);
-        Route::get('taxes/history', [\App\Http\Controllers\Api\V1\TransactionController::class, 'getTransactions']);
+            // Sewa Reklame Aset Pemkab
+            Route::get('reklame-aset-pemkab', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getAsetPemkab']);
+            Route::post('reklame-sewa', [\App\Http\Controllers\Api\V1\ReklameController::class, 'submitSewa']);
+            Route::get('reklame-sewa', [\App\Http\Controllers\Api\V1\ReklameController::class, 'getSewaList']);
 
-        // Gebyar Sadar Pajak
-        Route::post('gebyar/submit', [\App\Http\Controllers\Api\V1\GebyarController::class, 'submit']);
-        Route::get('gebyar/history', [\App\Http\Controllers\Api\V1\GebyarController::class, 'getHistory']);
+            // Transactions / Self Assessment
+            Route::post('taxes/self-assessment', [\App\Http\Controllers\Api\V1\TransactionController::class, 'createSelfAssessment']);
+            Route::get('taxes/history', [\App\Http\Controllers\Api\V1\TransactionController::class, 'getTransactions']);
 
-        // Notifications
-        Route::get('notifications', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index']);
-        Route::get('notifications/unread-count', [\App\Http\Controllers\Api\V1\NotificationController::class, 'unreadCount']);
-        Route::post('notifications/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead']);
-        Route::post('notifications/read-all', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAllAsRead']);
+            // Gebyar Sadar Pajak
+            Route::post('gebyar/submit', [\App\Http\Controllers\Api\V1\GebyarController::class, 'submit']);
+            Route::get('gebyar/history', [\App\Http\Controllers\Api\V1\GebyarController::class, 'getHistory']);
+
+            // Notifications
+            Route::get('notifications', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index']);
+            Route::get('notifications/unread-count', [\App\Http\Controllers\Api\V1\NotificationController::class, 'unreadCount']);
+            Route::post('notifications/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead']);
+            Route::post('notifications/read-all', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAllAsRead']);
+        });
     });
 });

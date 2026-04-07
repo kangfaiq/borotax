@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Auth\Support\PasswordChangeRequirement;
 use App\Domain\Auth\Models\VerificationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -132,6 +133,11 @@ class AuthController extends BaseController
         // $user->tokens()->delete();
 
         $token = $user->createToken('BorotaxApp')->plainTextToken;
+        $authRequirements = PasswordChangeRequirement::forApi((bool) $user->must_change_password);
+
+        $message = $user->must_change_password
+            ? 'Login berhasil. Password harus diganti sebelum melanjutkan.'
+            : 'Login berhasil.';
 
         return $this->sendResponse([
             'token' => $token,
@@ -140,8 +146,11 @@ class AuthController extends BaseController
                 'nama' => $user->nama_lengkap,
                 'email' => $user->email,
                 'role' => $user->role,
-            ]
-        ], 'Login berhasil.');
+                'must_change_password' => (bool) $user->must_change_password,
+                'password_changed_at' => $user->password_changed_at,
+            ],
+            'auth_requirements' => $authRequirements,
+        ], $message);
     }
 
     /**
@@ -159,6 +168,7 @@ class AuthController extends BaseController
     public function profile(Request $request)
     {
         $user = $request->user();
+        $authRequirements = PasswordChangeRequirement::forApi((bool) $user->must_change_password);
 
         // Decryption automatically handled by Eloquent Accessor (HasEncryptedAttributes trait)
         return $this->sendResponse([
@@ -177,7 +187,10 @@ class AuthController extends BaseController
             'birth_regency_code' => $user->birth_regency_code,
             'foto_url' => $user->foto_selfie_url, // Asumsi foto profil
             'role' => $user->role,
+            'must_change_password' => (bool) $user->must_change_password,
+            'password_changed_at' => $user->password_changed_at,
             'created_at' => $user->created_at,
+            'auth_requirements' => $authRequirements,
         ], 'Data profile user.');
     }
 

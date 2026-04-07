@@ -19,8 +19,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StpdManualResource extends Resource
@@ -183,8 +181,8 @@ class StpdManualResource extends Resource
                     ->label('Setujui & Terbitkan')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(StpdManual $record) => $record->status === 'draft' && (auth()->user()?->can('verify', StpdManual::class) ?? false))
-                    ->authorize(fn() => auth()->user()?->can('verify', StpdManual::class) ?? false)
+                    ->visible(fn(StpdManual $record) => $record->status === 'draft' && (auth()->user()?->can('verify', $record) ?? false))
+                    ->authorize(fn(StpdManual $record) => auth()->user()?->can('verify', $record) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Terbitkan STPD?')
                     ->modalDescription('Aksi ini akan men-generate nomor STPD resmi dan meng-update data billing terkait.')
@@ -222,8 +220,8 @@ class StpdManualResource extends Resource
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn(StpdManual $record) => $record->status === 'draft' && (auth()->user()?->can('verify', StpdManual::class) ?? false))
-                    ->authorize(fn() => auth()->user()?->can('verify', StpdManual::class) ?? false)
+                    ->visible(fn(StpdManual $record) => $record->status === 'draft' && (auth()->user()?->can('verify', $record) ?? false))
+                    ->authorize(fn(StpdManual $record) => auth()->user()?->can('verify', $record) ?? false)
                     ->schema([
                         Forms\Components\Textarea::make('catatan_verifikasi')
                             ->label('Alasan Penolakan')
@@ -249,18 +247,21 @@ class StpdManualResource extends Resource
                     ->label('Setujui Terpilih')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn() => auth()->user()?->can('verify', StpdManual::class) ?? false)
-                    ->authorize(fn() => auth()->user()?->can('verify', StpdManual::class) ?? false)
+                    ->visible(fn() => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
+                    ->authorize(fn() => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Setujui STPD Terpilih?')
                     ->modalDescription('Semua STPD draft yang dipilih akan diterbitkan.')
                     ->deselectRecordsAfterCompletion()
                     ->action(function (Collection $records): void {
-                        $draftRecords = $records->where('status', 'draft');
+                        $draftRecords = $records
+                            ->where('status', 'draft')
+                            ->filter(fn (StpdManual $record) => auth()->user()?->can('verify', $record) ?? false);
 
                         if ($draftRecords->isEmpty()) {
                             Notification::make()
-                                ->title('Tidak ada STPD draft yang dipilih')
+                                ->title('Tidak ada STPD draft yang dapat diverifikasi')
+                                ->body('Dokumen yang Anda buat sendiri tidak dapat diverifikasi oleh akun yang sama.')
                                 ->warning()
                                 ->send();
                             return;
@@ -302,8 +303,8 @@ class StpdManualResource extends Resource
                     ->label('Tolak Terpilih')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn() => auth()->user()?->can('verify', StpdManual::class) ?? false)
-                    ->authorize(fn() => auth()->user()?->can('verify', StpdManual::class) ?? false)
+                    ->visible(fn() => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
+                    ->authorize(fn() => auth()->user()?->hasRole(['admin', 'verifikator']) ?? false)
                     ->requiresConfirmation()
                     ->modalHeading('Tolak STPD Terpilih?')
                     ->schema([
@@ -313,11 +314,14 @@ class StpdManualResource extends Resource
                     ])
                     ->deselectRecordsAfterCompletion()
                     ->action(function (Collection $records, array $data): void {
-                        $draftRecords = $records->where('status', 'draft');
+                        $draftRecords = $records
+                            ->where('status', 'draft')
+                            ->filter(fn (StpdManual $record) => auth()->user()?->can('verify', $record) ?? false);
 
                         if ($draftRecords->isEmpty()) {
                             Notification::make()
-                                ->title('Tidak ada STPD draft yang dipilih')
+                                ->title('Tidak ada STPD draft yang dapat diverifikasi')
+                                ->body('Dokumen yang Anda buat sendiri tidak dapat diverifikasi oleh akun yang sama.')
                                 ->warning()
                                 ->send();
                             return;

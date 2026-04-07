@@ -27,6 +27,10 @@ class RedirectIfAuthenticated
                     return redirect('/admin');
                 }
 
+                if ($user->must_change_password) {
+                    return redirect()->route('portal.force-password.form');
+                }
+
                 // Wajib pajak / user lain → arahkan ke portal dashboard
                 return redirect('/portal/dashboard');
             }
