@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\WajibPajak\Models\WajibPajak;
@@ -16,9 +17,18 @@ class BillingDocumentController extends Controller
      * Cek status pembayaran: jika sudah lunas → redirect ke SPTPD,
      * jika belum → tampilkan billing document.
      */
-    public function checkStatus(string $taxId): RedirectResponse
+    public function checkStatus(string $taxId): RedirectResponse|View
     {
-        $tax = Tax::findOrFail($taxId);
+        $tax = Tax::with(['jenisPajak', 'taxObject', 'parent'])
+            ->findOrFail($taxId);
+
+        $this->authorizeTaxAccess($tax);
+
+        $latestPembetulan = $this->findLatestPembetulan($tax);
+
+        if ($latestPembetulan) {
+            return $this->renderResolutionView($tax, $latestPembetulan, 'qr');
+        }
 
         if ($tax->status === TaxStatus::Paid && $tax->sptpd_number) {
             return redirect()->route('portal.sptpd.show', $tax->id);
@@ -29,8 +39,19 @@ class BillingDocumentController extends Controller
 
     // ── Billing SA ────────────────────────────────────────────────────────
 
-    public function show(string $taxId): SymfonyResponse
+    public function show(string $taxId): SymfonyResponse|View
     {
+        $tax = Tax::with(['jenisPajak', 'taxObject', 'parent'])
+            ->findOrFail($taxId);
+
+        $this->authorizeTaxAccess($tax);
+
+        $latestPembetulan = $this->findLatestPembetulan($tax);
+
+        if ($latestPembetulan && !request()->boolean('historical')) {
+            return $this->renderResolutionView($tax, $latestPembetulan, 'document');
+        }
+
         return $this->generateBillingPdf($taxId, 'stream');
     }
 
@@ -155,6 +176,7 @@ class BillingDocumentController extends Controller
         }
 
         $pembetulanData = $this->getPembetulanData($tax);
+        $latestPembetulan = $this->findLatestPembetulan($tax);
 
         return [
             'tax'               => $tax,
@@ -168,6 +190,11 @@ class BillingDocumentController extends Controller
             'mblbDetails'       => $tax->isMblb() ? $tax->mblbDetails : collect(),
             'isSarangWalet'     => $tax->isSarangWalet(),
             'sarangWaletDetail' => $tax->isSarangWalet() ? $tax->sarangWaletDetail : null,
+            'hasNewerPembetulan' => $latestPembetulan !== null,
+            'latestPembetulan'   => $latestPembetulan,
+            'historicalBillingNote' => $latestPembetulan
+                ? $this->buildHistoricalBillingNote($tax, $latestPembetulan)
+                : null,
         ];
     }
 
@@ -183,6 +210,98 @@ class BillingDocumentController extends Controller
         }
 
         return compact('pembetulanKe', 'kreditPajak', 'parentPaid');
+    }
+
+    private function findLatestPembetulan(Tax $tax): ?Tax
+    {
+        $current = $tax;
+        $latest = null;
+
+        while (true) {
+            $next = $current->children()
+                ->with(['jenisPajak', 'taxObject', 'parent'])
+                ->orderByDesc('pembetulan_ke')
+                ->orderByDesc('created_at')
+                ->first();
+
+            if (! $next) {
+                break;
+            }
+
+            $latest = $next;
+            $current = $next;
+        }
+
+        return $latest;
+    }
+
+    private function resolvePrimaryDocument(Tax $tax, bool $isLatestPembetulan = false): array
+    {
+        if ($tax->status === TaxStatus::Paid && $tax->sptpd_number) {
+            return [
+                'url' => route('portal.sptpd.show', $tax->id),
+                'label' => $isLatestPembetulan ? 'Lihat SPTPD Pembetulan Terbaru' : 'Lihat SPTPD',
+            ];
+        }
+
+        return [
+            'url' => route('portal.billing.document.show', $tax->id),
+            'label' => $isLatestPembetulan ? 'Lihat Billing Pembetulan Terbaru' : 'Lihat Billing',
+        ];
+    }
+
+    private function buildResolutionMessage(Tax $scannedTax, Tax $latestTax): string
+    {
+        if ($scannedTax->status === TaxStatus::Cancelled) {
+            return "Billing yang dipindai sudah dibatalkan dan diganti. Dokumen terbaru yang berlaku saat ini adalah {$latestTax->billing_code}.";
+        }
+
+        if ($scannedTax->status === TaxStatus::Paid) {
+            return "Billing yang dipindai sudah pernah dilunasi, tetapi setelah itu diterbitkan billing pembetulan. Untuk kebutuhan aktif, gunakan dokumen terbaru {$latestTax->billing_code}.";
+        }
+
+        return "Billing yang dipindai sudah memiliki pembetulan yang lebih baru. Gunakan dokumen terbaru {$latestTax->billing_code} untuk melihat kewajiban yang sedang berlaku.";
+    }
+
+    private function buildScannedDocumentNote(Tax $tax): string
+    {
+        return match ($tax->status) {
+            TaxStatus::Cancelled => 'Dokumen ini bersifat historis karena billing asal sudah dibatalkan saat pembetulan dibuat.',
+            TaxStatus::Paid => 'Dokumen ini tetap tersimpan sebagai arsip historis pembayaran sebelum pembetulan diterbitkan.',
+            default => 'Dokumen ini adalah arsip billing yang dipindai melalui QR pada cetakan lama.',
+        };
+    }
+
+    private function buildHistoricalBillingNote(Tax $tax, Tax $latestTax): string
+    {
+        if ($tax->status === TaxStatus::Cancelled) {
+            return "Billing ini sudah dibatalkan dan diganti melalui pembetulan. Billing terbaru yang berlaku: {$latestTax->billing_code}.";
+        }
+
+        if ($tax->status === TaxStatus::Paid) {
+            return "Billing ini sudah menjadi arsip historis karena setelah pelunasan diterbitkan pembetulan. Gunakan billing terbaru {$latestTax->billing_code} untuk melihat kewajiban terkini.";
+        }
+
+        return "Billing ini sudah memiliki pembetulan yang lebih baru. Gunakan billing terbaru {$latestTax->billing_code} untuk status kewajiban yang berlaku.";
+    }
+
+    private function renderResolutionView(Tax $tax, Tax $latestPembetulan, string $source): View
+    {
+        $isQrSource = $source === 'qr';
+
+        return view('portal.billing.status-resolution', [
+            'scannedTax' => $tax,
+            'latestTax' => $latestPembetulan,
+            'latestDocument' => $this->resolvePrimaryDocument($latestPembetulan, true),
+            'resolutionMessage' => $this->buildResolutionMessage($tax, $latestPembetulan),
+            'scannedDocumentNote' => $this->buildScannedDocumentNote($tax),
+            'contextTitle' => $isQrSource
+                ? 'Billing yang dipindai sudah memiliki pembetulan yang lebih baru'
+                : 'Billing lama yang Anda buka sudah memiliki pembetulan yang lebih baru',
+            'contextKicker' => $isQrSource ? 'Resolusi Pembetulan' : 'Banner Pembetulan',
+            'showScannedDocumentAction' => true,
+            'scannedDocumentUrl' => route('portal.billing.document.show', ['taxId' => $tax->id, 'historical' => 1]),
+        ]);
     }
 
     private function renderPdf(string $view, array $data, string $prefix, string $number, string $mode): SymfonyResponse

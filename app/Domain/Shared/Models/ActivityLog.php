@@ -9,10 +9,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 
 class ActivityLog extends Model
 {
     use HasFactory, HasUuids;
+
+    protected const ACTION_LABELS = [
+        'UPDATE_TAX_OBJECT_FROM_SKPD_REKLAME_APPROVAL' => 'Sinkronisasi Objek dari Persetujuan SKPD Reklame',
+    ];
 
     protected $table = 'activity_logs';
 
@@ -72,6 +77,16 @@ class ActivityLog extends Model
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    public function getActionLabelAttribute(): string
+    {
+        return static::ACTION_LABELS[$this->action]
+            ?? Str::of((string) $this->action)
+                ->replace('_', ' ')
+                ->lower()
+                ->headline()
+                ->toString();
     }
 
     /**

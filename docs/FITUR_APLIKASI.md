@@ -24,6 +24,7 @@
 12. [Manajemen Data Master](#12-manajemen-data-master)
 13. [Fitur Reklame (Pajak Iklan)](#13-fitur-reklame-pajak-iklan)
 14. [Fitur Air Tanah (Pajak Air Bawah Tanah)](#14-fitur-air-tanah-pajak-air-bawah-tanah)
+14a. [Fitur Retribusi Sewa Tanah](#14a-fitur-retribusi-sewa-tanah)
 15. [Fitur Gebyar Sadar Pajak](#15-fitur-gebyar-sadar-pajak)
 16. [Sistem Notifikasi](#16-sistem-notifikasi)
 17. [Keamanan & Enkripsi Data](#17-keamanan--enkripsi-data)
@@ -139,7 +140,9 @@ Catatan: tabel berikut menggambarkan akses halaman utama. Untuk beberapa modul, 
 | Lunas Bayar Manual | ✅ | ❌ | ❌ |
 | Pembatalan Pembayaran | ✅ | ❌ | ❌ |
 | Daftar SKPD Saya | ❌ | ❌ | ✅ |
-| Aset Reklame Pemkab | ✅ (list/view/update) | ✅ (list/view) | ✅ (list/view/update) |
+| Pengajuan Reklame Portal | ✅ | ❌ | ✅ |
+| Aset Reklame Pemkab | ✅ (list/view/update + aksi operasional) | ✅ (list/view + maintenance/pinjam OPD) | ✅ (list/view + maintenance/pinjam OPD) |
+| Permintaan Pembetulan | ✅ | ❌ | ✅ |
 | Permohonan Sewa Reklame | ❌ | ❌ | ✅ |
 | Gebyar Sadar Pajak | ✅ | ✅ | ✅ |
 | Berita & Destinasi (CMS) | ✅ | ✅ | ✅ |
@@ -160,6 +163,9 @@ Catatan: tabel berikut menggambarkan akses halaman utama. Untuk beberapa modul, 
 | `41107` | Pajak Parkir | Parkir | Self-Assessment | Sesuai tarif | — |
 | `41108` | Pajak Air Tanah | ABT | Official Assessment | Sesuai tarif | — |
 | `41109` | Pajak Sarang Burung Walet | Walet | Self-Assessment (tahunan) | 10% | — |
+| `42101` | Retribusi Sewa Tanah | Sewa Tanah | Official Assessment | Nominal tetap | — |
+
+> **Catatan Billing Retribusi:** Kode jenis pajak `42101` mempunyai `billing_kode_override` ke `41104` sehingga kode billing yang dihasilkan menggunakan prefix `3522104` (sama dengan Reklame), menjaga kompatibilitas dengan sistem billing lama.
 
 ### Sub Jenis Pajak Penting
 
@@ -170,6 +176,9 @@ Catatan: tabel berikut menggambarkan akses halaman utama. Untuk beberapa modul, 
 | `MBLB_WAPU` | MBLB (41106) | MBLB Pemungut | Multi-billing per masa pajak |
 | *(insidentil)* | Hiburan/Parkir | Event-based | Bebas denda, multi-billing |
 | *(Katering/OPD)* | Restoran | OPD/Katering | Bebas denda, multi-billing |
+| `SEWA_TANAH_PERMANEN` | Sewa Tanah (42101) | Pemakaian Tanah untuk Pemasangan Reklame Permanen | Tarif Rp 80.000/tahun |
+| `SEWA_TANAH_KAIN` | Sewa Tanah (42101) | Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul | Tarif Rp 20.000/bulan |
+| `SEWA_TANAH_RUMIJA` | Sewa Tanah (42101) | Pemakaian Tanah untuk Ruang Udara diatas RUMIJA | Tarif Rp 80.000/tahun |
 
 ---
 
@@ -496,7 +505,7 @@ Dashboard menampilkan:
   - Total Wajib Pajak (status disetujui) + indikator pertambahan bulan ini
   - Billing Pending (transaksi `pending` + `verified` yang belum lunas)
   - Transaksi Bulan Ini (billing lunas bulan berjalan)
-- **Blok Perlu Tindakan:** shortcut verifikasi dengan counter untuk Wajib Pajak, Pengajuan Reklame, Permintaan Pembetulan, SKPD Reklame, dan SKPD Air Tanah jika ada item menunggu
+- **Blok Perlu Tindakan:** shortcut verifikasi dengan counter untuk Wajib Pajak, Pengajuan Reklame Portal, Permintaan Pembetulan, SKPD Reklame, dan SKPD Air Tanah jika ada item menunggu sesuai akses role
 - **Chart Line:** Tren pendapatan 6 bulan terakhir
 - **Visual pendapatan per jenis pajak:** ringkasan bulan ini per jenis pajak dalam bentuk bar/progress list
 - **Daftar:** transaksi terbaru dengan link ke halaman Laporan Pendapatan
@@ -506,6 +515,7 @@ Dashboard menampilkan:
 #### Buat Billing Self-Assessment
 - **Jenis pajak:** Hotel (41101), Restoran (41102), Hiburan (41103), PPJ (41105), Parkir (41107)
 - **Fitur:** Pencarian NIK/NPWPD/nama, auto-deteksi masa pajak berikutnya, input omzet, deteksi duplikat, dan konfirmasi pembetulan atau penggantian billing sesuai status tagihan yang sudah ada
+- **Warning lompat periode:** Untuk objek reguler bulanan, petugas tetap boleh memilih masa pajak yang melompati prefill periode berikutnya, tetapi sistem menampilkan konfirmasi khusus bahwa masa pajak sebelumnya belum dibuat
 - **Aturan prefill masa pajak:**
   - Objek `is_opd` atau `is_insidentil` → selalu prefill **bulan berjalan**
   - Objek reguler → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`
@@ -565,6 +575,8 @@ Catatan implementasi saat ini:
 - Verifikator/admin kemudian mereview request tersebut dari modul `Data Change Request` untuk `approve` atau `reject`.
 - Edit record Wajib Pajak yang sudah `disetujui` tetap tersedia untuk admin/petugas, tetapi perubahan sensitifnya tetap masuk ke workflow `DataChangeRequest` agar ada jejak review.
 - Aksi verifikasi Wajib Pajak (`Setujui`, `Tolak`, `Perlu Perbaikan`) digunakan untuk record berstatus `menungguVerifikasi` dan dijalankan oleh admin/verifikator.
+- Persetujuan SKPD Reklame tetap satu tahap, tetapi sinkronisasi perubahan ke `tax_objects` sekarang menulis `ActivityLog` hanya untuk field objek yang benar-benar berubah, lengkap dengan nomor SKPD draft/final, `request_id` bila berasal dari pengajuan, nama petugas pembuat draft, dan nama verifikator penyetuju.
+- Widget riwayat perubahan objek pajak menampilkan label aksi log yang human-readable, sehingga proses seperti sinkronisasi objek dari persetujuan SKPD Reklame tidak lagi tampil sebagai kode action internal.
 
 ### 6.11 Surat Ketetapan Pajak Daerah
 - **Akses list:** Admin, Verifikator, Petugas
@@ -643,6 +655,9 @@ Catatan implementasi saat ini:
 ### 6.13 Pendaftaran
 - **Data Wajib Pajak:** List dan detail dapat diakses semua role backoffice untuk kebutuhan operasional dan verifikasi
 - **Daftar Wajib Pajak:** Pendaftaran WP baru hanya untuk admin dan petugas, dengan form perorangan/perusahaan serta cascading wilayah
+- **Email login otomatis:** Jika email dikosongkan saat pendaftaran WP backoffice, sistem membuat email login yang tetap terbaca dari kombinasi nama, alamat, nomor kontak, dan suffix acak agar WP tetap bisa login memakai email atau NIK
+- **Label UI email login:** Setelah akun dibuat, notifikasi backoffice dan form data WP menandai apakah akun memakai `Username login otomatis` atau tetap memakai email asli wajib pajak
+- **Badge tabel/detail WP:** Tabel pendaftaran WP dan tabel/detail data WP menampilkan badge warna `Username Otomatis` atau `Email WP` agar operator bisa membedakan sumber username login tanpa membuka form edit
 - **Objek Pajak:** Pendaftaran objek pajak baru hanya untuk admin dan petugas, dengan form kondisional per jenis pajak (reklame: bentuk+dimensi, air tanah: kelompok+kriteria, dll)
 
 ---
@@ -696,7 +711,7 @@ Catatan implementasi saat ini:
 - Form: alasan, omzet baru, lampiran (opsional)
 - Guard pengajuan: satu billing tidak boleh memiliki lebih dari satu `PembetulanRequest` berstatus `pending`
 - Lampiran portal bersifat opsional, menerima JPG/PNG/PDF maksimal 1 MB
-- Review pembetulan dilakukan dari backoffice oleh admin/verifikator sampai menghasilkan billing pengganti atau penolakan
+- Review pembetulan dilakukan dari backoffice oleh admin/petugas sampai menghasilkan billing pengganti atau penolakan
 
 ### 7.4 Riwayat Transaksi
 - Daftar semua transaksi pajak WP
@@ -900,6 +915,10 @@ Wajib pajak dapat melihat dan mengunduh:
 | Konten Khusus | Detail MBLB (mineral per item), Sarang Walet (jenis + volume), PPJ (detail kapasitas) |
 | Akses | Portal WP, Backoffice (cetak/unduh) |
 | Route Status | `/portal/billing/{taxId}/status` mengarahkan ke SPTPD jika billing sudah lunas dan `sptpd_number` tersedia; selain itu tetap ke billing document |
+| Pembetulan QR | Jika billing yang discan sudah punya rantai pembetulan yang lebih baru, route status tidak langsung redirect. Sistem menampilkan halaman resolusi yang menjelaskan dokumen asal, billing pembetulan terbaru yang berlaku, dan tombol ke dokumen historis vs dokumen aktif terbaru. |
+| Billing Lama Dibuka Langsung | Jika billing lama dibuka langsung dari route dokumen dan sudah punya pembetulan yang lebih baru, sistem menampilkan banner resolusi terlebih dahulu. PDF historis tetap bisa dibuka eksplisit melalui jalur `historical=1`. |
+| PDF Historis | Billing original yang sudah punya pembetulan diberi watermark/catatan `sudah dipembetulkan` agar file PDF yang dibuka langsung tetap terbaca sebagai dokumen historis. |
+| Label Aksi Dokumen | Label/tip aksi billing sekarang dinamis: billing aktif tetap `Cetak Billing` dan `Unduh Billing`, billing original yang sudah punya pembetulan berubah menjadi `Lihat Resolusi Dokumen` dan `Unduh Billing Historis`, sedangkan billing pembetulan terbaru tampil sebagai `Cetak Billing Pembetulan` dan `Unduh Billing Pembetulan`. |
 
 ### 10.2 SPTPD (Surat Pemberitahuan Pajak Terutang Daerah)
 
@@ -909,7 +928,7 @@ Wajib pajak dapat melihat dan mengunduh:
 | Template | `documents.sptpd` |
 | Kondisi Terbit | Billing berstatus `paid` dan `sptpd_number` diterbitkan setelah syarat `isTriwulanComplete()` terpenuhi |
 | Penomoran | `sptpd_number` = `billing_code` (auto-set saat status → paid) |
-| Konten | Data lengkap billing + konfirmasi pelunasan |
+| Konten | Data lengkap billing + konfirmasi pelunasan, termasuk tanggal bayar dari `paid_at` |
 | Akses | Portal WP pemilik billing (setelah lunas), Backoffice |
 | Validasi Akses | Route view/download mengembalikan `404` jika `sptpd_number` belum tersedia |
 
@@ -970,6 +989,19 @@ Wajib pajak dapat melihat dan mengunduh:
 | Akses | Backoffice, Portal WP pemilik SKPD (SKPD Air Tanah list) |
 | Catatan Akses | Tidak ada route publik signed URL; akses PDF hanya melalui jalur autentikasi dan dibatasi ke pemilik objek/SKPD atau role backoffice |
 
+### 10.5a SKRD Sewa Tanah (Surat Ketetapan Retribusi Daerah — Sewa Tanah)
+
+| Aspek | Detail |
+|-------|--------|
+| Nama | SKRD Sewa Tanah |
+| Template | `documents.skrd-sewa-tanah` |
+| Format Nomor | `SKRD/{YYYY}/{MM}/{000001}` |
+| Konten | Data wajib bayar, objek retribusi, jenis retribusi, tarif nominal, durasi, jumlah retribusi, masa berlaku, jatuh tempo, tanda tangan elektronik, QR code |
+| Perhitungan | `Jumlah Retribusi = Tarif Nominal × Durasi` (tarif tetap, bukan persentase) |
+| Kode Billing | Menggunakan prefix `41104` via `billing_kode_override` pada jenis pajak `42101` |
+| Akses | Backoffice (`admin`, `verifikator`, `petugas`) |
+| Route | `/skrd-sewa/{skrdId}/view` (cetak), `/skrd-sewa/{skrdId}/download` (unduh PDF) |
+
 ### 10.6 Surat Ketetapan Pajak Daerah Umum
 
 | Aspek | Detail |
@@ -1006,6 +1038,7 @@ Wajib pajak dapat melihat dan mengunduh:
 | STPD (Manual) | Draft oleh petugas, terbit oleh verifikator; nomor dokumen memakai format STPD resmi, sedangkan kode pembayaran mengikuti billing asal untuk `pokok_sanksi` dan kode turunan `77` untuk `sanksi_saja`; PDF aktif setelah status disetujui | Pimpinan | PDF F4 |
 | SKPD Reklame | Draft oleh petugas, terbit oleh verifikator; signed URL publik hanya untuk permohonan sewa yang disetujui | Pimpinan | PDF F4 |
 | SKPD Air Tanah | Draft oleh petugas, terbit oleh verifikator | Pimpinan | PDF F4 |
+| SKRD Sewa Tanah | Draft oleh petugas, terbit oleh verifikator; billing memakai kode prefix 41104 | Pimpinan | PDF F4 |
 | Surat Ketetapan Umum | Draft oleh admin/petugas, terbit oleh admin/verifikator; nomor dokumen memakai format surat, sedangkan billing penagihan baru hanya muncul pada `SKPDKB`/`SKPDKBT` | Pimpinan | PDF F4 |
 
 ### 10.8 Preview Dokumen Lokal
@@ -1190,6 +1223,7 @@ Untuk objek reguler, pemeriksaan histori billing aktif dan prefill masa pajak me
 - Durasi: 30, 90, 180, atau 365 hari
 - Syarat: izin reklame ≤ 30 hari dari kadaluarsa atau sudah kadaluarsa
 - Status: diajukan → menunggu verifikasi → diproses → disetujui/ditolak
+- **Akses backoffice:** Pengajuan reklame dari portal WP/mobile ditangani pada menu terpisah **Pengajuan Reklame Portal** untuk admin/petugas
 
 ### 13.5 SKPD Reklame
 - **Draft dibuat** dari flow operasional reklame, terutama oleh petugas saat memproses permohonan atau perpanjangan
@@ -1217,8 +1251,8 @@ Untuk objek reguler, pemeriksaan histori billing aktif dan prefill masa pajak me
 ### 13.6 Aset Reklame Pemkab (Milik Pemerintah)
 - Pengelolaan aset reklame milik pemerintah (billboard, neon box)
 - Atribut: kode aset, nama, jenis, lokasi, dimensi, harga sewa (per tahun/bulan/minggu), foto, GPS, kawasan, traffic
-- **Akses backoffice:** Admin, verifikator, dan petugas dapat list/view; create/delete admin-only; update dan aksi operasional tersedia untuk admin/petugas
-- **Aksi operasional:** `set maintenance`, `pinjam OPD`, `set tersedia`, dan `selesai pinjam` hanya tersedia untuk admin/petugas
+- **Akses backoffice:** Admin, verifikator, dan petugas dapat list/view; create, edit, delete, restore, dan force delete hanya untuk admin
+- **Aksi operasional:** `set maintenance` dan `pinjam OPD` tersedia untuk admin, verifikator, dan petugas; `set tersedia` dan `selesai pinjam` hanya untuk admin
 
 **Status Ketersediaan:**
 
@@ -1242,7 +1276,10 @@ Untuk objek reguler, pemeriksaan histori billing aktif dan prefill masa pajak me
 - **Publik (tanpa login):** Ajukan sewa aset reklame Pemkab langsung dari website
 - **Upload:** KTP dan desain reklame wajib; NPWP opsional
 - **Akses backoffice:** List/detail permohonan hanya untuk petugas; verifikator bekerja pada tahap verifikasi SKPD yang dihasilkan, bukan pada resource permohonan
+- **Pemisahan menu:** Resource ini khusus untuk permohonan sewa reklame aset milik Pemkab dan terpisah dari menu **Pengajuan Reklame Portal** untuk pengajuan reklame WP/mobile
 - **Aksi backoffice petugas:** `proses`, `tolak`, `cek NPWPD`, `buat NPWPD`, `perlu revisi`, dan `buat SKPD` sesuai status permohonan
+- **Fallback email akun WP:** Saat `buat NPWPD`, petugas boleh mengosongkan email dan sistem akan membuat email login otomatis yang terbaca dari nama, alamat, nomor telepon, dan suffix acak
+- **Penanda username di UI:** Notifikasi sukses `buat NPWPD` menampilkan label berbeda antara `Username login otomatis` dan `Email login WP` agar petugas tidak salah menyampaikan username
 - **Alur lengkap:**
   1. Pilih aset tersedia → isi form + upload dokumen → terima nomor tiket
   2. Petugas proses → cek/buat NPWPD → buat SKPD draft
@@ -1299,6 +1336,73 @@ Untuk objek reguler, pemeriksaan histori billing aktif dan prefill masa pajak me
 | 2 | Air Tanah Kualitas Baik, Tidak Ada Sumber Alternatif |
 | 3 | Air Tanah Kualitas Tidak Baik, Ada Sumber Alternatif |
 | 4 | Air Tanah Kualitas Tidak Baik, Tidak Ada Sumber Alternatif |
+
+---
+
+## 14a. Fitur Retribusi Sewa Tanah
+
+### 14a.1 Deskripsi
+Retribusi Sewa Tanah adalah retribusi daerah atas pemakaian tanah milik pemerintah untuk kegiatan tertentu. Dokumen ketetapannya berupa **SKRD (Surat Ketetapan Retribusi Daerah)**, berbeda dengan SKPD untuk pajak daerah.
+
+### 14a.2 Sub Jenis & Tarif
+
+| Kode | Nama | Tarif Nominal | Satuan |
+|------|------|---------------|--------|
+| `SEWA_TANAH_PERMANEN` | Pemakaian Tanah untuk Pemasangan Reklame Permanen | Rp 80.000 | per Tahun |
+| `SEWA_TANAH_KAIN` | Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul | Rp 20.000 | per Bulan |
+| `SEWA_TANAH_RUMIJA` | Pemakaian Tanah untuk Ruang Udara diatas RUMIJA | Rp 80.000 | per Tahun |
+
+- Tarif disimpan di tabel `tarif_sewa_tanah` dan bersifat temporal (berlaku mulai/sampai)
+- **Rumus Perhitungan:** `Jumlah Retribusi = Luas m² × Jumlah Reklame × Harga Sub Jenis × Tarif Retribusi (25%) × Durasi`
+- Luas m² diambil dari objek retribusi (yang terhubung ke objek reklame di tabel `tax_objects`)
+- Tarif retribusi 25% diambil dari `tarif_default` pada jenis pajak Reklame (kode `41104`)
+
+### 14a.3 Objek Retribusi Sewa Tanah
+
+| Aspek | Detail |
+|-------|--------|
+| Model | `App\Domain\Retribusi\Models\ObjekRetribusiSewaTanah` |
+| Tabel | `objek_retribusi_sewa_tanah` |
+| NOP | Auto-increment per NPWPD |
+| FK | `tax_object_id` → `tax_objects` (objek reklame) |
+| Filament | `ObjekRetribusiSewaTanahResource` (navigasi: Pendaftaran, sort 3) |
+| Alur Form | Pilih NPWPD → pilih objek reklame milik NPWPD → tampil info wajib pajak → pilih sub jenis → isi data objek retribusi |
+| Akses | admin, petugas |
+| Lokasi Objek Retribusi | `kecamatan` dan `kelurahan` dipilih dari master wilayah Kabupaten Bojonegoro |
+| Data Terenkripsi | NIK, nama pemilik, alamat pemilik, nama objek, alamat objek |
+
+### 14a.4 SKRD Sewa Tanah
+
+| Aspek | Detail |
+|-------|--------|
+| Model | `App\Domain\Retribusi\Models\SkrdSewaRetribusi` |
+| Tabel | `skrd_sewa_retribusi` |
+| Format Nomor | `SKRD/{YYYY}/{MM}/{000001}` |
+| Workflow | Draft oleh petugas → Verifikator setujui/tolak |
+| Halaman Input | `BuatSkrdSewaTanah` (navigasi: Laporan Petugas) |
+| Halaman Verifikasi | `SkrdSewaRetribusiResource` (navigasi: Verifikasi, sort 4, badge count draft) |
+| On Approve | Generate nomor SKRD resmi, kode billing (prefix 41104 via `billing_kode_override`), jatuh tempo, record Tax |
+| Kode Billing | Menggunakan `JenisPajak::getBillingKode()` yang mengembalikan `41104` (bukan `42101`) untuk kompatibilitas sistem billing lama |
+| Dokumen PDF | Template `documents.skrd-sewa-tanah`, judul "SURAT KETETAPAN RETRIBUSI DAERAH (SKRD)" |
+| Route | `/skrd-sewa/{skrdId}/view` (cetak), `/skrd-sewa/{skrdId}/download` (unduh PDF) |
+| Controller | `SkrdSewaDocumentController` |
+| Akses PDF | Role backoffice (`admin`, `verifikator`, `petugas`) |
+| Self-verify Prevention | Petugas pembuat SKRD tidak dapat memverifikasi SKRD yang dibuatnya sendiri |
+| Bulk Actions | Bulk approve dan bulk reject untuk verifikasi massal |
+| Data Terenkripsi | NIK, nama, alamat wajib bayar, nama objek, alamat objek, tarif nominal, jumlah retribusi |
+| Overlap Guard | Tidak bisa membuat SKRD draft untuk NIK + sub jenis + periode yang tumpang tindih |
+
+### 14a.5 Billing Kode Override
+
+Karena kode jenis pajak `42101` baru dan unik, tetapi sistem billing lama memerlukan prefix `41104`, field `billing_kode_override` pada tabel `jenis_pajak` digunakan untuk memetakan:
+
+```
+JenisPajak(kode=42101, billing_kode_override=41104)
+  → getBillingKode() returns '41104'
+  → Tax::generateBillingCode('41104') → prefix '3522104...'
+```
+
+Jenis pajak lain yang tidak punya override tetap menggunakan kode aslinya.
 
 ---
 

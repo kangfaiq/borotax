@@ -411,8 +411,8 @@
                                             <div style="display:flex; flex-direction:column; align-items:center;">
                                                 <span style="font-size:0.65rem; font-weight:700; color:var(--text-secondary); margin-bottom:2px;">Billing</span>
                                                 <div style="display:flex; gap:6px;">
-                                                    <a href="{{ route('portal.billing.document.show', $tx->id) }}" target="_blank" title="Print Billing" style="color:var(--text-secondary); font-size:1.1rem;"><i class="bi bi-printer"></i></a>
-                                                    <a href="{{ route('portal.billing.document.download', $tx->id) }}" title="Download Billing" style="color:var(--text-secondary); font-size:1.1rem;"><i class="bi bi-download"></i></a>
+                                                    <a href="{{ route('portal.billing.document.show', $tx->id) }}" target="_blank" title="{{ $tx->getBillingDocumentActionTitle() }}" style="color:var(--text-secondary); font-size:1.1rem;"><i class="bi bi-printer"></i></a>
+                                                    <a href="{{ route('portal.billing.document.download', $tx->id) }}" title="{{ $tx->getBillingDownloadActionTitle() }}" style="color:var(--text-secondary); font-size:1.1rem;"><i class="bi bi-download"></i></a>
                                                 </div>
                                             </div>
                                         @endif

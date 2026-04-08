@@ -9,12 +9,12 @@ class ReklameRequestPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'verifikator', 'petugas']);
+        return $user->hasRole(['admin', 'petugas']);
     }
 
     public function view(User $user, ReklameRequest $reklameRequest): bool
     {
-        return $user->hasRole(['admin', 'verifikator', 'petugas']);
+        return $user->hasRole(['admin', 'petugas']);
     }
 
     public function create(User $user): bool

@@ -45,7 +45,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'petugas',
                 'password' => Hash::make('petugas123'),
-                'nama_lengkap' => 'Petugas Lapangan',
+                'nama_lengkap' => 'Petugas',
                 'status' => 'verified',
                 'role' => 'petugas',
                 'email_verified_at' => now(),

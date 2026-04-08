@@ -18,6 +18,7 @@ use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\JenisPajakSeeder;
 use Database\Seeders\SubJenisPajakSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -120,6 +121,44 @@ class TaxStpdWorkflowTest extends TestCase
 
         $this->get(route('portal.sptpd.show', $januaryTax->id))->assertOk();
         $this->get(route('portal.stpd.show', $januaryTax->id))->assertOk();
+    }
+
+    public function test_sptpd_document_renders_payment_date_information(): void
+    {
+        $this->seed([
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $wajibPajak = $this->createApprovedWajibPajakFixture();
+        $taxObject = $this->createTaxObjectFixture($wajibPajak, '41102');
+        $paymentDate = Carbon::create(2030, 3, 18, 14, 25, 0);
+
+        $tax = $this->createTaxFixture($taxObject, $wajibPajak->user, [
+            'status' => TaxStatus::Paid,
+            'billing_code' => '352210100000260301',
+            'sptpd_number' => '352210100000260301',
+            'paid_at' => $paymentDate,
+            'masa_pajak_bulan' => 3,
+            'masa_pajak_tahun' => 2030,
+        ])->load(['jenisPajak', 'subJenisPajak', 'taxObject']);
+
+        $html = view('documents.sptpd', [
+            'tax' => $tax,
+            'taxObject' => $tax->taxObject,
+            'wajibPajak' => $wajibPajak,
+            'isPdf' => true,
+            'pembetulanKe' => 0,
+            'kreditPajak' => 0,
+            'parentPaid' => false,
+            'isMblb' => false,
+            'mblbDetails' => collect(),
+            'isSarangWalet' => false,
+            'sarangWaletDetail' => null,
+        ])->render();
+
+        $this->assertStringContainsString('Tanggal Bayar', $html);
+        $this->assertStringContainsString('18/03/2030 14:25', $html);
     }
 
     public function test_portal_document_routes_are_limited_to_tax_owner_or_backoffice_roles(): void

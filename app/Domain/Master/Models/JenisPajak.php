@@ -18,6 +18,7 @@ class JenisPajak extends Model
 
     protected $fillable = [
         'kode',
+        'billing_kode_override',
         'nama',
         'nama_singkat',
         'deskripsi',
@@ -79,5 +80,10 @@ class JenisPajak extends Model
     public function isPbjt(): bool
     {
         return in_array($this->kode, ['41101', '41102', '41103', '41107'], true);
+    }
+
+    public function getBillingKode(): string
+    {
+        return $this->billing_kode_override ?? $this->kode;
     }
 }

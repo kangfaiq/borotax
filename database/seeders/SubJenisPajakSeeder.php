@@ -58,7 +58,7 @@ class SubJenisPajakSeeder extends Seeder
 
             $allSubs[] = ['jenis_pajak_id' => $hiburan->id, 'kode' => 'PBJT_PANTI_PIJAT', 'nama' => 'PBJT-Panti Pijat', 'nama_lengkap' => 'PBJT-Panti Pijat dan Pijat Refleksi', 'tarif_persen' => 10.00, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 9];
 
-            $allSubs[] = ['jenis_pajak_id' => $hiburan->id, 'kode' => 'PBJT_HIBURAN_DEWASA', 'nama' => 'PBJT-Hiburan Dewasa', 'nama_lengkap' => 'PBJT-Distkotek, Karaoke, Kelab Malam, Bar', 'tarif_persen' => 60.00, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 10];
+            $allSubs[] = ['jenis_pajak_id' => $hiburan->id, 'kode' => 'PBJT_DISKOTEK_KARAOKE_BAR', 'nama' => 'PBJT-Diskotek, Karaoke dan Bar', 'nama_lengkap' => 'PBJT-Distkotek, Karaoke, Kelab Malam, Bar', 'tarif_persen' => 60.00, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 10];
 
             $allSubs[] = ['jenis_pajak_id' => $hiburan->id, 'kode' => 'PBJT_MANDI_UAP_SPA', 'nama' => 'PBJT-Mandi Uap/SPA', 'nama_lengkap' => 'PBJT-Mandi Uap/SPA', 'tarif_persen' => 40.00, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 11];
         }
@@ -97,6 +97,14 @@ class SubJenisPajakSeeder extends Seeder
         $sarangWalet = JenisPajak::where('kode', '41109')->first();
         if ($sarangWalet) {
             $allSubs[] = ['jenis_pajak_id' => $sarangWalet->id, 'kode' => 'SARANG_WALET', 'nama' => 'Pajak Sarang Burung Walet', 'tarif_persen' => 10.00, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 1];
+        }
+
+        // Sub Jenis Retribusi Sewa Tanah
+        $sewaTanah = JenisPajak::where('kode', '42101')->first();
+        if ($sewaTanah) {
+            $allSubs[] = ['jenis_pajak_id' => $sewaTanah->id, 'kode' => 'SEWA_TANAH_PERMANEN', 'nama' => 'Pemakaian Tanah untuk Pemasangan Reklame Permanen', 'tarif_persen' => 0, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 1];
+            $allSubs[] = ['jenis_pajak_id' => $sewaTanah->id, 'kode' => 'SEWA_TANAH_KAIN', 'nama' => 'Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul', 'tarif_persen' => 0, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 2];
+            $allSubs[] = ['jenis_pajak_id' => $sewaTanah->id, 'kode' => 'SEWA_TANAH_RUMIJA', 'nama' => 'Pemakaian Tanah untuk Ruang Udara diatas RUMIJA', 'tarif_persen' => 0, 'is_insidentil' => false, 'is_active' => true, 'urutan' => 3];
         }
 
         foreach ($allSubs as $data) {

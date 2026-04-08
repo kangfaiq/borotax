@@ -10,6 +10,7 @@ use App\Domain\Tax\Models\PembetulanRequest;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Enums\TaxStatus;
+use App\Filament\Pages\Dashboard;
 use App\Filament\Resources\DataChangeRequestResource;
 use App\Filament\Resources\DataChangeRequestResource\Pages\ListDataChangeRequests;
 use App\Filament\Resources\PembetulanRequestResource;
@@ -27,10 +28,10 @@ class VerificationAccessModuleTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[DataProvider('roleProvider')]
-    public function test_data_change_and_pembetulan_verification_access_follow_role_rules(
+    #[DataProvider('dataChangeRoleProvider')]
+    public function test_data_change_request_access_follow_role_rules(
         string $role,
-        bool $canAccessVerificationModules
+        bool $canAccessVerificationModule
     ): void {
         $this->seed([
             JenisPajakSeeder::class,
@@ -39,17 +40,13 @@ class VerificationAccessModuleTest extends TestCase
 
         $user = $this->createAdminPanelUser($role);
         $dataChangeRequest = $this->createDataChangeRequest();
-        $pembetulanRequest = $this->createPembetulanRequest();
 
         $this->actingAs($user);
 
         $dataChangeIndex = $this->get(DataChangeRequestResource::getUrl('index'));
-        $this->assertAccessExpectation($dataChangeIndex->getStatusCode(), $canAccessVerificationModules, "data change request index for {$role}");
+        $this->assertAccessExpectation($dataChangeIndex->getStatusCode(), $canAccessVerificationModule, "data change request index for {$role}");
 
-        $pembetulanIndex = $this->get(PembetulanRequestResource::getUrl('index'));
-        $this->assertAccessExpectation($pembetulanIndex->getStatusCode(), $canAccessVerificationModules, "pembetulan request index for {$role}");
-
-        if (! $canAccessVerificationModules) {
+        if (! $canAccessVerificationModule) {
             return;
         }
 
@@ -57,6 +54,29 @@ class VerificationAccessModuleTest extends TestCase
             ->assertCanSeeTableRecords([$dataChangeRequest])
             ->assertTableActionVisible('approve', $dataChangeRequest)
             ->assertTableActionVisible('reject', $dataChangeRequest);
+    }
+
+    #[DataProvider('pembetulanRoleProvider')]
+    public function test_pembetulan_request_access_follow_role_rules(
+        string $role,
+        bool $canAccessPembetulan
+    ): void {
+        $this->seed([
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $user = $this->createAdminPanelUser($role);
+        $pembetulanRequest = $this->createPembetulanRequest();
+
+        $this->actingAs($user);
+
+        $pembetulanIndex = $this->get(PembetulanRequestResource::getUrl('index'));
+        $this->assertAccessExpectation($pembetulanIndex->getStatusCode(), $canAccessPembetulan, "pembetulan request index for {$role}");
+
+        if (! $canAccessPembetulan) {
+            return;
+        }
 
         Livewire::test(ListPembetulanRequests::class)
             ->assertCanSeeTableRecords([$pembetulanRequest])
@@ -65,12 +85,54 @@ class VerificationAccessModuleTest extends TestCase
             ->assertTableActionVisible('tolak', $pembetulanRequest);
     }
 
-    public static function roleProvider(): array
+    #[DataProvider('dashboardShortcutRoleProvider')]
+    public function test_dashboard_shortcuts_for_pembetulan_follow_role_rules(string $role, bool $shouldSeePembetulanShortcut): void
+    {
+        $this->seed([
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $this->createPembetulanRequest();
+
+        $this->actingAs($this->createAdminPanelUser($role));
+
+        $response = $this->get(Dashboard::getUrl());
+        $response->assertOk();
+
+        if ($shouldSeePembetulanShortcut) {
+            $response->assertSee('Permintaan Pembetulan');
+
+            return;
+        }
+
+        $response->assertDontSee('Permintaan Pembetulan');
+    }
+
+    public static function dataChangeRoleProvider(): array
     {
         return [
             'admin' => ['admin', true],
             'verifikator' => ['verifikator', true],
             'petugas' => ['petugas', false],
+        ];
+    }
+
+    public static function pembetulanRoleProvider(): array
+    {
+        return [
+            'admin' => ['admin', true],
+            'verifikator' => ['verifikator', false],
+            'petugas' => ['petugas', true],
+        ];
+    }
+
+    public static function dashboardShortcutRoleProvider(): array
+    {
+        return [
+            'admin' => ['admin', true],
+            'verifikator' => ['verifikator', false],
+            'petugas' => ['petugas', true],
         ];
     }
 

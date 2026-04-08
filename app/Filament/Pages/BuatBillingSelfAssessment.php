@@ -27,7 +27,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
 
     protected static string | \BackedEnum | null $navigationIcon  = 'heroicon-o-document-plus';
     protected static string | \UnitEnum | null $navigationGroup = 'Laporan Petugas';
-    protected static ?string $navigationLabel = 'Buat Billing SA';
+    protected static ?string $navigationLabel = 'Buat Billing Self Assessment';
     protected static ?string $title           = 'Buat Billing Self Assessment';
     protected static ?int    $navigationSort  = 3;
     protected string  $view            = 'filament.pages.buat-billing-self-assessment';
@@ -75,6 +75,10 @@ class BuatBillingSelfAssessment extends Page implements HasForms
     public bool    $showDuplicateConfirm   = false;
     public string  $duplicateConfirmTitle  = '';
     public string  $duplicateConfirmMessage = '';
+    public bool    $showSkippedMonthConfirm = false;
+    public bool    $skipMonthWarningAcknowledged = false;
+    public string  $skippedMonthConfirmTitle = '';
+    public string  $skippedMonthConfirmMessage = '';
 
     // ── State: Success panel (right) ────────────────────────────────────────
     public ?array $billingResult = null;
@@ -176,6 +180,8 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         $this->existingBillingInfo   = null;
         $this->billingResult         = null;
         $this->showDuplicateConfirm  = false;
+        $this->showSkippedMonthConfirm = false;
+        $this->skipMonthWarningAcknowledged = false;
         $this->keterangan            = null;
 
         // Reset PPJ fields
@@ -309,6 +315,16 @@ class BuatBillingSelfAssessment extends Page implements HasForms
             return;
         }
 
+        $skippedPeriodInfo = $this->getSkippedPeriodInfo();
+
+        if ($skippedPeriodInfo && !$this->skipMonthWarningAcknowledged) {
+            $this->skippedMonthConfirmTitle = 'Masa Pajak Sebelumnya Belum Dibuat';
+            $this->skippedMonthConfirmMessage = "Masa pajak <strong>{$skippedPeriodInfo['missing_label']}</strong> belum dibuat, tetapi Anda memilih <strong>{$skippedPeriodInfo['selected_label']}</strong>. Sistem tetap mengizinkan lanjut. Apakah Anda ingin menerbitkan billing untuk periode yang dipilih?";
+            $this->showSkippedMonthConfirm = true;
+
+            return;
+        }
+
         $existingTax = app(BillingService::class)->findExistingBillingForPeriod(
             $this->selectedTaxObjectId,
             $this->masaPajakBulan,
@@ -348,9 +364,23 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         $this->doGenerateBilling();
     }
 
+    public function confirmSkippedMonthAndContinue(): void
+    {
+        $this->showSkippedMonthConfirm = false;
+        $this->skipMonthWarningAcknowledged = true;
+
+        $this->terbitkanBilling();
+    }
+
     public function cancelDuplicateConfirm(): void
     {
         $this->showDuplicateConfirm = false;
+    }
+
+    public function cancelSkippedMonthConfirm(): void
+    {
+        $this->showSkippedMonthConfirm = false;
+        $this->skipMonthWarningAcknowledged = false;
     }
 
     private function doGenerateBilling(): void
@@ -542,6 +572,8 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         $this->existingBillingInfo   = null;
         $this->billingResult         = null;
         $this->showDuplicateConfirm  = false;
+        $this->showSkippedMonthConfirm = false;
+        $this->skipMonthWarningAcknowledged = false;
         $this->keterangan            = null;
 
         // Reset PPJ fields
@@ -590,6 +622,50 @@ class BuatBillingSelfAssessment extends Page implements HasForms
             ->orderBy('urutan')
             ->pluck('nama')
             ->toArray();
+    }
+
+    public function updatedMasaPajakBulan(): void
+    {
+        $this->resetSkippedMonthWarningState();
+    }
+
+    public function updatedMasaPajakTahun(): void
+    {
+        $this->resetSkippedMonthWarningState();
+    }
+
+    private function getSkippedPeriodInfo(): ?array
+    {
+        if (!$this->selectedTaxObjectData || ($this->selectedTaxObjectData['is_multi_billing'] ?? false)) {
+            return null;
+        }
+
+        $expectedMonth = $this->selectedTaxObjectData['next_bulan'] ?? null;
+        $expectedYear = $this->selectedTaxObjectData['next_tahun'] ?? null;
+
+        if (!$expectedMonth || !$expectedYear || !$this->masaPajakBulan || !$this->masaPajakTahun) {
+            return null;
+        }
+
+        $expectedPeriod = Carbon::create((int) $expectedYear, (int) $expectedMonth, 1)->startOfMonth();
+        $selectedPeriod = Carbon::create((int) $this->masaPajakTahun, (int) $this->masaPajakBulan, 1)->startOfMonth();
+
+        if ($selectedPeriod->lessThanOrEqualTo($expectedPeriod)) {
+            return null;
+        }
+
+        return [
+            'missing_label' => $expectedPeriod->translatedFormat('F Y'),
+            'selected_label' => $selectedPeriod->translatedFormat('F Y'),
+        ];
+    }
+
+    private function resetSkippedMonthWarningState(): void
+    {
+        $this->showSkippedMonthConfirm = false;
+        $this->skipMonthWarningAcknowledged = false;
+        $this->skippedMonthConfirmTitle = '';
+        $this->skippedMonthConfirmMessage = '';
     }
 
     public static function getBadgeColor(string $jenisNama): string

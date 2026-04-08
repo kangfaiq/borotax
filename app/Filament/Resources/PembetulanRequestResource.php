@@ -16,8 +16,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Domain\Shared\Services\NotificationService;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -37,9 +35,19 @@ class PembetulanRequestResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole(['admin', 'petugas']) ?? false;
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'pending')->count() ?: null;
+        return static::getModel()::whereIn('status', ['pending', 'diproses'])->count() ?: null;
     }
 
     public static function getNavigationBadgeColor(): ?string

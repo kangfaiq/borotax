@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Domain\Auth\Support\GeneratedLoginEmail;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -26,9 +27,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WajibPajakResource extends Resource
@@ -98,6 +98,24 @@ class WajibPajakResource extends Resource
                         Placeholder::make('email_display')
                             ->label('Email')
                             ->content(fn ($record) => $record?->user?->email ?: '-'),
+                        Placeholder::make('email_login_badge')
+                            ->label('Sumber Login')
+                            ->content(function ($record) {
+                                $email = $record?->user?->email;
+                                $isGenerated = GeneratedLoginEmail::isGenerated($email);
+                                $badgeClasses = $isGenerated
+                                    ? 'bg-amber-100 text-amber-800 ring-amber-600/20'
+                                    : 'bg-emerald-100 text-emerald-800 ring-emerald-600/20';
+                                $description = $isGenerated
+                                    ? 'Email di atas dibentuk otomatis oleh sistem.'
+                                    : 'Email di atas adalah email milik wajib pajak.';
+
+                                return new HtmlString(
+                                    '<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $badgeClasses . '">' . GeneratedLoginEmail::sourceLabel($email) . '</span>'
+                                    . '<div class="mt-2 text-sm text-gray-600">' . $description . '</div>'
+                                );
+                            })
+                            ->columnSpanFull(),
                     ])->columns(3),
 
                 Section::make('Asal Wilayah')
@@ -215,6 +233,11 @@ class WajibPajakResource extends Resource
                 TextColumn::make('npwpd')
                     ->label('NPWPD')
                     ->placeholder('-'),
+                TextColumn::make('user.email')
+                    ->label('Sumber Login')
+                    ->badge()
+                    ->formatStateUsing(fn(?string $state): string => GeneratedLoginEmail::sourceLabel($state))
+                    ->color(fn(?string $state): string => GeneratedLoginEmail::sourceColor($state)),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {

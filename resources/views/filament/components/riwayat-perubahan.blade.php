@@ -82,7 +82,7 @@
                                 </td>
                                 <td class="border border-gray-200 dark:border-gray-700 px-3 py-2">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                                        {{ $log->action }}
+                                        {{ $log->action_label }}
                                     </span>
                                 </td>
                                 <td class="border border-gray-200 dark:border-gray-700 px-3 py-2">

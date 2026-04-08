@@ -168,6 +168,60 @@ class Tax extends Model
         return $this->hasMany(Tax::class, 'parent_tax_id');
     }
 
+    public function hasNewerPembetulan(): bool
+    {
+        if (array_key_exists('has_newer_pembetulan', $this->attributes)) {
+            return (bool) $this->attributes['has_newer_pembetulan'];
+        }
+
+        if ($this->relationLoaded('children')) {
+            return $this->children->isNotEmpty();
+        }
+
+        return $this->children()->exists();
+    }
+
+    public function isPembetulanRevision(): bool
+    {
+        return $this->pembetulan_ke > 0 || !empty($this->parent_tax_id);
+    }
+
+    public function getBillingDocumentActionLabel(): string
+    {
+        return match (true) {
+            $this->hasNewerPembetulan() => 'Lihat Resolusi Dokumen',
+            $this->isPembetulanRevision() => 'Cetak Billing Pembetulan',
+            default => 'Cetak Billing',
+        };
+    }
+
+    public function getBillingDocumentActionTitle(): string
+    {
+        return match (true) {
+            $this->hasNewerPembetulan() => 'Lihat resolusi dokumen billing',
+            $this->isPembetulanRevision() => 'Cetak billing pembetulan',
+            default => 'Cetak billing',
+        };
+    }
+
+    public function getBillingDownloadActionLabel(): string
+    {
+        return match (true) {
+            $this->hasNewerPembetulan() => 'Unduh Billing Historis',
+            $this->isPembetulanRevision() => 'Unduh Billing Pembetulan',
+            default => 'Unduh Billing',
+        };
+    }
+
+    public function getBillingDownloadActionTitle(): string
+    {
+        return match (true) {
+            $this->hasNewerPembetulan() => 'Unduh billing historis',
+            $this->isPembetulanRevision() => 'Unduh billing pembetulan',
+            default => 'Unduh billing',
+        };
+    }
+
     /**
      * Get payments
      */

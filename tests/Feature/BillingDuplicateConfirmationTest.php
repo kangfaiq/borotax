@@ -117,6 +117,105 @@ class BillingDuplicateConfirmationTest extends TestCase
             ->assertSee('Rp 125.000');
     }
 
+    public function test_skipped_month_confirmation_shows_when_selected_period_jumps_over_expected_next_period(): void
+    {
+        $this->seed([
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $petugas = $this->createAdminPanelUser('petugas');
+        $wajibPajak = $this->createApprovedWajibPajak();
+        $jenisPajak = JenisPajak::where('kode', '41102')->firstOrFail();
+        $subJenisPajak = SubJenisPajak::where('kode', 'PBJT_RESTORAN')->firstOrFail();
+
+        $taxObject = TaxObject::create([
+            'nik' => $wajibPajak->nik,
+            'nik_hash' => WajibPajak::generateHash($wajibPajak->nik),
+            'nama_objek_pajak' => 'Objek Restoran Loncat Bulan',
+            'jenis_pajak_id' => $jenisPajak->id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'npwpd' => $wajibPajak->npwpd,
+            'nopd' => 2201,
+            'alamat_objek' => 'Jl. MH Thamrin No. 8',
+            'kelurahan' => 'Kadipaten',
+            'kecamatan' => 'Bojonegoro',
+            'tarif_persen' => 10,
+            'tanggal_daftar' => now()->toDateString(),
+            'is_active' => true,
+            'is_opd' => false,
+            'is_insidentil' => false,
+        ]);
+
+        Tax::create([
+            'jenis_pajak_id' => $jenisPajak->id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'tax_object_id' => $taxObject->id,
+            'user_id' => $wajibPajak->user_id,
+            'amount' => 100000,
+            'omzet' => 1000000,
+            'tarif_persentase' => 10,
+            'status' => TaxStatus::Paid,
+            'billing_code' => '352220100000260001',
+            'payment_channel' => 'QRIS',
+            'payment_expired_at' => now()->addDays(7),
+            'masa_pajak_bulan' => 3,
+            'masa_pajak_tahun' => 2026,
+            'pembetulan_ke' => 0,
+            'billing_sequence' => 0,
+        ]);
+
+        $this->actingAs($petugas);
+
+        Livewire::test(BuatBillingSelfAssessment::class)
+            ->set('selectedTaxObjectId', $taxObject->id)
+            ->set('selectedTaxObjectData', [
+                'id' => $taxObject->id,
+                'nama' => $taxObject->nama_objek_pajak,
+                'alamat' => $taxObject->alamat_objek,
+                'npwpd' => $taxObject->npwpd,
+                'nopd' => $taxObject->nopd,
+                'nik_hash' => $taxObject->nik_hash,
+                'sub_jenis' => $subJenisPajak->nama,
+                'jenis_pajak_nama' => $jenisPajak->nama,
+                'tarif_persen' => 10,
+                'jenis_pajak_id' => $jenisPajak->id,
+                'sub_jenis_pajak_id' => $subJenisPajak->id,
+                'next_bulan' => 4,
+                'next_tahun' => 2026,
+                'next_label' => Carbon::create(2026, 4, 1)->translatedFormat('F Y'),
+                'is_new' => false,
+                'is_opd' => false,
+                'is_insidentil' => false,
+                'sub_jenis_kode' => $subJenisPajak->kode,
+                'is_multi_billing' => false,
+            ])
+            ->set('wajibPajakData', [
+                'id' => $wajibPajak->id,
+                'user_id' => $wajibPajak->user_id,
+                'nama_lengkap' => $wajibPajak->nama_lengkap,
+                'npwpd' => $wajibPajak->npwpd,
+                'tipe' => $wajibPajak->tipe_wajib_pajak,
+            ])
+            ->set('masaPajakBulan', 5)
+            ->set('masaPajakTahun', 2026)
+            ->set('omzet', 1750000)
+            ->call('terbitkanBilling')
+            ->assertSet('showSkippedMonthConfirm', true)
+            ->assertSee('Masa Pajak Sebelumnya Belum Dibuat')
+            ->assertSee('April 2026')
+            ->assertSee('Mei 2026')
+            ->call('confirmSkippedMonthAndContinue')
+            ->assertSet('showSkippedMonthConfirm', false)
+            ->assertSet('billingResult.masa_pajak', 'Mei 2026');
+
+        $this->assertDatabaseHas('taxes', [
+            'tax_object_id' => $taxObject->id,
+            'masa_pajak_bulan' => 5,
+            'masa_pajak_tahun' => 2026,
+        ]);
+    }
+
     private function createApprovedWajibPajak(): WajibPajak
     {
         $nik = str_pad((string) random_int(0, 9999999999999999), 16, '0', STR_PAD_LEFT);

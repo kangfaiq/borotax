@@ -61,6 +61,45 @@ class PendaftaranModuleTest extends TestCase
         ];
     }
 
+    public function test_wajib_pajak_list_and_detail_show_login_source_badges(): void
+    {
+        $this->seed([
+            AdminUserSeeder::class,
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $generatedWp = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'siti.kadipaten.7890.abcd@generated.local',
+        ]);
+        $regularWp = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'wajib.pajak@example.test',
+        ]);
+        $admin = $this->createAdminPanelUser('admin');
+
+        $this->actingAs($admin);
+
+        $this->get(DaftarWajibPajakResource::getUrl('index'))
+            ->assertOk()
+            ->assertSee('Username Otomatis')
+            ->assertSee('Email WP');
+
+        $this->get(DaftarWajibPajakResource::getUrl('view', ['record' => $generatedWp]))
+            ->assertOk()
+            ->assertSee('Username Otomatis')
+            ->assertSee('Gunakan username login ini saat menyampaikan akun ke wajib pajak.');
+
+        $this->get(WajibPajakResource::getUrl('index'))
+            ->assertOk()
+            ->assertSee('Username Otomatis')
+            ->assertSee('Email WP');
+
+        $this->get(WajibPajakResource::getUrl('view', ['record' => $regularWp]))
+            ->assertOk()
+            ->assertSee('Email WP')
+            ->assertSee('Email di atas adalah email milik wajib pajak.');
+    }
+
     private function createAdminPanelUser(string $role): User
     {
         return User::create([

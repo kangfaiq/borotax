@@ -18,7 +18,7 @@ class BillingController extends Controller
 
         if ($code) {
             $billing = Tax::wherePaymentCode($code)
-                ->with('jenisPajak')
+                ->with(['jenisPajak', 'children:id,parent_tax_id'])
                 ->first();
         }
 
@@ -35,7 +35,7 @@ class BillingController extends Controller
 
         if ($code) {
             $billing = Tax::wherePaymentCode($code)
-                ->with('jenisPajak')
+                ->with(['jenisPajak', 'children:id,parent_tax_id'])
                 ->first();
         }
 

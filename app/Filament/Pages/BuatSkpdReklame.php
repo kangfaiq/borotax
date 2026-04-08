@@ -9,6 +9,7 @@ use App\Domain\Reklame\Models\AsetReklamePemkab;
 use App\Domain\Reklame\Models\HargaPatokanReklame;
 use App\Domain\Reklame\Models\KelompokLokasiJalan;
 use App\Domain\Reklame\Models\PermohonanSewaReklame;
+use App\Domain\Reklame\Models\ReklameRequest;
 use App\Domain\Reklame\Models\ReklameNilaiStrategis;
 use App\Domain\Reklame\Models\ReklameObject;
 use App\Domain\Reklame\Models\ReklameTariff;
@@ -61,6 +62,8 @@ class BuatSkpdReklame extends Page implements HasForms
     public ?string $selectedReklameObjectId   = null;
     public ?array  $selectedReklameObjectData = null;
     public ?array  $wajibPajakData            = null;
+    public ?string $requestId                 = null;
+    public ?array  $requestData               = null;
 
     // ── State: Aset Pemkab ──────────────────────────────────────────────────
     public ?string $searchAsetKeyword       = null;
@@ -160,6 +163,66 @@ class BuatSkpdReklame extends Page implements HasForms
                     $this->durasi = $permohonan->durasi_sewa_hari;
                     $this->satuanWaktu = 'perHari';
                     $this->hitungMasaBerlakuSampai();
+                }
+            }
+        }
+
+        $requestId = request()->query('request_id');
+        if ($requestId) {
+            $reklameRequest = ReklameRequest::with(['reklameObject.subJenisPajak'])->find($requestId);
+
+            if ($reklameRequest && $reklameRequest->reklameObject) {
+                $this->mode = 'objek_wp';
+                $this->requestId = $requestId;
+                $this->requestData = [
+                    'id' => $reklameRequest->id,
+                    'status' => $reklameRequest->status,
+                    'durasi_perpanjangan_hari' => $reklameRequest->durasi_perpanjangan_hari,
+                    'catatan_pengajuan' => $reklameRequest->catatan_pengajuan,
+                ];
+
+                $selected = $this->mapReklameObject($reklameRequest->reklameObject);
+                $this->selectedReklameObjectId = $reklameRequest->reklameObject->id;
+                $this->selectedReklameObjectData = $selected;
+                $this->skpdResult = null;
+                $this->subJenisPajakId = $selected['sub_jenis_pajak_id'];
+                $this->hargaPatokanReklameId = $selected['harga_patokan_reklame_id'];
+                $this->lokasiJalanId = $selected['lokasi_jalan_id'];
+                $this->kelompokLokasi = $selected['kelompok_lokasi'];
+                $this->jumlahMuka = (int) $selected['jumlah_muka'];
+                $this->luasM2 = (float) $selected['luas_m2'];
+                $this->jumlahReklame = 1;
+                $this->lokasiPenempatan = 'luar_ruangan';
+                $this->jenisProduk = 'non_rokok';
+
+                [$this->satuanWaktu, $this->durasi] = match ((int) ($reklameRequest->durasi_perpanjangan_hari ?? 0)) {
+                    365 => ['perTahun', 1],
+                    180 => ['perBulan', 6],
+                    90 => ['perBulan', 3],
+                    30 => ['perBulan', 1],
+                    default => [null, 1],
+                };
+
+                $this->masaBerlakuMulai = $reklameRequest->reklameObject->masa_berlaku_sampai?->copy()->addDay()->format('Y-m-d')
+                    ?? now()->format('Y-m-d');
+                $this->hitungMasaBerlakuSampai();
+
+                $this->wajibPajakData = null;
+                if (!empty($selected['nik_hash'])) {
+                    $wp = WajibPajak::where('nik_hash', $selected['nik_hash'])
+                        ->where('status', 'disetujui')
+                        ->first();
+
+                    if ($wp) {
+                        $this->wajibPajakData = [
+                            'id' => $wp->id,
+                            'user_id' => $wp->user_id,
+                            'nik' => $wp->nik,
+                            'nama_lengkap' => $wp->nama_lengkap,
+                            'alamat' => $wp->alamat,
+                            'npwpd' => $wp->npwpd,
+                        ];
+                    }
                 }
             }
         }
@@ -936,6 +999,20 @@ class BuatSkpdReklame extends Page implements HasForms
                 'petugas_id'         => auth()->id(),
                 'petugas_nama'       => auth()->user()->nama_lengkap ?? auth()->user()->name,
             ]);
+
+            if ($this->requestId) {
+                $reklameRequest = ReklameRequest::find($this->requestId);
+
+                if ($reklameRequest) {
+                    $reklameRequest->update([
+                        'status' => 'diproses',
+                        'tanggal_diproses' => now(),
+                        'petugas_id' => auth()->id(),
+                        'petugas_nama' => auth()->user()->nama_lengkap ?? auth()->user()->name,
+                        'skpd_id' => $skpd->id,
+                    ]);
+                }
+            }
 
             $preview = $this->getPreviewPajak();
 

@@ -115,12 +115,46 @@
             margin: 0;
             padding: 20px;
             border: 3px solid #000;
+            position: relative;
+        }
+
+        .historical-watermark {
+            position: absolute;
+            top: 44%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-28deg);
+            font-size: 40pt;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: rgba(180, 35, 24, 0.11);
+            text-align: center;
+            white-space: nowrap;
+            z-index: 0;
+        }
+
+        .historical-note {
+            border: 2px solid #991b1b;
+            background: #fff1f2;
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            font-size: 9pt;
+            line-height: 1.45;
+        }
+
+        .content-layer {
+            position: relative;
+            z-index: 1;
         }
     </style>
 </head>
 
 <body>
     <div class="page">
+        @if(!empty($hasNewerPembetulan) && !empty($latestPembetulan))
+            <div class="historical-watermark">SUDAH DIPEMBETULKAN</div>
+        @endif
+
+        <div class="content-layer">
         {{-- HEADER --}}
         <table class="kop-table" style="margin-bottom: 2px;">
             <tr>
@@ -177,6 +211,13 @@
             Gunakan Kode Billing berikut untuk melakukan pembayaran Pajak Daerah.<br>
             Kode Billing berlaku sampai tanggal: <strong>{{ $jatuhTempo->translatedFormat('d-F-Y') }}</strong>
         </div>
+
+        @if(!empty($hasNewerPembetulan) && !empty($latestPembetulan) && !empty($historicalBillingNote))
+        <div class="historical-note">
+            <span class="bold">CATATAN HISTORIS BILLING</span><br>
+            {{ $historicalBillingNote }}
+        </div>
+        @endif
 
         {{-- JENIS PAJAK --}}
         <table style="margin-bottom: 2px;">
@@ -578,6 +619,7 @@
             </tr>
         </table>
 
+        </div>
     </div>
 </body>
 

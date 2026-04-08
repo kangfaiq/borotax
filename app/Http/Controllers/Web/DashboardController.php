@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         // Recent transactions (last 5)
         $recentTransactions = Tax::where('user_id', $user->id)
-            ->with(['jenisPajak', 'taxObject'])
+            ->with(['jenisPajak', 'taxObject', 'children:id,parent_tax_id'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();

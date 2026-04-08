@@ -9,17 +9,17 @@ class PembetulanRequestPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'verifikator']);
+        return $user->hasRole(['admin', 'petugas']);
     }
 
     public function view(User $user, PembetulanRequest $pembetulanRequest): bool
     {
-        return $user->hasRole(['admin', 'verifikator']);
+        return $user->hasRole(['admin', 'petugas']);
     }
 
     public function review(User $user, PembetulanRequest $pembetulanRequest): bool
     {
-        return $user->hasRole(['admin', 'verifikator']);
+        return $user->hasRole(['admin', 'petugas']);
     }
 
     public function delete(User $user, PembetulanRequest $pembetulanRequest): bool

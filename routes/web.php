@@ -184,6 +184,15 @@ Route::middleware('auth')->group(function () {
 });
 
 // =============================================
+// SKRD SEWA TANAH DOCUMENTS (auth, no portal prefix)
+// =============================================
+use App\Http\Controllers\SkrdSewaDocumentController;
+Route::middleware('auth')->group(function () {
+    Route::get('/skrd-sewa/{skrdId}/download', [SkrdSewaDocumentController::class, 'download'])->name('skrd-sewa.download');
+    Route::get('/skrd-sewa/{skrdId}/view', [SkrdSewaDocumentController::class, 'show'])->name('skrd-sewa.show');
+});
+
+// =============================================
 // STPD MANUAL DOCUMENTS (auth, no portal prefix)
 // =============================================
 Route::middleware('auth')->group(function () {

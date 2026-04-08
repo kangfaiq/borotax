@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DaftarWajibPajakResource\Pages;
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Auth\Support\GeneratedLoginEmail;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Domain\Shared\Models\ActivityLog;
 use App\Filament\Resources\DaftarWajibPajakResource;
@@ -14,13 +15,22 @@ class CreateDaftarWajibPajak extends CreateRecord
     protected static string $resource = DaftarWajibPajakResource::class;
 
     private bool $isNewUser = false;
+    private bool $usedGeneratedEmail = false;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Ambil data kontak dari form (disimpan ke User, bukan WajibPajak)
-        $contactEmail = $data['email'];
         $contactWhatsapp = $data['no_whatsapp'] ?? null;
         $contactTelp = $data['no_telp'] ?? null;
+        $this->usedGeneratedEmail = blank($data['email'] ?? null);
+
+        $contactEmail = filled($data['email'] ?? null)
+            ? str($data['email'])->trim()->lower()->value()
+            : GeneratedLoginEmail::forWajibPajak(
+                $data['nama_lengkap'] ?? null,
+                $data['alamat'] ?? null,
+                $contactWhatsapp ?: $contactTelp,
+            );
 
         // Buat atau ambil user berdasarkan email
         $user = User::where('email', $contactEmail)->first();
@@ -86,7 +96,8 @@ class CreateDaftarWajibPajak extends CreateRecord
 
         $body = "NPWPD: {$this->record->npwpd}";
         if ($this->isNewUser) {
-            $body .= "\nAkun user dibuat (email: {$user->email})\nPassword default: @Password123";
+            $loginLabel = $this->usedGeneratedEmail ? 'Username login otomatis' : 'Email login WP';
+            $body .= "\nAkun user dibuat\n{$loginLabel}: {$user->email}\nPassword default: @Password123";
         }
 
         Notification::make()

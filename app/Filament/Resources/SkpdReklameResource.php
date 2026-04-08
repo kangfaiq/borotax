@@ -4,8 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SkpdReklameResource\Pages;
 use App\Domain\Reklame\Models\SkpdReklame;
-use App\Domain\Reklame\Models\ReklameObject;
 use App\Domain\Master\Models\Pimpinan;
+use App\Domain\Shared\Models\ActivityLog;
 use App\Domain\Tax\Models\Tax;
 use App\Enums\TaxStatus;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -25,6 +25,26 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SkpdReklameResource extends Resource
 {
+    protected const REKLAME_OBJECT_SYNC_ACTION = 'UPDATE_TAX_OBJECT_FROM_SKPD_REKLAME_APPROVAL';
+
+    protected const REKLAME_OBJECT_SYNC_MAP = [
+        'nama_objek_pajak' => 'nama_reklame',
+        'alamat_objek' => 'alamat_reklame',
+        'sub_jenis_pajak_id' => 'sub_jenis_pajak_id',
+        'kelompok_lokasi' => 'kelompok_lokasi',
+        'bentuk' => 'bentuk',
+        'panjang' => 'panjang',
+        'lebar' => 'lebar',
+        'tinggi' => 'tinggi',
+        'sisi_atas' => 'sisi_atas',
+        'sisi_bawah' => 'sisi_bawah',
+        'diameter' => 'diameter',
+        'diameter2' => 'diameter2',
+        'alas' => 'alas',
+        'luas_m2' => 'luas_m2',
+        'jumlah_muka' => 'jumlah_muka',
+    ];
+
     protected static ?string $model = SkpdReklame::class;
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-currency-dollar';
@@ -157,6 +177,7 @@ class SkpdReklameResource extends Resource
                     ->modalHeading('Terbitkan SKPD?')
                     ->modalDescription('Aksi ini akan menerbitkan Kode Pembayaran Aktif dan mengubah status menjadi Disetujui.')
                     ->action(function (SkpdReklame $record): void {
+                        $draftNomorSkpd = $record->nomor_skpd;
                         $kodeJenisPajak = $record->jenisPajak->kode ?? '41104';
                         $billing = Tax::generateBillingCode($kodeJenisPajak);
                         $noSkpd = SkpdReklame::generateNomorSkpd(); // Official Number
@@ -188,27 +209,7 @@ class SkpdReklameResource extends Resource
                             ]);
                         }
 
-                        // Sync data ke objek pajak reklame
-                        if ($record->tax_object_id) {
-                            ReklameObject::where('id', $record->tax_object_id)
-                                ->update([
-                                    'nama_objek_pajak' => $record->nama_reklame,
-                                    'alamat_objek' => $record->alamat_reklame,
-                                    'sub_jenis_pajak_id' => $record->sub_jenis_pajak_id,
-                                    'kelompok_lokasi' => $record->kelompok_lokasi,
-                                    'bentuk' => $record->bentuk,
-                                    'panjang' => $record->panjang,
-                                    'lebar' => $record->lebar,
-                                    'tinggi' => $record->tinggi,
-                                    'sisi_atas' => $record->sisi_atas,
-                                    'sisi_bawah' => $record->sisi_bawah,
-                                    'diameter' => $record->diameter,
-                                    'diameter2' => $record->diameter2,
-                                    'alas' => $record->alas,
-                                    'luas_m2' => $record->luas_m2,
-                                    'jumlah_muka' => $record->jumlah_muka,
-                                ]);
-                        }
+                        static::syncApprovedSkpdToReklameObject($record, $draftNomorSkpd);
 
                         // Insert ke tabel Taxes (Tagihan)
                         // Agar muncul di menu Pembayaran / Laporan Pendapatan
@@ -304,6 +305,7 @@ class SkpdReklameResource extends Resource
                             $seq = 0;
                             foreach ($draftRecords as $record) {
                                 $seq++;
+                                $draftNomorSkpd = $record->nomor_skpd;
                                 $kodeJenisPajak = $record->jenisPajak->kode ?? '41104';
                                 $billing = Tax::generateBillingCode($kodeJenisPajak);
 
@@ -330,27 +332,7 @@ class SkpdReklameResource extends Resource
                                     ]);
                                 }
 
-                                // Sync data ke objek pajak reklame
-                                if ($record->tax_object_id) {
-                                    ReklameObject::where('id', $record->tax_object_id)
-                                        ->update([
-                                            'nama_objek_pajak' => $record->nama_reklame,
-                                            'alamat_objek' => $record->alamat_reklame,
-                                            'sub_jenis_pajak_id' => $record->sub_jenis_pajak_id,
-                                            'kelompok_lokasi' => $record->kelompok_lokasi,
-                                            'bentuk' => $record->bentuk,
-                                            'panjang' => $record->panjang,
-                                            'lebar' => $record->lebar,
-                                            'tinggi' => $record->tinggi,
-                                            'sisi_atas' => $record->sisi_atas,
-                                            'sisi_bawah' => $record->sisi_bawah,
-                                            'diameter' => $record->diameter,
-                                            'diameter2' => $record->diameter2,
-                                            'alas' => $record->alas,
-                                            'luas_m2' => $record->luas_m2,
-                                            'jumlah_muka' => $record->jumlah_muka,
-                                        ]);
-                                }
+                                static::syncApprovedSkpdToReklameObject($record, $draftNomorSkpd);
 
                                 Tax::create([
                                     'jenis_pajak_id' => $record->jenis_pajak_id,
@@ -432,6 +414,87 @@ class SkpdReklameResource extends Resource
         return [
             //
         ];
+    }
+
+    protected static function syncApprovedSkpdToReklameObject(SkpdReklame $record, ?string $draftNomorSkpd = null): void
+    {
+        if (! $record->tax_object_id) {
+            return;
+        }
+
+        $record->loadMissing(['reklameObject', 'reklameRequest']);
+
+        $reklameObject = $record->reklameObject;
+
+        if (! $reklameObject) {
+            return;
+        }
+
+        $syncData = [];
+        $oldValues = [];
+        $newValues = [];
+
+        foreach (static::REKLAME_OBJECT_SYNC_MAP as $objectField => $skpdField) {
+            $newValue = $record->getAttribute($skpdField);
+            $currentValue = $reklameObject->getAttribute($objectField);
+
+            $syncData[$objectField] = $newValue;
+
+            if (! static::reklameObjectValuesDiffer($currentValue, $newValue)) {
+                continue;
+            }
+
+            $oldValues[$objectField] = $currentValue;
+            $newValues[$objectField] = $newValue;
+        }
+
+        if ($oldValues === []) {
+            return;
+        }
+
+        $reklameObject->fill($syncData);
+        $reklameObject->save();
+
+        ActivityLog::log(
+            action: static::REKLAME_OBJECT_SYNC_ACTION,
+            actorId: auth()->id(),
+            targetTable: $reklameObject->getTable(),
+            targetId: $reklameObject->getKey(),
+            description: static::buildReklameObjectSyncDescription($record, $draftNomorSkpd),
+            oldValues: $oldValues,
+            newValues: $newValues,
+        );
+    }
+
+    protected static function buildReklameObjectSyncDescription(SkpdReklame $record, ?string $draftNomorSkpd = null): string
+    {
+        $description = [
+            'Sinkronisasi objek reklame dari persetujuan SKPD Reklame.',
+            'Nomor draft: ' . ($draftNomorSkpd ?: '-'),
+            'Nomor final: ' . ($record->nomor_skpd ?: '-'),
+        ];
+
+        if ($record->request_id) {
+            $description[] = 'Request ID: ' . $record->request_id;
+        }
+
+        $description[] = 'Petugas draft: ' . ($record->petugas_nama ?: '-');
+        $description[] = 'Verifikator penyetuju: ' . ($record->verifikator_nama ?: '-');
+
+        return implode(' ', $description);
+    }
+
+    protected static function reklameObjectValuesDiffer(mixed $currentValue, mixed $newValue): bool
+    {
+        if ($currentValue === null && $newValue === null) {
+            return false;
+        }
+
+        if (is_numeric($currentValue) && is_numeric($newValue)) {
+            return (float) $currentValue !== (float) $newValue;
+        }
+
+        return (string) $currentValue !== (string) $newValue;
     }
 
     public static function getPages(): array

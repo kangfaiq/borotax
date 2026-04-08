@@ -129,6 +129,49 @@ class ReklameWorkflowTest extends TestCase
             'id' => $wajibPajak->user_id,
             'role' => 'user',
         ]);
+
+        $user = User::findOrFail($wajibPajak->user_id);
+        $this->assertSame(str($permohonan->email)->lower()->value(), $user->email);
+    }
+
+    public function test_petugas_can_create_npwpd_with_generated_login_email_when_email_is_blank(): void
+    {
+        $this->seed([
+            AdminUserSeeder::class,
+            AsetReklamePemkabSeeder::class,
+        ]);
+        $this->seedPermohonanSewaReklameFixtures();
+
+        $petugas = $this->createAdminPanelUser('petugas');
+        $permohonan = PermohonanSewaReklame::where('status', 'diproses')
+            ->whereNull('npwpd')
+            ->oldest('tanggal_pengajuan')
+            ->firstOrFail();
+        $region = $this->createRegionFixture();
+
+        $this->actingAs($petugas);
+
+        Livewire::test(ListPermohonanSewaReklame::class)
+            ->assertCanSeeTableRecords([$permohonan])
+            ->callTableAction('buat_npwpd', $permohonan, [
+                'nik' => $permohonan->nik,
+                'nama_lengkap' => 'Budi Santoso',
+                'alamat' => 'Jl. Teuku Umar No. 12',
+                'email' => null,
+                'tipe_wajib_pajak' => 'perorangan',
+                'asal_wilayah' => 'bojonegoro',
+                'province_code' => $region['province']->code,
+                'regency_code' => $region['regency']->code,
+                'district_code' => $region['district']->code,
+                'village_code' => $region['village']->code,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $wajibPajak = WajibPajak::where('nik_hash', WajibPajak::generateHash($permohonan->nik))->firstOrFail();
+        $user = User::findOrFail($wajibPajak->user_id);
+
+        $this->assertMatchesRegularExpression('/^budi-santoso\.teuku-umar\.\d{4}\.[a-z0-9]{4}@generated\.local$/', $user->email);
+        $this->assertSame('user', $user->role);
     }
 
     public function test_petugas_can_create_draft_skpd_from_processed_permohonan_with_npwpd(): void
@@ -267,7 +310,6 @@ class ReklameWorkflowTest extends TestCase
     {
         return [
             'admin' => ['admin'],
-            'petugas' => ['petugas'],
         ];
     }
 

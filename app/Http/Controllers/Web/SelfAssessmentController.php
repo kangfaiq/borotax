@@ -566,7 +566,7 @@ class SelfAssessmentController extends Controller
     public function success(string $taxId)
     {
         $user = auth()->user();
-        $tax = Tax::with(['jenisPajak', 'subJenisPajak'])->findOrFail($taxId);
+        $tax = Tax::with(['jenisPajak', 'subJenisPajak', 'children:id,parent_tax_id'])->findOrFail($taxId);
 
         // Check ownership
         if ($tax->user_id !== $user->id) {

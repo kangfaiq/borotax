@@ -24,10 +24,20 @@ class AsetReklamePemkabPolicy
 
     public function update(User $user, AsetReklamePemkab $aset): bool
     {
-        return $user->hasRole(['admin', 'petugas']);
+        return $user->isAdmin();
     }
 
     public function delete(User $user, AsetReklamePemkab $aset): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function restore(User $user, AsetReklamePemkab $aset): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function forceDelete(User $user, AsetReklamePemkab $aset): bool
     {
         return $user->isAdmin();
     }

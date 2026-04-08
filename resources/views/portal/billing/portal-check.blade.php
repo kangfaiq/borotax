@@ -189,9 +189,9 @@
         @if($code)
             @if($billing)
                 <div class="result-card">
-                    <div class="result-header {{ $billing->status }}">
+                    <div class="result-header {{ $billing->status->value }}">
                         <span>Detail Billing</span>
-                        @switch($billing->status)
+                        @switch($billing->status->value)
                             @case('pending')
                                 <span class="badge badge-pending">Belum Dibayar</span>
                                 @break
@@ -205,7 +205,7 @@
                                 <span class="badge badge-expired">Kedaluwarsa</span>
                                 @break
                             @default
-                                <span class="badge badge-rejected">{{ ucfirst($billing->status) }}</span>
+                                <span class="badge badge-rejected">{{ ucfirst($billing->status->value) }}</span>
                         @endswitch
                     </div>
                     <div class="result-body">
@@ -252,12 +252,14 @@
                     </div>
                     <div style="display:flex; gap:10px; padding:16px 20px; border-top:1px solid var(--border);">
                         <a href="{{ route('portal.billing.document.show', $billing->id) }}" target="_blank"
+                            title="{{ $billing->getBillingDocumentActionTitle() }}"
                             style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:#3b82f6; color:#fff; border-radius:var(--radius-md); font-size:0.84rem; font-weight:600; text-decoration:none;">
-                            <i class="bi bi-printer"></i> Print Dokumen
+                            <i class="bi bi-printer"></i> {{ $billing->getBillingDocumentActionLabel() }}
                         </a>
                         <a href="{{ route('portal.billing.document.download', $billing->id) }}"
+                            title="{{ $billing->getBillingDownloadActionTitle() }}"
                             style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:#10b981; color:#fff; border-radius:var(--radius-md); font-size:0.84rem; font-weight:600; text-decoration:none;">
-                            <i class="bi bi-download"></i> Download PDF
+                            <i class="bi bi-download"></i> {{ $billing->getBillingDownloadActionLabel() }}
                         </a>
                     </div>
                 </div>

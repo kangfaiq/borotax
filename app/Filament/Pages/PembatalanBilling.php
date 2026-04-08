@@ -207,8 +207,9 @@ class PembatalanBilling extends Page implements HasTable
                 // — Lihat detail dokumen —
                 ActionGroup::make([
                     Action::make('cetak_billing')
-                        ->label('Cetak Billing')
+                        ->label(fn(Tax $record): string => $record->getBillingDocumentActionLabel())
                         ->icon('heroicon-o-printer')
+                        ->tooltip(fn(Tax $record): string => $record->getBillingDocumentActionTitle())
                         ->url(fn(Tax $record) => route('portal.billing.document.show', $record->id))
                         ->openUrlInNewTab(),
                 ])->label('Dokumen')->icon('heroicon-m-document-text'),
@@ -224,12 +225,12 @@ class PembatalanBilling extends Page implements HasTable
         if ($this->activeTab === 'dibatalkan') {
             return Tax::onlyTrashed()
                 ->whereIn('jenis_pajak_id', $selfAssessmentIds)
-                ->with(['taxObject', 'cancelledByUser']);
+                ->with(['taxObject', 'cancelledByUser', 'children:id,parent_tax_id']);
         }
 
         return Tax::query()
             ->whereIn('jenis_pajak_id', $selfAssessmentIds)
             ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified, TaxStatus::Expired])
-            ->with(['taxObject']);
+            ->with(['taxObject', 'children:id,parent_tax_id']);
     }
 }

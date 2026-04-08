@@ -27,8 +27,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -223,12 +221,15 @@ class AsetReklamePemkabResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->visible(fn (AsetReklamePemkab $record): bool => auth()->user()?->can('update', $record) ?? false)
+                    ->authorize(fn (AsetReklamePemkab $record): bool => auth()->user()?->can('update', $record) ?? false),
                 Action::make('set_maintenance')
                     ->label('Maintenance')
                     ->icon('heroicon-o-wrench')
                     ->color('warning')
-                    ->visible(fn(AsetReklamePemkab $record) => $record->status_ketersediaan !== 'maintenance' && auth()->user()->can('update', $record))
+                    ->visible(fn (AsetReklamePemkab $record): bool => $record->status_ketersediaan !== 'maintenance' && static::canManageMaintenanceAndPinjam())
+                    ->authorize(fn (): bool => static::canManageMaintenanceAndPinjam())
                     ->schema([
                         Textarea::make('catatan_status')
                             ->label('Catatan / Alasan')
@@ -245,7 +246,8 @@ class AsetReklamePemkabResource extends Resource
                     ->label('Set Tersedia')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(AsetReklamePemkab $record) => in_array($record->status_ketersediaan, ['maintenance', 'tidak_aktif', 'dipinjam_opd']) && auth()->user()->can('update', $record))
+                    ->visible(fn (AsetReklamePemkab $record): bool => in_array($record->status_ketersediaan, ['maintenance', 'tidak_aktif', 'dipinjam_opd']) && static::canManageAdminOnlyOperationalActions())
+                    ->authorize(fn (): bool => static::canManageAdminOnlyOperationalActions())
                     ->requiresConfirmation()
                     ->action(function (AsetReklamePemkab $record): void {
                         // Close any active peminjaman records
@@ -266,7 +268,8 @@ class AsetReklamePemkabResource extends Resource
                     ->label('Pinjam OPD')
                     ->icon('heroicon-o-building-library')
                     ->color('info')
-                    ->visible(fn(AsetReklamePemkab $record) => $record->status_ketersediaan === 'tersedia' && auth()->user()->can('update', $record))
+                    ->visible(fn (AsetReklamePemkab $record): bool => $record->status_ketersediaan === 'tersedia' && static::canManageMaintenanceAndPinjam())
+                    ->authorize(fn (): bool => static::canManageMaintenanceAndPinjam())
                     ->schema([
                         TextInput::make('peminjam_opd')
                             ->label('Nama OPD / Dinas Peminjam')
@@ -322,7 +325,8 @@ class AsetReklamePemkabResource extends Resource
                     ->label('Selesai Pinjam')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('success')
-                    ->visible(fn(AsetReklamePemkab $record) => $record->status_ketersediaan === 'dipinjam_opd' && auth()->user()->can('update', $record))
+                    ->visible(fn (AsetReklamePemkab $record): bool => $record->status_ketersediaan === 'dipinjam_opd' && static::canManageAdminOnlyOperationalActions())
+                    ->authorize(fn (): bool => static::canManageAdminOnlyOperationalActions())
                     ->requiresConfirmation()
                     ->modalHeading('Selesaikan Peminjaman OPD?')
                     ->action(function (AsetReklamePemkab $record): void {
@@ -350,6 +354,16 @@ class AsetReklamePemkabResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    protected static function canManageMaintenanceAndPinjam(): bool
+    {
+        return auth()->user()?->hasRole(['admin', 'verifikator', 'petugas']) ?? false;
+    }
+
+    protected static function canManageAdminOnlyOperationalActions(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     public static function getPages(): array

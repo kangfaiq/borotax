@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Domain\Auth\Support\GeneratedLoginEmail;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Radio;
@@ -29,6 +31,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class DaftarWajibPajakResource extends Resource
 {
@@ -136,8 +139,36 @@ class DaftarWajibPajakResource extends Resource
                         TextInput::make('email')
                             ->label('Email')
                             ->email()
-                            ->required()
-                            ->helperText('Digunakan sebagai username login'),
+                            ->required(fn(string $operation): bool => $operation === 'edit')
+                            ->helperText(function (?string $state, $record, string $operation): string {
+                                if ($operation === 'create') {
+                                    return 'Kosongkan jika wajib pajak tidak memiliki email, sistem akan generate email login otomatis.';
+                                }
+
+                                return GeneratedLoginEmail::isGenerated($record?->user?->email ?? $state)
+                                    ? 'Label UI: Username login otomatis. Sampaikan username ini ke wajib pajak.'
+                                    : 'Label UI: Email login wajib pajak.';
+                            })
+                            ->dehydrateStateUsing(fn(?string $state): ?string => filled($state) ? str($state)->trim()->lower()->value() : null),
+                        Placeholder::make('email_login_status')
+                            ->label('Status Username Login')
+                            ->content(function ($record) {
+                                $email = $record?->user?->email;
+                                $isGenerated = GeneratedLoginEmail::isGenerated($email);
+                                $badgeClasses = $isGenerated
+                                    ? 'bg-amber-100 text-amber-800 ring-amber-600/20'
+                                    : 'bg-emerald-100 text-emerald-800 ring-emerald-600/20';
+                                $description = $isGenerated
+                                    ? 'Gunakan username login ini saat menyampaikan akun ke wajib pajak.'
+                                    : 'Akun memakai email asli wajib pajak.';
+
+                                return new HtmlString(
+                                    '<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $badgeClasses . '">' . GeneratedLoginEmail::sourceLabel($email) . '</span>'
+                                    . '<div class="mt-2 text-sm text-gray-600">' . $description . '</div>'
+                                );
+                            })
+                            ->visible(fn($record, string $operation): bool => $operation !== 'create' && filled($record?->user?->email))
+                            ->columnSpanFull(),
                     ])->columns(3),
 
                 Section::make('Asal Wilayah')
@@ -285,6 +316,11 @@ class DaftarWajibPajakResource extends Resource
                     ->label('NPWPD')
                     ->searchable()
                     ->placeholder('-'),
+                TextColumn::make('user.email')
+                    ->label('Sumber Login')
+                    ->badge()
+                    ->formatStateUsing(fn(?string $state): string => GeneratedLoginEmail::sourceLabel($state))
+                    ->color(fn(?string $state): string => GeneratedLoginEmail::sourceColor($state)),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {

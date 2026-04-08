@@ -297,12 +297,14 @@
                 {{-- Print / Download --}}
                 <div style="display:flex; gap:10px; margin-top:20px;">
                     <a href="{{ route('portal.billing.document.show', $tax->id) }}" target="_blank"
+                        title="{{ $tax->getBillingDocumentActionTitle() }}"
                         style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px; background:#3b82f6; color:#fff; border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; text-decoration:none; transition:all var(--transition);">
-                        <i class="bi bi-printer"></i> Print Dokumen
+                        <i class="bi bi-printer"></i> {{ $tax->getBillingDocumentActionLabel() }}
                     </a>
                     <a href="{{ route('portal.billing.document.download', $tax->id) }}"
+                        title="{{ $tax->getBillingDownloadActionTitle() }}"
                         style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px; background:#10b981; color:#fff; border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; text-decoration:none; transition:all var(--transition);">
-                        <i class="bi bi-download"></i> Download PDF
+                        <i class="bi bi-download"></i> {{ $tax->getBillingDownloadActionLabel() }}
                     </a>
                 </div>
 

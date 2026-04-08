@@ -28,6 +28,7 @@ use App\Domain\Master\Models\SubJenisPajak;
 use App\Domain\Master\Models\Pimpinan;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Domain\Auth\Models\User;
+use App\Domain\Auth\Support\GeneratedLoginEmail;
 use App\Domain\Region\Models\Province;
 use App\Domain\Region\Models\Regency;
 use App\Domain\Region\Models\District;
@@ -41,8 +42,6 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Hash;
 use App\Domain\Shared\Services\NotificationService;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -280,7 +279,7 @@ class PermohonanSewaReklameResource extends Resource
                                 TextInput::make('email')
                                     ->label('Email')
                                     ->default($record->email)
-                                    ->helperText('Kosongkan untuk auto-generate'),
+                                    ->helperText('Kosongkan jika pemohon tidak punya email, sistem akan generate email login otomatis.'),
                                 Select::make('tipe_wajib_pajak')
                                     ->label('Tipe Wajib Pajak')
                                     ->options([
@@ -362,12 +361,15 @@ class PermohonanSewaReklameResource extends Resource
                         };
 
                         // Generate email if empty
-                        $email = $data['email'] ?? null;
-                        if (empty($email)) {
-                            $namaClean = str()->slug($data['nama_lengkap'], '');
-                            $nikDigits = substr(preg_replace('/\D/', '', $data['nik'] ?? ''), -4);
-                            $email = $namaClean . $nikDigits . '@generated.local';
-                        }
+                        $usedGeneratedEmail = blank($data['email'] ?? null);
+
+                        $email = filled($data['email'] ?? null)
+                            ? str($data['email'])->trim()->lower()->value()
+                            : GeneratedLoginEmail::forWajibPajak(
+                                $data['nama_lengkap'] ?? null,
+                                $data['alamat'] ?? null,
+                                $record->no_telepon,
+                            );
 
                         // Check if NIK already exists as WajibPajak
                         $nikHash = WajibPajak::generateHash($data['nik']);
@@ -435,7 +437,9 @@ class PermohonanSewaReklameResource extends Resource
 
                         Notification::make()->success()
                             ->title('NPWPD berhasil dibuat')
-                            ->body("NPWPD: {$npwpd}")
+                            ->body("NPWPD: {$npwpd}\n" . ($usedGeneratedEmail
+                                ? "Username login otomatis: {$user->email}"
+                                : "Email login WP: {$user->email}"))
                             ->send();
                     }),
                 Action::make('cek_npwpd')

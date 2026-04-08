@@ -246,6 +246,14 @@
             </tr>
         </table>
 
+        <table style="margin-bottom: 2px; border-top: none;">
+            <tr>
+                <td style="width: 20%; font-weight: bold; vertical-align: middle;">Pelunasan</td>
+                <td style="width: 20%; font-weight: bold;">Tanggal Bayar</td>
+                <td colspan="2">{{ $tax->paid_at?->format('d/m/Y H:i') ?? '-' }}</td>
+            </tr>
+        </table>
+
         {{-- HITUNGAN --}}
         @php
             $isPembetulan = isset($pembetulanKe) && $pembetulanKe > 0;

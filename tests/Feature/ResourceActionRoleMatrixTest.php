@@ -27,6 +27,8 @@ use App\Filament\Resources\MeterReportResource;
 use App\Filament\Resources\MeterReportResource\Pages\ListMeterReports;
 use App\Filament\Resources\PermohonanSewaReklameResource;
 use App\Filament\Resources\PermohonanSewaReklameResource\Pages\ListPermohonanSewaReklame;
+use App\Filament\Resources\ReklameRequestResource;
+use App\Filament\Resources\ReklameRequestResource\Pages\ListReklameRequests;
 use App\Filament\Resources\StpdManualResource;
 use App\Filament\Resources\StpdManualResource\Pages\ListStpdManuals;
 use App\Filament\Resources\WajibPajakResource;
@@ -174,7 +176,12 @@ class ResourceActionRoleMatrixTest extends TestCase
     }
 
     #[DataProvider('asetReklameRoleProvider')]
-    public function test_aset_reklame_operational_actions_follow_role_rules(string $role, bool $canOperate): void
+    public function test_aset_reklame_operational_actions_follow_role_rules(
+        string $role,
+        bool $canEdit,
+        bool $canManageMaintenanceAndPinjam,
+        bool $canManageAdminOnlyOperationalActions
+    ): void
     {
         $this->seed(AsetReklamePemkabSeeder::class);
 
@@ -213,23 +220,60 @@ class ResourceActionRoleMatrixTest extends TestCase
         $component = Livewire::test(ListAsetReklamePemkab::class)
             ->assertCanSeeTableRecords([$tersedia, $maintenance, $dipinjam]);
 
-        if ($canOperate) {
+        if ($canEdit) {
+            $component->assertTableActionVisible('edit', $tersedia);
+        } else {
+            $component->assertTableActionHidden('edit', $tersedia);
+        }
+
+        if ($canManageMaintenanceAndPinjam) {
             $component
-                ->assertTableActionVisible('edit', $tersedia)
                 ->assertTableActionVisible('set_maintenance', $tersedia)
-                ->assertTableActionVisible('pinjam_opd', $tersedia)
+                ->assertTableActionVisible('pinjam_opd', $tersedia);
+        } else {
+            $component
+                ->assertTableActionHidden('set_maintenance', $tersedia)
+                ->assertTableActionHidden('pinjam_opd', $tersedia);
+        }
+
+        if ($canManageAdminOnlyOperationalActions) {
+            $component
                 ->assertTableActionVisible('set_tersedia', $maintenance)
                 ->assertTableActionVisible('set_tersedia', $dipinjam)
                 ->assertTableActionVisible('selesai_pinjam', $dipinjam);
         } else {
             $component
-                ->assertTableActionHidden('edit', $tersedia)
-                ->assertTableActionHidden('set_maintenance', $tersedia)
-                ->assertTableActionHidden('pinjam_opd', $tersedia)
                 ->assertTableActionHidden('set_tersedia', $maintenance)
                 ->assertTableActionHidden('set_tersedia', $dipinjam)
                 ->assertTableActionHidden('selesai_pinjam', $dipinjam);
         }
+    }
+
+    #[DataProvider('portalReklameRoleProvider')]
+    public function test_portal_reklame_actions_follow_role_rules(string $role, bool $canProcess): void
+    {
+        $this->seed([
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $request = $this->createPendingPortalReklameRequest();
+        $user = $this->createAdminPanelUser($role);
+
+        $this->actingAs($user);
+
+        $indexResponse = $this->get(ReklameRequestResource::getUrl('index'));
+        $this->assertAccessExpectation($indexResponse->getStatusCode(), $canProcess, "portal reklame index for {$role}");
+
+        if (! $canProcess) {
+            return;
+        }
+
+        Livewire::test(ListReklameRequests::class)
+            ->assertCanSeeTableRecords([$request])
+            ->assertTableActionVisible('proses', $request)
+            ->assertTableActionVisible('buat_skpd', $request)
+            ->assertTableActionVisible('tolak', $request);
     }
 
     public static function wajibPajakRoleProvider(): array
@@ -260,6 +304,15 @@ class ResourceActionRoleMatrixTest extends TestCase
     }
 
     public static function asetReklameRoleProvider(): array
+    {
+        return [
+            'admin' => ['admin', true, true, true],
+            'verifikator' => ['verifikator', false, true, false],
+            'petugas' => ['petugas', false, true, false],
+        ];
+    }
+
+    public static function portalReklameRoleProvider(): array
     {
         return [
             'admin' => ['admin', true],
@@ -540,6 +593,56 @@ class ResourceActionRoleMatrixTest extends TestCase
             'tanggal_buat' => now()->subHours(2),
             'petugas_id' => $petugas->id,
             'petugas_nama' => $petugas->nama_lengkap,
+        ]);
+    }
+
+    private function createPendingPortalReklameRequest(): ReklameRequest
+    {
+        $jenisPajak = JenisPajak::where('kode', '41104')->firstOrFail();
+        $subJenisPajak = SubJenisPajak::where('jenis_pajak_id', $jenisPajak->id)->firstOrFail();
+
+        $portalUser = User::create([
+            'name' => 'Portal Reklame User',
+            'email' => sprintf('portal-reklame-%s@example.test', Str::random(6)),
+            'password' => Hash::make('password'),
+            'nik' => '3522011234567890',
+            'nama_lengkap' => 'Portal Reklame User',
+            'alamat' => 'Jl. Teuku Umar No. 15',
+            'role' => 'wajibPajak',
+            'status' => 'verified',
+            'email_verified_at' => now(),
+        ]);
+
+        $reklameObject = ReklameObject::create([
+            'nik' => '3522011234567890',
+            'nama_objek_pajak' => 'Reklame Portal Baru',
+            'jenis_pajak_id' => $jenisPajak->id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'npwpd' => 'P100000000001',
+            'nopd' => 1001,
+            'alamat_objek' => 'Jl. MH Thamrin No. 20',
+            'kelurahan' => 'Kadipaten',
+            'kecamatan' => 'Bojonegoro',
+            'tarif_persen' => 25,
+            'tanggal_daftar' => now()->toDateString(),
+            'is_active' => true,
+            'bentuk' => 'persegi',
+            'panjang' => 4,
+            'lebar' => 2,
+            'jumlah_muka' => 1,
+            'status' => 'aktif',
+            'kelompok_lokasi' => 'A',
+        ]);
+
+        return ReklameRequest::create([
+            'tax_object_id' => $reklameObject->id,
+            'user_id' => $portalUser->id,
+            'user_nik' => '3522011234567890',
+            'user_name' => 'Portal Reklame User',
+            'tanggal_pengajuan' => now()->subDay(),
+            'durasi_perpanjangan_hari' => 30,
+            'catatan_pengajuan' => 'Pengajuan reklame portal.',
+            'status' => 'diajukan',
         ]);
     }
 

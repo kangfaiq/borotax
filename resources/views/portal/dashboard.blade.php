@@ -345,8 +345,8 @@
                                 </td>
                                 <td style="text-align:center;">
                                     <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                                        <a href="{{ route('portal.billing.document.show', $tx->id) }}" target="_blank" title="Print" style="color:var(--primary); font-size:1rem;"><i class="bi bi-printer"></i></a>
-                                        <a href="{{ route('portal.billing.document.download', $tx->id) }}" title="Download" style="color:#10b981; font-size:1rem;"><i class="bi bi-download"></i></a>
+                                        <a href="{{ route('portal.billing.document.show', $tx->id) }}" target="_blank" title="{{ $tx->getBillingDocumentActionTitle() }}" style="color:var(--primary); font-size:1rem;"><i class="bi bi-printer"></i></a>
+                                        <a href="{{ route('portal.billing.document.download', $tx->id) }}" title="{{ $tx->getBillingDownloadActionTitle() }}" style="color:#10b981; font-size:1rem;"><i class="bi bi-download"></i></a>
                                     </div>
                                 </td>
                             </tr>

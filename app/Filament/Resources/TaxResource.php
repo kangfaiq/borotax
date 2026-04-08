@@ -26,9 +26,6 @@ use Filament\Tables\Filters\Filter;
 use League\Csv\Writer;
 use SplTempFileObject;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxResource extends Resource
 {
@@ -254,13 +251,15 @@ class TaxResource extends Resource
                 // — Billing / SPTPD / STPD (untuk self_assessment) —
                 ActionGroup::make([
                     Action::make('cetak_billing')
-                        ->label('Cetak Billing')
+                        ->label(fn(Tax $record): string => $record->getBillingDocumentActionLabel())
                         ->icon('heroicon-o-printer')
+                        ->tooltip(fn(Tax $record): string => $record->getBillingDocumentActionTitle())
                         ->url(fn(Tax $record) => route('portal.billing.document.show', $record->id))
                         ->openUrlInNewTab(),
                     Action::make('unduh_billing')
-                        ->label('Unduh Billing')
+                        ->label(fn(Tax $record): string => $record->getBillingDownloadActionLabel())
                         ->icon('heroicon-o-arrow-down-tray')
+                        ->tooltip(fn(Tax $record): string => $record->getBillingDownloadActionTitle())
                         ->url(fn(Tax $record) => route('portal.billing.document.download', $record->id)),
 
                     Action::make('cetak_sptpd')

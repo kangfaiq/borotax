@@ -260,6 +260,7 @@
 
             <div class="flex gap-3">
                 <a href="{{ route('portal.billing.document.show', $billingResult['tax_id']) }}" target="_blank"
+                   title="{{ $billingResult['is_tambahan'] ? 'Cetak billing pembetulan' : 'Cetak billing' }}"
                    class="flex-1 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold
                           py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50
                           dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm">
@@ -267,7 +268,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
-                    Cetak
+                    {{ $billingResult['is_tambahan'] ? 'Cetak Billing Pembetulan' : 'Cetak Billing' }}
                 </a>
                 <button wire:click="buatBaru"
                         class="flex-1 sa-bg-primary sa-bg-ph sa-shadow text-white font-bold
@@ -654,6 +655,55 @@
                            transition-all flex items-center gap-2">
                 <span wire:loading.remove wire:target="confirmAndGenerate">Ya, Lanjutkan</span>
                 <span wire:loading wire:target="confirmAndGenerate" class="flex items-center gap-1.5">
+                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Memproses...
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Skipped Month Confirmation Modal --}}
+@if($showSkippedMonthConfirm)
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/70 backdrop-blur-sm"
+         wire:click="cancelSkippedMonthConfirm"></div>
+    <div class="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl
+                border border-slate-200 dark:border-slate-700 overflow-hidden sa-pop">
+        <div class="px-6 pt-6 pb-3 flex items-start gap-4">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-100 dark:bg-amber-900/30">
+                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white">{!! $skippedMonthConfirmTitle !!}</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{!! $skippedMonthConfirmMessage !!}</p>
+            </div>
+            <button wire:click="cancelSkippedMonthConfirm"
+                    class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-slate-400
+                           hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="px-6 py-4 flex gap-3 justify-end border-t border-slate-100 dark:border-slate-800">
+            <button wire:click="cancelSkippedMonthConfirm"
+                    class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700
+                           bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300
+                           font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                Tidak
+            </button>
+            <button wire:click="confirmSkippedMonthAndContinue" wire:loading.attr="disabled"
+                    class="px-4 py-2 rounded-lg sa-bg-primary sa-bg-ph sa-shadow text-white font-bold text-sm
+                           transition-all flex items-center gap-2">
+                <span wire:loading.remove wire:target="confirmSkippedMonthAndContinue">Ya, Lanjutkan</span>
+                <span wire:loading wire:target="confirmSkippedMonthAndContinue" class="flex items-center gap-1.5">
                     <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>

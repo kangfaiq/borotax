@@ -54,6 +54,7 @@ class PendaftaranWorkflowTest extends TestCase
         $this->assertSame('wajibPajak', $user->role);
         $this->assertTrue((bool) $user->must_change_password);
         $this->assertSame('verified', $user->status);
+        $this->assertSame($email, $user->email);
 
         $this->assertSame('Wajib Pajak Baru', $wajibPajak->nama_lengkap);
         $this->assertSame('3522011234567890', $wajibPajak->nik);
@@ -74,6 +75,41 @@ class PendaftaranWorkflowTest extends TestCase
             'admin' => ['admin'],
             'petugas' => ['petugas'],
         ];
+    }
+
+    #[DataProvider('registrationRoleProvider')]
+    public function test_admin_and_petugas_can_register_wajib_pajak_without_email_and_system_generates_login_email(string $role): void
+    {
+        $this->seedMinimalRegionFixtures();
+
+        $petugas = $this->createAdminPanelUser($role);
+
+        $this->actingAs($petugas);
+
+        Livewire::test(CreateDaftarWajibPajak::class)
+            ->fillForm([
+                'nik' => '3522011234567891',
+                'nama_lengkap' => 'Siti Nur Aini',
+                'alamat' => 'Jl. Panglima Sudirman No. 77',
+                'no_whatsapp' => '081234567890',
+                'no_telp' => '(0353) 881826',
+                'email' => null,
+                'asal_wilayah' => 'bojonegoro',
+                'district_code' => '35.22.01',
+                'village_code' => '35.22.01.2001',
+                'tipe_wajib_pajak' => 'perorangan',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors()
+            ->assertRedirect(DaftarWajibPajakResource::getUrl('index'));
+
+        $user = User::where('nik_hash', User::generateHash('3522011234567891'))->firstOrFail();
+        $wajibPajak = WajibPajak::where('user_id', $user->id)->firstOrFail();
+
+        $this->assertMatchesRegularExpression('/^siti-nur-aini\.panglima-sudirman\.7890\.[a-z0-9]{4}@generated\.local$/', $user->email);
+        $this->assertSame('wajibPajak', $user->role);
+        $this->assertTrue((bool) $user->must_change_password);
+        $this->assertSame($user->id, $wajibPajak->user_id);
     }
 
     private function seedMinimalRegionFixtures(): void

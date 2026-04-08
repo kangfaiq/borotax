@@ -71,11 +71,21 @@ class Dashboard extends Page
             ->count();
 
         // --- VERIFIKASI PENDING ---
-        $wpMenunggu = WajibPajak::where('status', 'menungguVerifikasi')->count();
-        $reklameMenunggu = ReklameRequest::whereIn('status', ['diajukan', 'menungguVerifikasi'])->count();
-        $pembetulanMenunggu = PembetulanRequest::where('status', 'pending')->count();
-        $skpdReklameMenunggu = SkpdReklame::whereIn('status', ['diterbitkan', 'menungguVerifikasi'])->count();
-        $skpdAirMenunggu = SkpdAirTanah::whereIn('status', ['diterbitkan', 'menungguVerifikasi'])->count();
+        $wpMenunggu = auth()->user()?->can('viewAny', WajibPajak::class)
+            ? WajibPajak::where('status', 'menungguVerifikasi')->count()
+            : 0;
+        $reklameMenunggu = auth()->user()?->can('viewAny', ReklameRequest::class)
+            ? ReklameRequest::whereIn('status', ['diajukan', 'menungguVerifikasi', 'diproses'])->count()
+            : 0;
+        $pembetulanMenunggu = auth()->user()?->can('viewAny', PembetulanRequest::class)
+            ? PembetulanRequest::whereIn('status', ['pending', 'diproses'])->count()
+            : 0;
+        $skpdReklameMenunggu = auth()->user()?->can('viewAny', SkpdReklame::class)
+            ? SkpdReklame::whereIn('status', ['diterbitkan', 'menungguVerifikasi'])->count()
+            : 0;
+        $skpdAirMenunggu = auth()->user()?->can('viewAny', SkpdAirTanah::class)
+            ? SkpdAirTanah::whereIn('status', ['diterbitkan', 'menungguVerifikasi'])->count()
+            : 0;
 
         // --- TRANSAKSI TERBARU ---
         $transaksiTerbaru = Tax::with(['jenisPajak', 'user'])

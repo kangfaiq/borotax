@@ -113,6 +113,18 @@ class JenisPajakSeeder extends Seeder
                 'is_active' => true,
                 'urutan' => 9,
             ],
+            [
+                'kode' => '42101',
+                'billing_kode_override' => '41104',
+                'nama' => 'Retribusi Sewa Tanah',
+                'nama_singkat' => 'Sewa Tanah',
+                'deskripsi' => 'Retribusi atas pemakaian tanah untuk pemasangan reklame dan ruang udara',
+                'icon' => '🏗️',
+                'tarif_default' => 0,
+                'tipe_assessment' => 'official_assessment',
+                'is_active' => true,
+                'urutan' => 10,
+            ],
         ];
 
         foreach ($jenisPajak as $data) {

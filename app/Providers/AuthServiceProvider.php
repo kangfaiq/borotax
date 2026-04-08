@@ -61,6 +61,8 @@ use App\Domain\Reklame\Models\KelompokLokasiJalan;
 use App\Policies\KelompokLokasiJalanPolicy;
 use App\Domain\Reklame\Models\PermohonanSewaReklame;
 use App\Policies\PermohonanSewaReklamePolicy;
+use App\Domain\Retribusi\Models\SkrdSewaRetribusi;
+use App\Policies\SkrdSewaRetribusiPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -100,6 +102,7 @@ class AuthServiceProvider extends ServiceProvider
         HargaPatokanReklame::class => HargaPatokanReklamePolicy::class,
         KelompokLokasiJalan::class => KelompokLokasiJalanPolicy::class,
         PermohonanSewaReklame::class => PermohonanSewaReklamePolicy::class,
+        SkrdSewaRetribusi::class => SkrdSewaRetribusiPolicy::class,
     ];
 
     /**
