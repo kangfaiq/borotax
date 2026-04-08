@@ -295,6 +295,7 @@ class BillingDocumentController extends Controller
             'latestDocument' => $this->resolvePrimaryDocument($latestPembetulan, true),
             'resolutionMessage' => $this->buildResolutionMessage($tax, $latestPembetulan),
             'scannedDocumentNote' => $this->buildScannedDocumentNote($tax),
+            'useStandaloneLayout' => $this->shouldUseStandaloneResolutionLayout(),
             'contextTitle' => $isQrSource
                 ? 'Billing yang dipindai sudah memiliki pembetulan yang lebih baru'
                 : 'Billing lama yang Anda buka sudah memiliki pembetulan yang lebih baru',
@@ -302,6 +303,11 @@ class BillingDocumentController extends Controller
             'showScannedDocumentAction' => true,
             'scannedDocumentUrl' => route('portal.billing.document.show', ['taxId' => $tax->id, 'historical' => 1]),
         ]);
+    }
+
+    private function shouldUseStandaloneResolutionLayout(): bool
+    {
+        return auth()->user()?->hasRole(['admin', 'verifikator', 'petugas']) ?? false;
     }
 
     private function renderPdf(string $view, array $data, string $prefix, string $number, string $mode): SymfonyResponse

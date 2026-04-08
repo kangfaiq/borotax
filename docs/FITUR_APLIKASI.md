@@ -461,6 +461,7 @@ Perhitungan dilakukan per-tier: volume dipecah sesuai bracket dan dikalikan NPA 
 - **`pembetulan_ke`**: 0 = original, 1 = pembetulan pertama, dst.
 - Pembetulan yang sudah dibayar membentuk rantai (`parent_tax_id` → `children`)
 - Kredit pajak = total yang sudah dibayar pada billing sebelumnya
+- Saat halaman resolusi pembetulan billing dibuka oleh `admin`, `petugas`, atau `verifikator`, sistem menampilkan halaman status billing dalam layout standalone tanpa sidebar dan topbar; wajib pajak tetap melihat layout portal seperti sebelumnya.
 
 ### 5.6 Alur Permohonan Sewa Reklame (Publik)
 

@@ -272,64 +272,6 @@
             color: var(--sidebar-text);
         }
 
-        .sidebar-password-meta {
-            margin-top: 7px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .password-status-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            width: max-content;
-            padding: 4px 8px;
-            border-radius: var(--radius-full);
-            font-size: 0.64rem;
-            font-weight: 700;
-            border: 1px solid transparent;
-        }
-
-        .password-status-chip.safe {
-            background: rgba(108, 172, 207, 0.18);
-            color: #D7ECF6;
-        }
-
-        .password-status-chip.warning {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.92), rgba(245, 158, 11, 0.95));
-            border-color: rgba(255, 255, 255, 0.14);
-            box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.22), 0 8px 18px rgba(239, 68, 68, 0.22);
-            color: #FFF7ED;
-            position: relative;
-        }
-
-        .password-status-chip.warning i {
-            color: #FFFFFF;
-        }
-
-        .password-status-chip.warning::after {
-            content: '';
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #FFFFFF;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
-        }
-
-        .sidebar-password-time {
-            font-size: 0.68rem;
-            color: var(--sidebar-text);
-            line-height: 1.35;
-        }
-
-        .sidebar-password-time.warning {
-            color: #FDE68A;
-        }
-
         .sidebar-logout {
             background: none;
             border: none;
@@ -504,7 +446,7 @@
         }
 
         .topbar-password-label {
-            font-size: 0.66rem;
+            font-size: 0.6rem;
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
@@ -512,7 +454,7 @@
         }
 
         .topbar-password-value {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             font-weight: 600;
             color: var(--text-primary);
         }
@@ -521,11 +463,11 @@
             display: none;
             margin-top: 3px;
             width: max-content;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: var(--radius-full);
             background: rgba(239, 68, 68, 0.12);
             color: #B91C1C;
-            font-size: 0.64rem;
+            font-size: 0.56rem;
             font-weight: 800;
             letter-spacing: 0.03em;
             text-transform: uppercase;
@@ -796,7 +738,7 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                font-size: 0.74rem;
+                font-size: 0.68rem;
             }
 
             .topbar-password-indicator.warning {
@@ -811,14 +753,10 @@
                 display: inline-flex;
             }
 
-            .password-status-chip.warning {
-                animation: passwordWarningFloat 2.6s ease-in-out infinite;
-            }
         }
 
         @media (prefers-reduced-motion: reduce) {
             .topbar-password-indicator.warning,
-            .password-status-chip.warning,
             .topbar-password-indicator.warning .topbar-password-icon.warning-marker::after {
                 animation: none !important;
             }
@@ -911,13 +849,6 @@
                 <div class="sidebar-user-info">
                     <div class="sidebar-user-name">{{ $portalUser->nama_lengkap }}</div>
                     <div class="sidebar-user-role">Wajib Pajak</div>
-                    <div class="sidebar-password-meta">
-                        <span class="password-status-chip {{ $passwordChangedAt ? 'safe' : 'warning' }}" title="{{ $passwordStatusTooltip }}">
-                            <i class="bi {{ $passwordChangedAt ? 'bi-shield-check' : 'bi-exclamation-diamond-fill' }}"></i>
-                            {{ $passwordChangedAt ? 'Password aktif' : 'Belum pernah diubah' }}
-                        </span>
-                        <span class="sidebar-password-time {{ $passwordChangedAt ? '' : 'warning' }}">Terakhir diubah: {{ $passwordChangedLabel }}</span>
-                    </div>
                 </div>
                 <form method="POST" action="{{ route('portal.logout') }}" style="margin:0;">
                     @csrf

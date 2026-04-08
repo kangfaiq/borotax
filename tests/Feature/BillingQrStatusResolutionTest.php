@@ -58,10 +58,51 @@ class BillingQrStatusResolutionTest extends TestCase
         $this->get(route('portal.billing.check-status', $original->id))
             ->assertOk()
             ->assertSee('Billing yang dipindai sudah memiliki pembetulan yang lebih baru')
+            ->assertSee('<aside class="sidebar" id="sidebar">', false)
+            ->assertSee('<header class="topbar">', false)
             ->assertSee($original->billing_code)
             ->assertSee($pembetulan->billing_code)
             ->assertSee('Lihat Billing Pembetulan Terbaru')
             ->assertSee(route('portal.billing.document.show', $pembetulan->id), false);
+    }
+
+    public function test_qr_status_resolution_uses_standalone_layout_for_backoffice_roles(): void
+    {
+        $this->seed([JenisPajakSeeder::class, SubJenisPajakSeeder::class]);
+
+        $wajibPajak = $this->createApprovedWajibPajakFixture();
+        $taxObject = $this->createTaxObjectFixture($wajibPajak, '41102');
+        $original = $this->createTaxFixture($taxObject, $wajibPajak->user, [
+            'status' => TaxStatus::Paid,
+            'billing_code' => '352210100000260012',
+            'sptpd_number' => '352210100000260012',
+            'masa_pajak_bulan' => 3,
+            'masa_pajak_tahun' => 2030,
+        ]);
+
+        $this->createTaxFixture($taxObject, $wajibPajak->user, [
+            'status' => TaxStatus::Pending,
+            'billing_code' => '352210100000260013',
+            'masa_pajak_bulan' => 3,
+            'masa_pajak_tahun' => 2030,
+            'pembetulan_ke' => 1,
+            'parent_tax_id' => $original->id,
+        ]);
+
+        foreach (['admin', 'petugas', 'verifikator'] as $role) {
+            $this->actingAs($this->createPortalUserFixture([
+                'role' => $role,
+                'navigation_mode' => 'sidebar',
+            ]));
+
+            $this->get(route('portal.billing.check-status', $original->id))
+                ->assertOk()
+                ->assertSee('billing-status-shell', false)
+                ->assertDontSee('<aside class="sidebar" id="sidebar">', false)
+                ->assertDontSee('<header class="topbar">', false);
+
+            auth()->logout();
+        }
     }
 
     public function test_qr_status_resolution_uses_latest_sptpd_when_latest_pembetulan_already_paid(): void
@@ -135,6 +176,7 @@ class BillingQrStatusResolutionTest extends TestCase
         $this->get(route('portal.billing.document.show', $original->id))
             ->assertOk()
             ->assertSee('Billing lama yang Anda buka sudah memiliki pembetulan yang lebih baru')
+            ->assertSee('<aside class="sidebar" id="sidebar">', false)
             ->assertSee($original->billing_code)
             ->assertSee($pembetulan->billing_code)
             ->assertSee(route('portal.billing.document.show', ['taxId' => $original->id, 'historical' => 1]), false)

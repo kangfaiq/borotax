@@ -1,4 +1,4 @@
-@extends('layouts.portal-dashboard')
+@extends(($useStandaloneLayout ?? false) ? 'layouts.billing-status-standalone' : 'layouts.portal-dashboard')
 
 @section('title', 'Status Billing - Borotax Portal')
 @section('page-title', 'Status Billing')
