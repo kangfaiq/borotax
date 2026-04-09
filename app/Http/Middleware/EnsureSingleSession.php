@@ -38,7 +38,8 @@ class EnsureSingleSession
             return $next($request);
         }
 
-        $sessionId = $request->session()->get(SingleSessionManager::SESSION_KEY);
+        $sessionKey = SingleSessionManager::sessionKeyForUser($user);
+        $sessionId = $request->session()->get($sessionKey);
 
         if (blank($sessionId) && app()->runningUnitTests() && blank($request->bearerToken())) {
             SingleSessionManager::attachToCurrentWebSession($user);

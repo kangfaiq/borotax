@@ -56,6 +56,8 @@
 2. **Portal Wajib Pajak (Web)** — `/portal/*` — untuk wajib pajak melalui browser
 3. **Aplikasi Mobile (API)** — `/api/v1/*` — untuk wajib pajak melalui aplikasi mobile
 
+- **Pemisahan sesi browser web:** backoffice dan portal memakai guard sesi browser yang berbeda, sehingga satu browser yang sama dapat menahan satu sesi backoffice dan satu sesi portal secara bersamaan pada tab berbeda. Seluruh role backoffice (`admin`, `verifikator`, `petugas`) tetap berbagi guard/sesi backoffice yang sama, sehingga login backoffice kedua pada browser yang sama akan menggantikan login backoffice sebelumnya.
+
 ### Domain-Driven Structure
 
 ```
@@ -1508,6 +1510,7 @@ Semua data PII (Personally Identifiable Information) dienkripsi pada level kolom
 - **Password:** Hashed (Laravel default bcrypt/argon2)
 - **Standar password aplikasi:** minimal 7 karakter, wajib mengandung minimal 1 huruf kapital, 1 huruf kecil, 1 angka, dan 1 tanda baca/karakter non-alphabetic; checklist standar ini ditampilkan pada form ubah password portal, form password user di backoffice, serta modal reset password backoffice, lalu divalidasi konsisten pada flow registrasi API, ubah password web/API, create/edit user backoffice, dan reset password user backoffice
 - **Single session lintas kanal:** satu akun hanya boleh memiliki satu sesi aktif pada satu waktu; login baru dari portal, backoffice admin, atau mobile API akan merotasi `active_session_id`, menyimpan metadata kanal/waktu/device/IP sesi aktif, menampilkan notifikasi bahwa sesi sebelumnya digantikan, lalu mengakhiri akses sesi lama pada request berikutnya dengan pesan yang menjelaskan dari kanal dan perangkat mana login baru terjadi; token API lama ikut menjadi stale dan ditolak dengan respons informatif ketika dipakai kembali
+- **Pemisahan sesi portal vs backoffice di browser:** browser yang sama dapat login sebagai wajib pajak di portal dan sekaligus login sebagai `admin`/`verifikator`/`petugas` di backoffice pada tab berbeda karena guard sesi web dipisah. Logout portal tidak lagi mematikan sesi backoffice, dan logout backoffice tidak lagi mematikan sesi portal. Namun seluruh role backoffice tetap memakai guard yang sama, sehingga admin dan petugas tidak bisa dipertahankan bersamaan dalam browser profile yang sama.
 - **PIN:** 6 digit, hashed, untuk operasi sensitif di mobile app
 - **Account Lockout (portal web):** 5 kali gagal login → dikunci 15 menit
 - **State lockout:** disimpan pada `failed_login_attempts` dan `locked_until` di model `User`

@@ -16,13 +16,8 @@ class WebAuthController extends Controller
      */
     public function showLogin()
     {
-        if (auth()->check()) {
-            // Admin/verifikator/petugas → arahkan ke /admin
-            if (in_array(auth()->user()->role, ['admin', 'verifikator', 'petugas'])) {
-                return redirect('/admin');
-            }
-
-            if (auth()->user()->must_change_password) {
+        if (auth('portal')->check()) {
+            if (auth('portal')->user()->must_change_password) {
                 return redirect()->route('portal.force-password.form');
             }
 
@@ -116,10 +111,10 @@ class WebAuthController extends Controller
             'last_login_at' => now(),
         ]);
 
-        auth()->login($user, $request->boolean('remember'));
+        auth('portal')->login($user, $request->boolean('remember'));
 
         $request->session()->regenerate();
-        $singleSessionResult = SingleSessionManager::startWebSession($user, $password, $request, 'portal_web');
+        $singleSessionResult = SingleSessionManager::startWebSession($user, $password, $request, 'portal_web', 'portal');
 
         if ($user->must_change_password) {
             $redirect = redirect()->route('portal.force-password.form')
@@ -146,11 +141,11 @@ class WebAuthController extends Controller
      */
     public function showForceChangePassword()
     {
-        if (! auth()->check()) {
+        if (! auth('portal')->check()) {
             return redirect()->route('portal.login');
         }
 
-        if (! auth()->user()->must_change_password) {
+        if (! auth('portal')->user()->must_change_password) {
             return redirect()->route('portal.dashboard');
         }
 
@@ -242,8 +237,8 @@ class WebAuthController extends Controller
             SingleSessionManager::clearCurrentSession($request->user(), $request);
         }
 
-        auth()->logout();
-        $request->session()->invalidate();
+        auth('portal')->logout();
+        $request->session()->migrate(true);
         $request->session()->regenerateToken();
 
         return redirect()->route('portal.login')

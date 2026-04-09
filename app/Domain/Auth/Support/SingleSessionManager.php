@@ -10,17 +10,21 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class SingleSessionManager
 {
-    public const SESSION_KEY = 'single_session_id';
+    public const SESSION_KEY = 'single_session_id_portal';
+
+    public const PORTAL_SESSION_KEY = 'single_session_id_portal';
+
+    public const BACKOFFICE_SESSION_KEY = 'single_session_id_backoffice';
 
     private const TOKEN_ABILITY_PREFIX = 'single-session:';
 
-    public static function startWebSession(User $user, string $plainPassword, Request $request, string $channel): array
+    public static function startWebSession(User $user, string $plainPassword, Request $request, string $channel, string $guard = 'web'): array
     {
         $replacedSessionNotice = self::buildReplacementNotice($user);
         $sessionId = self::issueNewSession($user, $request, $channel);
 
-        auth()->logoutOtherDevices($plainPassword);
-        self::attachToCurrentWebSession($user, $sessionId);
+        auth($guard)->logoutOtherDevices($plainPassword);
+        self::attachToCurrentWebSession($user, $sessionId, $channel);
 
         return [
             'session_id' => $sessionId,
@@ -58,13 +62,19 @@ class SingleSessionManager
         return $sessionId;
     }
 
-    public static function attachToCurrentWebSession(User $user, ?string $sessionId = null): void
+    public static function attachToCurrentWebSession(User $user, ?string $sessionId = null, ?string $channel = null): void
     {
         if (! request()->hasSession()) {
             return;
         }
 
-        request()->session()->put(self::SESSION_KEY, $sessionId ?? $user->active_session_id);
+        $sessionKey = self::sessionKeyForChannel($channel ?? $user->active_session_channel);
+
+        if (! $sessionKey) {
+            return;
+        }
+
+        request()->session()->put($sessionKey, $sessionId ?? $user->active_session_id);
     }
 
     public static function tokenMatchesActiveSession(User $user, ?PersonalAccessToken $token = null): bool
@@ -82,10 +92,13 @@ class SingleSessionManager
     public static function clearCurrentSession(User $user, Request $request): void
     {
         $shouldClearActiveSession = false;
+        $sessionKey = self::sessionKeyForUser($user);
 
         if ($request->hasSession()) {
-            $shouldClearActiveSession = $request->session()->get(self::SESSION_KEY) === $user->active_session_id;
-            $request->session()->forget(self::SESSION_KEY);
+            if ($sessionKey) {
+                $shouldClearActiveSession = $request->session()->get($sessionKey) === $user->active_session_id;
+                $request->session()->forget($sessionKey);
+            }
         }
 
         $currentAccessToken = $user->currentAccessToken();
@@ -175,6 +188,22 @@ class SingleSessionManager
     public static function tokenAbility(string $sessionId): string
     {
         return self::TOKEN_ABILITY_PREFIX . $sessionId;
+    }
+
+    public static function sessionKeyForUser(User $user): string
+    {
+        return $user->hasRole(['admin', 'verifikator', 'petugas'])
+            ? self::BACKOFFICE_SESSION_KEY
+            : self::PORTAL_SESSION_KEY;
+    }
+
+    public static function sessionKeyForChannel(?string $channel): ?string
+    {
+        return match ($channel) {
+            'portal_web' => self::PORTAL_SESSION_KEY,
+            'admin_panel' => self::BACKOFFICE_SESSION_KEY,
+            default => null,
+        };
     }
 
     private static function resolveIpAddress(Request $request): ?string

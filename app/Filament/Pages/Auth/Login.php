@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Domain\Auth\Support\SingleSessionManager;
+use Filament\Facades\Filament;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,25 +16,15 @@ class Login extends \Filament\Auth\Pages\Login
 
     protected static string $layout = 'filament-panels::components.layout.base';
 
-    public function mount(): void
-    {
-        parent::mount();
-
-        // Jika sudah login sebagai wajib_pajak, arahkan ke portal /login
-        if (auth()->check() && auth()->user()->role === 'wajib_pajak') {
-            redirect('/login');
-        }
-    }
-
     public function authenticate(): ?LoginResponse
     {
         $response = parent::authenticate();
 
         // Cek jika user yang login adalah wajib_pajak
-        $user = auth()->user();
+        $user = Filament::auth()->user();
         if ($user && $user->role === 'wajib_pajak') {
-            auth()->logout();
-            request()->session()->invalidate();
+            Filament::auth()->logout();
+            request()->session()->migrate(true);
             request()->session()->regenerateToken();
 
             throw ValidationException::withMessages([
@@ -50,6 +41,7 @@ class Login extends \Filament\Auth\Pages\Login
                 (string) ($this->data['password'] ?? ''),
                 request(),
                 'admin_panel',
+                'web',
             );
 
             if ($singleSessionResult['replaced_session_notice']) {

@@ -2,12 +2,14 @@
 
 namespace Tests;
 
+use App\Domain\Auth\Models\User;
 use App\Domain\Master\Models\Pimpinan;
 use Database\Seeders\JenisPajakSeeder;
 use Database\Seeders\KelompokLokasiJalanSeeder;
 use Database\Seeders\ReklameSubJenisPajakSeeder;
 use Database\Seeders\ReklameTariffSeeder;
 use Database\Seeders\SubJenisPajakSeeder;
+use Illuminate\Contracts\Auth\Authenticatable;
 use RuntimeException;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Tests\Concerns\BuildsDomainFixtures;
@@ -71,5 +73,28 @@ abstract class TestCase extends BaseTestCase
                 'pangkat' => 'Pembina (IV/a)',
             ]
         );
+    }
+
+    public function actingAs(Authenticatable $user, $guard = null)
+    {
+        return parent::actingAs($user, $this->resolveGuardForUser($user, $guard));
+    }
+
+    public function assertAuthenticatedAs($user, $guard = null)
+    {
+        return parent::assertAuthenticatedAs($user, $this->resolveGuardForUser($user, $guard));
+    }
+
+    protected function resolveGuardForUser(Authenticatable $user, ?string $guard = null): string
+    {
+        if ($guard) {
+            return $guard;
+        }
+
+        if ($user instanceof User && $user->hasRole(['admin', 'verifikator', 'petugas'])) {
+            return 'web';
+        }
+
+        return 'portal';
     }
 }

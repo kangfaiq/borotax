@@ -36,7 +36,7 @@ class SingleSessionEnforcementTest extends TestCase
         $this->assertNotNull($user->active_session_id);
         $this->assertSame('portal_web', $user->active_session_channel);
         $this->assertDatabaseCount('personal_access_tokens', 1);
-        $this->assertSame($user->active_session_id, session(SingleSessionManager::SESSION_KEY));
+        $this->assertSame($user->active_session_id, session(SingleSessionManager::PORTAL_SESSION_KEY));
     }
 
     public function test_portal_login_shows_notice_when_previous_session_is_replaced(): void
@@ -84,7 +84,7 @@ class SingleSessionEnforcementTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->withSession([SingleSessionManager::SESSION_KEY => (string) Str::uuid()])
+            ->withSession([SingleSessionManager::PORTAL_SESSION_KEY => (string) Str::uuid()])
             ->followingRedirects()
             ->get(route('portal.dashboard'))
             ->assertOk()
@@ -92,7 +92,7 @@ class SingleSessionEnforcementTest extends TestCase
             ->assertSee('Chrome / Windows')
             ->assertSee('192.168.1.20');
 
-        $this->assertGuest();
+        $this->assertGuest('portal');
     }
 
     public function test_stale_admin_session_is_redirected_to_admin_login(): void
@@ -107,7 +107,7 @@ class SingleSessionEnforcementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->withSession([SingleSessionManager::SESSION_KEY => (string) Str::uuid()])
+            ->withSession([SingleSessionManager::BACKOFFICE_SESSION_KEY => (string) Str::uuid()])
             ->followingRedirects()
             ->get('/admin')
             ->assertOk()
@@ -115,7 +115,95 @@ class SingleSessionEnforcementTest extends TestCase
             ->assertSee('Chrome / Windows')
             ->assertSee('172.16.0.4');
 
-        $this->assertGuest();
+        $this->assertGuest('web');
+    }
+
+    public function test_portal_and_backoffice_can_stay_logged_in_in_the_same_browser_session(): void
+    {
+        $admin = $this->createBackofficeUser('admin', 'split-guard-admin@example.test');
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'split-guard-portal@example.test',
+            'password' => Hash::make('PasswordPortal123!'),
+            'must_change_password' => false,
+        ]);
+
+        $this->actingAs($admin, 'web');
+
+        $this->followingRedirects()->get('/admin')->assertOk();
+        $this->get(route('portal.login'))->assertOk();
+
+        $this->post(route('portal.login.submit'), [
+            'email' => $wajibPajak->user->email,
+            'password' => 'PasswordPortal123!',
+        ])->assertRedirect(route('portal.dashboard'));
+
+        $this->assertAuthenticatedAs($admin, 'web');
+        $this->assertAuthenticatedAs($wajibPajak->user, 'portal');
+
+        $this->followingRedirects()->get('/admin')->assertOk();
+        $this->get(route('portal.dashboard'))->assertOk();
+    }
+
+    public function test_portal_logout_keeps_backoffice_session_active(): void
+    {
+        $admin = $this->createBackofficeUser('admin', 'split-guard-logout-admin@example.test');
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'split-guard-logout-portal@example.test',
+            'password' => Hash::make('PasswordPortal123!'),
+            'must_change_password' => false,
+        ]);
+
+        $this->actingAs($admin, 'web');
+
+        $this->post(route('portal.login.submit'), [
+            'email' => $wajibPajak->user->email,
+            'password' => 'PasswordPortal123!',
+        ])->assertRedirect(route('portal.dashboard'));
+
+        $this->post(route('portal.logout'))
+            ->assertRedirect(route('portal.login'));
+
+        $this->assertGuest('portal');
+        $this->assertAuthenticatedAs($admin, 'web');
+        $this->followingRedirects()->get('/admin')->assertOk();
+    }
+
+    public function test_backoffice_logout_keeps_portal_session_active(): void
+    {
+        $admin = $this->createBackofficeUser('admin', 'split-guard-filament-admin@example.test');
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'split-guard-filament-portal@example.test',
+            'password' => Hash::make('PasswordPortal123!'),
+            'must_change_password' => false,
+        ]);
+
+        $this->actingAs($admin, 'web');
+
+        $this->post(route('portal.login.submit'), [
+            'email' => $wajibPajak->user->email,
+            'password' => 'PasswordPortal123!',
+        ])->assertRedirect(route('portal.dashboard'));
+
+        $this->post(route('filament.admin.auth.logout'))
+            ->assertRedirect(route('filament.admin.auth.login'));
+
+        $this->assertGuest('web');
+        $this->assertAuthenticatedAs($wajibPajak->user, 'portal');
+        $this->get(route('portal.dashboard'))->assertOk();
+    }
+
+    public function test_backoffice_roles_still_share_a_single_browser_session(): void
+    {
+        $admin = $this->createBackofficeUser('admin', 'split-guard-single-backoffice-admin@example.test');
+        $petugas = $this->createBackofficeUser('petugas', 'split-guard-single-backoffice-petugas@example.test');
+
+        $this->actingAs($admin, 'web');
+        $this->assertAuthenticatedAs($admin, 'web');
+
+        $this->actingAs($petugas, 'web');
+
+        $this->assertAuthenticatedAs($petugas, 'web');
+        $this->assertNotSame($admin->id, auth('web')->id());
     }
 
     public function test_api_login_returns_notice_and_latest_token_can_access_profile(): void
