@@ -739,6 +739,9 @@ Catatan implementasi saat ini:
 
 ### 7.7 Cek Billing
 - Input kode billing → tampilkan detail, jumlah, dan status pembayaran
+- Pada portal terautentikasi `/portal/cek-billing`, billing `paid` yang sudah memiliki `sptpd_number` menampilkan aksi `Cetak SPTPD` dan `Unduh SPTPD`; jika `stpd_number` juga tersedia dan objek bukan OPD, portal menampilkan aksi STPD tambahan.
+- Jika billing sudah `paid` tetapi `sptpd_number` belum terbit, portal tetap menampilkan aksi billing biasa disertai catatan bahwa SPTPD belum tersedia karena dokumen triwulan belum lengkap.
+- Jika billing yang dicek sudah punya pembetulan lebih baru, portal mempertahankan aksi resolusi dokumen historis alih-alih langsung mengganti tombol ke SPTPD historis.
 
 ### 7.8 Dokumen
 Wajib pajak dapat melihat dan mengunduh:

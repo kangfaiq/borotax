@@ -164,6 +164,59 @@
         color: var(--error);
     }
 
+    .result-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        padding: 16px 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .result-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 12px;
+        border-radius: var(--radius-md);
+        font-size: 0.84rem;
+        font-weight: 600;
+        text-decoration: none;
+        color: #fff;
+        transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+    }
+
+    .result-action:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.98);
+    }
+
+    .result-action.billing-print,
+    .result-action.sptpd-print {
+        background: #3b82f6;
+    }
+
+    .result-action.billing-download,
+    .result-action.sptpd-download {
+        background: #10b981;
+    }
+
+    .result-action.stpd-print,
+    .result-action.stpd-download {
+        background: #f59e0b;
+    }
+
+    .result-note {
+        margin: 0 20px 20px;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        background: var(--info-light);
+        border: 1px solid rgba(59, 130, 246, 0.18);
+        color: #1d4ed8;
+        font-size: 0.8rem;
+        line-height: 1.6;
+    }
+
     @media (max-width: 640px) {
         .billing-box { padding: 24px 18px; }
         .billing-input-group { flex-direction: column; }
@@ -188,6 +241,20 @@
 
         @if($code)
             @if($billing)
+                @php
+                    $hasNewerPembetulan = $billing->hasNewerPembetulan();
+                    $showSptpdActions = ! $hasNewerPembetulan
+                        && $billing->status === App\Enums\TaxStatus::Paid
+                        && filled($billing->sptpd_number);
+                    $showStpdActions = $showSptpdActions
+                        && filled($billing->stpd_number)
+                        && ! ($billing->taxObject && $billing->taxObject->is_opd);
+                    $showBillingActions = $hasNewerPembetulan || ! $showSptpdActions;
+                    $showSptpdFallbackNotice = ! $hasNewerPembetulan
+                        && $billing->status === App\Enums\TaxStatus::Paid
+                        && blank($billing->sptpd_number);
+                @endphp
+
                 <div class="result-card">
                     <div class="result-header {{ $billing->status->value }}">
                         <span>Detail Billing</span>
@@ -250,18 +317,52 @@
                         <span class="label">Total Tagihan</span>
                         <span class="value">Rp {{ number_format($billing->amount ?? 0, 0, ',', '.') }}</span>
                     </div>
-                    <div style="display:flex; gap:10px; padding:16px 20px; border-top:1px solid var(--border);">
-                        <a href="{{ route('portal.billing.document.show', $billing->id) }}" target="_blank"
-                            title="{{ $billing->getBillingDocumentActionTitle() }}"
-                            style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:#3b82f6; color:#fff; border-radius:var(--radius-md); font-size:0.84rem; font-weight:600; text-decoration:none;">
-                            <i class="bi bi-printer"></i> {{ $billing->getBillingDocumentActionLabel() }}
-                        </a>
-                        <a href="{{ route('portal.billing.document.download', $billing->id) }}"
-                            title="{{ $billing->getBillingDownloadActionTitle() }}"
-                            style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:#10b981; color:#fff; border-radius:var(--radius-md); font-size:0.84rem; font-weight:600; text-decoration:none;">
-                            <i class="bi bi-download"></i> {{ $billing->getBillingDownloadActionLabel() }}
-                        </a>
+                    <div class="result-actions">
+                        @if($showBillingActions)
+                            <a href="{{ route('portal.billing.document.show', $billing->id) }}" target="_blank"
+                                title="{{ $billing->getBillingDocumentActionTitle() }}"
+                                class="result-action billing-print">
+                                <i class="bi bi-printer"></i> {{ $billing->getBillingDocumentActionLabel() }}
+                            </a>
+                            <a href="{{ route('portal.billing.document.download', $billing->id) }}"
+                                title="{{ $billing->getBillingDownloadActionTitle() }}"
+                                class="result-action billing-download">
+                                <i class="bi bi-download"></i> {{ $billing->getBillingDownloadActionLabel() }}
+                            </a>
+                        @endif
+
+                        @if($showSptpdActions)
+                            <a href="{{ route('portal.sptpd.show', $billing->id) }}" target="_blank"
+                                title="Lihat SPTPD"
+                                class="result-action sptpd-print">
+                                <i class="bi bi-printer"></i> Cetak SPTPD
+                            </a>
+                            <a href="{{ route('portal.sptpd.download', $billing->id) }}"
+                                title="Unduh SPTPD"
+                                class="result-action sptpd-download">
+                                <i class="bi bi-download"></i> Unduh SPTPD
+                            </a>
+                        @endif
+
+                        @if($showStpdActions)
+                            <a href="{{ route('portal.stpd.show', $billing->id) }}" target="_blank"
+                                title="Lihat STPD"
+                                class="result-action stpd-print">
+                                <i class="bi bi-printer"></i> Cetak STPD
+                            </a>
+                            <a href="{{ route('portal.stpd.download', $billing->id) }}"
+                                title="Unduh STPD"
+                                class="result-action stpd-download">
+                                <i class="bi bi-download"></i> Unduh STPD
+                            </a>
+                        @endif
                     </div>
+
+                    @if($showSptpdFallbackNotice)
+                        <div class="result-note">
+                            Billing ini sudah lunas, tetapi SPTPD belum terbit karena dokumen triwulan terkait belum lengkap. Dokumen billing tetap ditampilkan sebagai arsip pembayaran yang tersedia saat ini.
+                        </div>
+                    @endif
                 </div>
             @else
                 <div class="not-found">
