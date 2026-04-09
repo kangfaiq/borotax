@@ -48,6 +48,8 @@
 | Database | MySQL (enkripsi per-kolom) |
 | PDF Generator | DomPDF |
 
+- **Timezone default aplikasi:** `Asia/Jakarta` (WIB) untuk proses `now()`, format tanggal/jam di portal, backoffice, notifikasi sesi, dan dokumen PDF, kecuali ada konversi eksplisit lain pada kode.
+
 ### Tiga Antarmuka Utama
 
 1. **Backoffice (Admin Panel)** — `/admin` — Filament-based, untuk pengelola (admin, verifikator, petugas)
