@@ -220,7 +220,7 @@ class BillingDocumentController extends Controller
         while (true) {
             $next = $current->children()
                 ->with(['jenisPajak', 'taxObject', 'parent'])
-                ->orderByDesc('pembetulan_ke')
+                ->orderByDesc('revision_attempt_no')
                 ->orderByDesc('created_at')
                 ->first();
 

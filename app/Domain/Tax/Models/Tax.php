@@ -73,6 +73,7 @@ class Tax extends Model
         'masa_pajak_tahun',
         'masa_pajak_tahun',
         'pembetulan_ke',
+        'revision_attempt_no',
         'billing_sequence',
         'parent_tax_id',
         'sptpd_number',
@@ -99,10 +100,20 @@ class Tax extends Model
         'masa_pajak_bulan' => 'integer',
         'masa_pajak_tahun' => 'integer',
         'pembetulan_ke' => 'integer',
+        'revision_attempt_no' => 'integer',
         'billing_sequence' => 'integer',
         'cancelled_at' => 'datetime',
         'is_legacy' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Tax $tax): void {
+            if ($tax->revision_attempt_no === null) {
+                $tax->revision_attempt_no = (int) ($tax->pembetulan_ke ?? 0);
+            }
+        });
+    }
 
     /**
      * Get jenis pajak

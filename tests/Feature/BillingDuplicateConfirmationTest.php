@@ -216,6 +216,143 @@ class BillingDuplicateConfirmationTest extends TestCase
         ]);
     }
 
+    public function test_cancelled_wrong_first_correction_can_be_recreated_as_first_correction_again(): void
+    {
+        $this->seed([
+            JenisPajakSeeder::class,
+            SubJenisPajakSeeder::class,
+        ]);
+
+        $petugas = $this->createAdminPanelUser('petugas');
+        $wajibPajak = $this->createApprovedWajibPajak();
+        $jenisPajak = JenisPajak::where('kode', '41101')->firstOrFail();
+        $subJenisPajak = SubJenisPajak::where('jenis_pajak_id', $jenisPajak->id)->firstOrFail();
+
+        $taxObject = TaxObject::create([
+            'nik' => $wajibPajak->nik,
+            'nik_hash' => WajibPajak::generateHash($wajibPajak->nik),
+            'nama_objek_pajak' => 'Objek Hotel Pembetulan Ulang',
+            'jenis_pajak_id' => $jenisPajak->id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'npwpd' => $wajibPajak->npwpd,
+            'nopd' => 1102,
+            'alamat_objek' => 'Jl. Teuku Umar No. 2',
+            'kelurahan' => 'Kadipaten',
+            'kecamatan' => 'Bojonegoro',
+            'tarif_persen' => 10,
+            'tanggal_daftar' => now()->toDateString(),
+            'is_active' => true,
+            'is_opd' => false,
+            'is_insidentil' => false,
+        ]);
+
+        $originalTax = Tax::create([
+            'jenis_pajak_id' => $jenisPajak->id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'tax_object_id' => $taxObject->id,
+            'user_id' => $wajibPajak->user_id,
+            'amount' => 125000,
+            'omzet' => 1250000,
+            'tarif_persentase' => 10,
+            'status' => TaxStatus::Paid,
+            'billing_code' => '352210100000260010',
+            'payment_channel' => 'QRIS',
+            'payment_expired_at' => now()->addDays(7),
+            'masa_pajak_bulan' => 3,
+            'masa_pajak_tahun' => 2026,
+            'pembetulan_ke' => 0,
+            'revision_attempt_no' => 0,
+            'billing_sequence' => 0,
+        ]);
+
+        $wrongCorrection = Tax::create([
+            'jenis_pajak_id' => $jenisPajak->id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'tax_object_id' => $taxObject->id,
+            'user_id' => $wajibPajak->user_id,
+            'amount' => 150000,
+            'omzet' => 1500000,
+            'tarif_persentase' => 10,
+            'status' => TaxStatus::Pending,
+            'billing_code' => '352210100000260011',
+            'payment_channel' => 'QRIS',
+            'payment_expired_at' => now()->addDays(7),
+            'masa_pajak_bulan' => 3,
+            'masa_pajak_tahun' => 2026,
+            'pembetulan_ke' => 1,
+            'revision_attempt_no' => 1,
+            'billing_sequence' => 0,
+            'parent_tax_id' => $originalTax->id,
+        ]);
+
+        $this->actingAs($petugas);
+
+        Livewire::test(BuatBillingSelfAssessment::class)
+            ->set('selectedTaxObjectId', $taxObject->id)
+            ->set('selectedTaxObjectData', [
+                'id' => $taxObject->id,
+                'nama' => $taxObject->nama_objek_pajak,
+                'alamat' => $taxObject->alamat_objek,
+                'npwpd' => $taxObject->npwpd,
+                'nopd' => $taxObject->nopd,
+                'nik_hash' => $taxObject->nik_hash,
+                'sub_jenis' => $subJenisPajak->nama,
+                'jenis_pajak_nama' => $jenisPajak->nama,
+                'tarif_persen' => 10,
+                'jenis_pajak_id' => $jenisPajak->id,
+                'sub_jenis_pajak_id' => $subJenisPajak->id,
+                'next_bulan' => 3,
+                'next_tahun' => 2026,
+                'next_label' => Carbon::create(2026, 3, 1)->translatedFormat('F Y'),
+                'is_new' => false,
+                'is_opd' => false,
+                'is_insidentil' => false,
+                'sub_jenis_kode' => $subJenisPajak->kode,
+                'is_multi_billing' => false,
+            ])
+            ->set('wajibPajakData', [
+                'id' => $wajibPajak->id,
+                'user_id' => $wajibPajak->user_id,
+                'nama_lengkap' => $wajibPajak->nama_lengkap,
+                'npwpd' => $wajibPajak->npwpd,
+                'tipe' => $wajibPajak->tipe_wajib_pajak,
+            ])
+            ->set('masaPajakBulan', 3)
+            ->set('masaPajakTahun', 2026)
+            ->set('omzet', 1750000)
+            ->call('terbitkanBilling')
+            ->assertSet('showDuplicateConfirm', true)
+            ->call('confirmAndGenerate')
+            ->assertSet('billingResult.pembetulan_ke', 1);
+
+        $replacementTax = Tax::query()
+            ->where('tax_object_id', $taxObject->id)
+            ->where('masa_pajak_bulan', 3)
+            ->where('masa_pajak_tahun', 2026)
+            ->where('revision_attempt_no', 2)
+            ->first();
+
+        $this->assertNotNull($replacementTax);
+        $this->assertSame(1, $replacementTax->pembetulan_ke);
+        $this->assertSame($originalTax->id, $replacementTax->parent_tax_id);
+
+        $this->assertDatabaseHas('taxes', [
+            'id' => $replacementTax->id,
+            'pembetulan_ke' => 1,
+            'revision_attempt_no' => 2,
+            'parent_tax_id' => $originalTax->id,
+        ]);
+
+        $this->assertSoftDeleted('taxes', [
+            'id' => $wrongCorrection->id,
+        ]);
+
+        $this->assertDatabaseHas('taxes', [
+            'id' => $wrongCorrection->id,
+            'status' => TaxStatus::Cancelled->value,
+        ]);
+    }
+
     private function createApprovedWajibPajak(): WajibPajak
     {
         $nik = str_pad((string) random_int(0, 9999999999999999), 16, '0', STR_PAD_LEFT);

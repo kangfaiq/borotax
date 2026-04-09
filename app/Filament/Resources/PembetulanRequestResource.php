@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PembetulanRequestResource\Pages;
 use App\Domain\Tax\Models\PembetulanRequest;
 use App\Domain\Tax\Models\Tax;
+use App\Domain\Tax\Services\BillingService;
 use App\Enums\TaxStatus;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -211,28 +212,29 @@ class PembetulanRequestResource extends Resource
 
                         try {
                             DB::transaction(function () use ($record, $tax, $data) {
+                                $billingService = app(BillingService::class);
                                 $petugasName = auth()->user()->nama_lengkap ?? auth()->user()->name;
                                 $omzet = $record->omzet_baru ? (float) $record->omzet_baru : (float) $tax->omzet;
                                 $tarifPersen = (float) $tax->tarif_persentase;
                                 $taxAmount = $omzet * ($tarifPersen / 100);
 
-                                $pembetulanKe = 0;
-                                $parentTaxId = null;
-                                $notesPrefix = '';
+                                $revisionContext = $billingService->resolveRevisionContext(
+                                    $tax,
+                                    $tax->tax_object_id,
+                                    $tax->masa_pajak_bulan,
+                                    (int) $tax->masa_pajak_tahun,
+                                );
+                                $pembetulanKe = $revisionContext['pembetulan_ke'];
+                                $revisionAttemptNo = $revisionContext['revision_attempt_no'];
+                                $parentTaxId = $revisionContext['parent_tax_id'];
+                                $notesPrefix = $revisionContext['notes_prefix'];
 
-                                if ($tax->status === TaxStatus::Paid) {
-                                    // Billing sudah dibayar → buat billing tambahan
-                                    $pembetulanKe = (int) $tax->pembetulan_ke + 1;
-                                    $parentTaxId = $tax->id;
-                                    $notesPrefix = "Pembetulan ke-{$pembetulanKe} atas billing {$tax->billing_code}. ";
-                                } else {
-                                    // Billing belum dibayar → cancel lama, buat pengganti
+                                if ($tax->status !== TaxStatus::Paid && $tax->status !== TaxStatus::Verified) {
                                     $tax->update([
-                                        'status' => TaxStatus::Cancelled,
                                         'notes' => ($tax->notes ? $tax->notes . ' | ' : '')
                                             . "Dibatalkan untuk pembetulan oleh petugas: {$petugasName} pada " . now()->format('d/m/Y H:i'),
                                     ]);
-                                    $notesPrefix = "Pengganti billing {$tax->billing_code}. ";
+                                    $billingService->cancelAndArchiveBilling($tax, 'Digantikan oleh billing pembetulan baru');
                                 }
 
                                 $jenisPajak = $tax->jenisPajak;
@@ -255,6 +257,8 @@ class PembetulanRequestResource extends Resource
                                     'masa_pajak_bulan' => $tax->masa_pajak_bulan,
                                     'masa_pajak_tahun' => $tax->masa_pajak_tahun,
                                     'pembetulan_ke' => $pembetulanKe,
+                                    'revision_attempt_no' => $revisionAttemptNo,
+                                    'billing_sequence' => $tax->billing_sequence,
                                     'parent_tax_id' => $parentTaxId,
                                     'notes' => $notesPrefix
                                         . "Dari permohonan pembetulan WP. Alasan: {$record->alasan}. "

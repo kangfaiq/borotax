@@ -463,6 +463,7 @@ Perhitungan dilakukan per-tier: volume dipecah sesuai bracket dan dikalikan NPA 
 ```
 
 - **`pembetulan_ke`**: 0 = original, 1 = pembetulan pertama, dst.
+- **`revision_attempt_no`**: nomor internal attempt billing per masa pajak untuk audit dan unique key. Nilai ini terus naik walau `pembetulan_ke` yang tampil ke user kembali memakai nomor sebelumnya setelah attempt salah dibatalkan.
 - Pembetulan yang sudah dibayar membentuk rantai (`parent_tax_id` → `children`)
 - Kredit pajak = total yang sudah dibayar pada billing sebelumnya
 - Saat halaman resolusi pembetulan billing dibuka oleh `admin`, `petugas`, atau `verifikator`, sistem menampilkan halaman status billing dalam layout standalone tanpa sidebar dan topbar; wajib pajak tetap melihat layout portal seperti sebelumnya.
@@ -1134,6 +1135,8 @@ Sebelum membuat billing, sistem otomatis memeriksa apakah sudah ada billing akti
 - Objek multi-billing (OPD/insidentil/WAPU) → langsung lewati pengecekan
 
 Untuk objek reguler, pemeriksaan histori billing aktif dan prefill masa pajak mengikuti `nopd` objek, sehingga jika ada beberapa record objek yang merepresentasikan `nopd` yang sama, sistem tetap membaca histori billing sebagai satu rangkaian yang sama.
+
+Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya tetap ditampilkan sebagai `Pembetulan ke-1`, tetapi sistem menyimpan attempt internal baru agar tidak terjadi duplicate data pada histori billing yang sudah dibatalkan.
 
 ---
 

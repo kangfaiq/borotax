@@ -60,6 +60,7 @@ class SarangWaletService
                 'masa_pajak_bulan' => $data['bulan'] ?? null,
                 'masa_pajak_tahun' => $data['tahun'],
                 'pembetulan_ke' => $data['pembetulan_ke'] ?? 0,
+                'revision_attempt_no' => $data['revision_attempt_no'] ?? 0,
                 'billing_sequence' => $data['billing_sequence'] ?? 0,
                 'parent_tax_id' => $data['parent_tax_id'] ?? null,
                 'notes' => $data['notes'] ?? null,

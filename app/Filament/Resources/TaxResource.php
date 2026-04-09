@@ -111,7 +111,7 @@ class TaxResource extends Resource
                             return 'Billing Sumber: ' . $record->parent->billing_code;
                         }
                         if ($record->children->count() > 0) {
-                            $latest = $record->children->sortByDesc('pembetulan_ke')->first();
+                            $latest = $record->children->sortByDesc('revision_attempt_no')->first();
                             return 'Pembetulan: ' . $latest->billing_code;
                         }
                         return null;

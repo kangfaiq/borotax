@@ -116,7 +116,7 @@ class BillingService
             ->first();
     }
 
-    public function findExistingBillingForPeriod(string $taxObjectId, int $bulan, int $tahun): ?Tax
+    public function findExistingBillingForPeriod(string $taxObjectId, ?int $bulan, int $tahun): ?Tax
     {
         $taxObject = $this->resolveTaxObject($taxObjectId);
 
@@ -124,10 +124,16 @@ class BillingService
             return null;
         }
 
-        $query = Tax::where('masa_pajak_bulan', $bulan)
-            ->where('masa_pajak_tahun', $tahun)
+        $query = Tax::where('masa_pajak_tahun', $tahun)
             ->whereIn('status', TaxStatus::activeStatuses())
-            ->orderByDesc('pembetulan_ke');
+            ->orderByDesc('revision_attempt_no')
+            ->orderByDesc('created_at');
+
+        if ($bulan === null) {
+            $query->whereNull('masa_pajak_bulan');
+        } else {
+            $query->where('masa_pajak_bulan', $bulan);
+        }
 
         if ($taxObject->nopd) {
             $query->whereHas('taxObject', function ($builder) use ($taxObject) {
@@ -141,9 +147,90 @@ class BillingService
         return $query->first();
     }
 
-    public function billingExistsForPeriod(string $taxObjectId, int $bulan, int $tahun): bool
+    public function billingExistsForPeriod(string $taxObjectId, ?int $bulan, int $tahun): bool
     {
         return $this->findExistingBillingForPeriod($taxObjectId, $bulan, $tahun) !== null;
+    }
+
+    public function getNextRevisionAttemptNo(string $taxObjectId, ?int $bulan, int $tahun): int
+    {
+        $taxObject = $this->resolveTaxObject($taxObjectId);
+
+        if (!$taxObject) {
+            return 0;
+        }
+
+        $query = Tax::withTrashed()
+            ->where('masa_pajak_tahun', $tahun);
+
+        if ($bulan === null) {
+            $query->whereNull('masa_pajak_bulan');
+        } else {
+            $query->where('masa_pajak_bulan', $bulan);
+        }
+
+        if ($taxObject->nopd) {
+            $query->whereHas('taxObject', function ($builder) use ($taxObject) {
+                $builder->where('nopd', $taxObject->nopd)
+                    ->where('jenis_pajak_id', $taxObject->jenis_pajak_id);
+            });
+        } else {
+            $query->where('tax_object_id', $taxObject->id);
+        }
+
+        $maxRevisionAttempt = $query->max('revision_attempt_no');
+
+        return $maxRevisionAttempt !== null ? ((int) $maxRevisionAttempt + 1) : 0;
+    }
+
+    public function resolveRevisionContext(?Tax $existingTax, string $taxObjectId, ?int $bulan, int $tahun): array
+    {
+        $revisionAttemptNo = $this->getNextRevisionAttemptNo($taxObjectId, $bulan, $tahun);
+
+        if (!$existingTax) {
+            return [
+                'pembetulan_ke' => 0,
+                'revision_attempt_no' => $revisionAttemptNo,
+                'parent_tax_id' => null,
+                'notes_prefix' => '',
+            ];
+        }
+
+        $status = $existingTax->status instanceof TaxStatus
+            ? $existingTax->status
+            : TaxStatus::from((string) $existingTax->status);
+
+        if (in_array($status, [TaxStatus::Paid, TaxStatus::Verified], true)) {
+            $pembetulanKe = (int) $existingTax->pembetulan_ke + 1;
+
+            return [
+                'pembetulan_ke' => $pembetulanKe,
+                'revision_attempt_no' => $revisionAttemptNo,
+                'parent_tax_id' => $existingTax->id,
+                'notes_prefix' => "Pembetulan ke-{$pembetulanKe} atas billing {$existingTax->billing_code}. ",
+            ];
+        }
+
+        $pembetulanKe = (int) $existingTax->pembetulan_ke;
+
+        return [
+            'pembetulan_ke' => $pembetulanKe,
+            'revision_attempt_no' => $revisionAttemptNo,
+            'parent_tax_id' => $pembetulanKe > 0 ? $existingTax->parent_tax_id : null,
+            'notes_prefix' => "Pengganti billing {$existingTax->billing_code}. ",
+        ];
+    }
+
+    public function cancelAndArchiveBilling(Tax $tax, string $reason = 'Digantikan oleh billing baru'): void
+    {
+        $tax->update([
+            'status' => TaxStatus::Cancelled,
+            'cancelled_at' => now(),
+            'cancelled_by' => auth()->id(),
+            'cancellation_reason' => $reason,
+        ]);
+
+        $tax->delete();
     }
 
     public function getNextBillingSequence(string $taxObjectId, int $bulan, int $tahun): int
@@ -226,6 +313,7 @@ class BillingService
                 'payment_expired_at' => Tax::hitungJatuhTempoSelfAssessment($data['bulan'], $data['tahun']),
                 'masa_pajak_bulan' => $data['bulan'],
                 'masa_pajak_tahun' => $data['tahun'],
+                'revision_attempt_no' => $data['revision_attempt_no'] ?? 0,
                 'billing_sequence' => $data['billing_sequence'] ?? 0,
                 'notes' => $data['notes'] ?? null,
                 'dasar_hukum' => $dasarHukum,
@@ -269,6 +357,7 @@ class BillingService
                 'masa_pajak_bulan' => $data['bulan'],
                 'masa_pajak_tahun' => $data['tahun'],
                 'pembetulan_ke' => $data['pembetulan_ke'] ?? 0,
+                'revision_attempt_no' => $data['revision_attempt_no'] ?? 0,
                 'billing_sequence' => $data['billing_sequence'] ?? 0,
                 'parent_tax_id' => $data['parent_tax_id'] ?? null,
                 'notes' => $data['notes'] ?? null,

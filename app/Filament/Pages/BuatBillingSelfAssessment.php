@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use Exception;
 use App\Domain\Master\Models\JenisPajak;
-use App\Enums\TaxStatus;
 use App\Filament\Pages\Concerns\InteractsWithDuplicateBillingInfo;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TarifPajak;
@@ -27,8 +26,8 @@ class BuatBillingSelfAssessment extends Page implements HasForms
 
     protected static string | \BackedEnum | null $navigationIcon  = 'heroicon-o-document-plus';
     protected static string | \UnitEnum | null $navigationGroup = 'Laporan Petugas';
-    protected static ?string $navigationLabel = 'Buat Billing Self Assessment';
-    protected static ?string $title           = 'Buat Billing Self Assessment';
+    protected static ?string $navigationLabel = 'Buat Billing Self';
+    protected static ?string $title           = 'Buat Billing Self';
     protected static ?int    $navigationSort  = 3;
     protected string  $view            = 'filament.pages.buat-billing-self-assessment';
 
@@ -338,7 +337,12 @@ class BuatBillingSelfAssessment extends Page implements HasForms
             $this->existingBillingInfo = $this->buildExistingBillingInfo($existingTax, $periodLabel);
 
             if ($this->existingBillingInfo['is_paid']) {
-                $n = $this->existingBillingInfo['pembetulan_ke'] + 1;
+                $n = app(BillingService::class)->resolveRevisionContext(
+                    $existingTax,
+                    $this->selectedTaxObjectId,
+                    $this->masaPajakBulan,
+                    $this->masaPajakTahun,
+                )['pembetulan_ke'];
                 $this->duplicateConfirmTitle   = 'Masa Pajak Sudah Lunas — Buat Pembetulan?';
                 $this->duplicateConfirmMessage = "Masa pajak <strong>{$periodLabel}</strong> sudah memiliki Kode Pembayaran Aktif "
                     . "<strong>{$existingTax->billing_code}</strong> yang telah dibayar/diverifikasi. "
@@ -408,36 +412,31 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         }
 
         try {
-            $pembetulanKe = 0;
-            $notesPrefix  = '';
-            $parentTaxId  = null;
+            $billingService = app(BillingService::class);
+            $existingTax = $this->existingBillingInfo
+                ? Tax::find($this->existingBillingInfo['id'])
+                : null;
+            $revisionContext = $billingService->resolveRevisionContext(
+                $existingTax,
+                $this->selectedTaxObjectId,
+                $this->masaPajakBulan,
+                $this->masaPajakTahun,
+            );
 
-            if ($this->existingBillingInfo) {
-                if ($this->existingBillingInfo['is_paid']) {
-                    $pembetulanKe = $this->existingBillingInfo['pembetulan_ke'] + 1;
-                    $notesPrefix  = "Pembetulan ke-{$pembetulanKe} atas billing {$this->existingBillingInfo['billing_code']}. ";
-                    $parentTaxId  = $this->existingBillingInfo['id'];
-                } else {
-                    // Delete the old pending billing to free up the unique constraint slot
-                    $oldTax = Tax::find($this->existingBillingInfo['id']);
-                    if ($oldTax) {
-                        $oldTax->update([
-                            'status' => TaxStatus::Cancelled,
-                            'cancelled_at' => now(),
-                            'cancelled_by' => auth()->id(),
-                            'cancellation_reason' => 'Digantikan oleh billing baru',
-                        ]);
-                        $oldTax->delete(); // soft-delete
-                    }
-                    $notesPrefix = "Pengganti billing {$this->existingBillingInfo['billing_code']}. ";
-                }
+            $pembetulanKe = $revisionContext['pembetulan_ke'];
+            $revisionAttemptNo = $revisionContext['revision_attempt_no'];
+            $notesPrefix  = $revisionContext['notes_prefix'];
+            $parentTaxId  = $revisionContext['parent_tax_id'];
+
+            if ($existingTax && !$this->existingBillingInfo['is_paid']) {
+                $billingService->cancelAndArchiveBilling($existingTax);
             }
 
             // Calculate billing_sequence for multi-billing objects (OPD/insidentil)
             $isMultiBilling = $this->selectedTaxObjectData['is_multi_billing'] ?? false;
             $billingSequence = 0;
             if ($isMultiBilling) {
-                $billingSequence = app(BillingService::class)->getNextBillingSequence(
+                $billingSequence = $billingService->getNextBillingSequence(
                     $this->selectedTaxObjectId,
                     $this->masaPajakBulan,
                     $this->masaPajakTahun,
@@ -468,6 +467,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
                     'bulan'              => $this->masaPajakBulan,
                     'tahun'              => $this->masaPajakTahun,
                     'pembetulan_ke'      => $pembetulanKe,
+                    'revision_attempt_no' => $revisionAttemptNo,
                     'billing_sequence'   => $billingSequence,
                     'parent_tax_id'      => $parentTaxId,
                     'notes'              => $notesAll,
@@ -491,6 +491,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
                     'bulan'                   => $this->masaPajakBulan,
                     'tahun'                   => $this->masaPajakTahun,
                     'pembetulan_ke'           => $pembetulanKe,
+                    'revision_attempt_no'     => $revisionAttemptNo,
                     'billing_sequence'        => $billingSequence,
                     'parent_tax_id'           => $parentTaxId,
                     'notes'                   => $notesAll,
@@ -508,6 +509,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
                     'bulan'              => $this->masaPajakBulan,
                     'tahun'              => $this->masaPajakTahun,
                     'pembetulan_ke'      => $pembetulanKe,
+                    'revision_attempt_no' => $revisionAttemptNo,
                     'billing_sequence'   => $billingSequence,
                     'parent_tax_id'      => $parentTaxId,
                     'notes'              => $notesAll,
