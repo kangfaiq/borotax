@@ -670,6 +670,7 @@ Catatan implementasi saat ini:
 - **Route ubah password reguler:** `/portal/password/change`
 - **Indikator status password di portal:** header dan sidebar menampilkan waktu terakhir password diubah; bila password belum pernah diubah, portal menampilkan badge warning yang lebih tegas, tooltip ajakan untuk segera memperbarui password, serta animasi pulse halus dan ikon penanda khusus di mobile agar lebih cepat tertangkap.
 - **Konsistensi CTA di halaman ubah password:** halaman `/portal/password/change` juga menampilkan ringkasan status password dan warning card yang selaras dengan indikator portal ketika password belum pernah diubah.
+- **Style tombol ubah password reguler konsisten:** CTA `Simpan Perubahan Password` pada halaman `/portal/password/change` memakai style tombol portal utama yang sama dengan halaman auth publik agar tampil seragam di seluruh alur password.
 - **Bahasa visual first-login konsisten:** halaman `/portal/password/change-first` memakai status banner dan warning card yang sama agar alur first-login dan settings reguler tetap terasa satu sistem.
 
 ### 7.1 Dashboard Portal

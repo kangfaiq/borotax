@@ -103,6 +103,42 @@
 
         a { color: inherit; text-decoration: none; }
 
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: inherit;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--text-white);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.24);
+        }
+
+        .btn-primary:focus-visible {
+            outline: 3px solid rgba(var(--primary-rgb), 0.22);
+            outline-offset: 2px;
+        }
+
         /* ============================================
            SIDEBAR
            ============================================ */
