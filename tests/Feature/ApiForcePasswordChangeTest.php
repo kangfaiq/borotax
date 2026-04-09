@@ -81,4 +81,62 @@ class ApiForcePasswordChangeTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true);
     }
+
+    public function test_api_update_password_rejects_password_that_does_not_meet_standard(): void
+    {
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'api-weak-password@example.test',
+            'password' => Hash::make('@Password123'),
+            'must_change_password' => true,
+            'password_changed_at' => null,
+        ]);
+
+        $loginResponse = $this->postJson('/api/v1/login', [
+            'email' => $wajibPajak->user->email,
+            'password' => '@Password123',
+        ])->assertOk();
+
+        $headers = [
+            'Authorization' => 'Bearer ' . $loginResponse->json('data.token'),
+            'Accept' => 'application/json',
+        ];
+
+        $this->postJson('/api/v1/update-password', [
+            'current_password' => '@Password123',
+            'password' => 'abcdefg',
+            'password_confirmation' => 'abcdefg',
+        ], $headers)
+            ->assertStatus(400)
+            ->assertJsonPath('message', 'Validation Error')
+            ->assertJsonPath('data.password.0', 'Password harus mengandung minimal satu huruf kapital (A-Z).')
+            ->assertJsonPath('data.password.1', 'Password harus mengandung minimal satu angka (0-9).')
+            ->assertJsonPath('data.password.2', 'Password harus mengandung minimal satu tanda baca atau karakter non-alphabetic seperti !, @, #, $, %, ^.');
+    }
+
+    public function test_api_register_rejects_password_that_does_not_meet_standard(): void
+    {
+        $this->postJson('/api/v1/register', [
+            'verification_token' => 'dummy-token',
+            'nama_lengkap' => 'Portal Tester',
+            'name' => 'Portal Tester',
+            'nik' => '3579010101010001',
+            'email' => 'portal-register@example.test',
+            'password' => 'abcdefg',
+            'password_confirmation' => 'abcdefg',
+            'no_whatsapp' => '081234567890',
+            'tempat_lahir' => 'Bojonegoro',
+            'tanggal_lahir' => '1990-01-01',
+            'alamat' => 'Jl. Veteran No. 1',
+            'province_code' => '35',
+            'regency_code' => '35.22',
+            'district_code' => '35.22.01',
+            'village_code' => '35.22.01.2001',
+            'birth_regency_code' => '35.22',
+        ])
+            ->assertStatus(400)
+            ->assertJsonPath('message', 'Validation Error')
+            ->assertJsonPath('data.password.0', 'Password harus mengandung minimal satu huruf kapital (A-Z).')
+            ->assertJsonPath('data.password.1', 'Password harus mengandung minimal satu angka (0-9).')
+            ->assertJsonPath('data.password.2', 'Password harus mengandung minimal satu tanda baca atau karakter non-alphabetic seperti !, @, #, $, %, ^.');
+    }
 }

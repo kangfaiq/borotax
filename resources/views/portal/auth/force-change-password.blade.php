@@ -3,16 +3,16 @@
 @section('title', 'Ganti Password Awal - Borotax Portal Wajib Pajak')
 
 @section('nav-links')
-    <form method="POST" action="{{ route('portal.logout') }}">
+    <form method="POST" action="{{ route('portal.logout') }}" class="password-logout-form">
         @csrf
-        <button type="submit" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer;">Keluar</button>
+        <button type="submit" class="navbar-cta password-logout-btn">Keluar</button>
     </form>
 @endsection
 
 @section('nav-mobile-links')
-    <form method="POST" action="{{ route('portal.logout') }}">
+    <form method="POST" action="{{ route('portal.logout') }}" class="password-logout-form">
         @csrf
-        <button type="submit" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer;">Keluar</button>
+        <button type="submit" class="navbar-cta password-logout-btn">Keluar</button>
     </form>
 @endsection
 
@@ -47,6 +47,25 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius-xl);
             padding: 36px 32px;
+        }
+
+        .password-logout-form {
+            margin: 0;
+        }
+
+        .password-logout-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            line-height: 1;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: none;
+            margin-left: 0;
+            text-decoration: none;
         }
 
         .password-status-banner {
@@ -206,6 +225,33 @@
             border-radius: var(--radius-md);
             background: rgba(108, 172, 207, 0.12);
             border: 1px solid rgba(108, 172, 207, 0.25);
+        }
+
+        .password-standards-card {
+            margin-bottom: 22px;
+            padding: 16px 18px;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(108, 172, 207, 0.24);
+            background: rgba(9, 18, 33, 0.28);
+        }
+
+        .password-standards-title {
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.84);
+        }
+
+        .password-standards-list {
+            margin: 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.88rem;
+            line-height: 1.5;
         }
 
         .form-group {
@@ -385,6 +431,8 @@
                 Akun yang baru dibuat atau baru di-reset hanya dapat mengakses portal setelah password diganti.
             </div>
 
+            @include('portal.auth.partials.password-standards')
+
             @if($errors->any())
                 <div class="alert alert-danger">
                     <ul>
@@ -413,7 +461,7 @@
                 <div class="form-group">
                     <label class="form-label" for="password">Password Baru</label>
                     <div class="input-pw-wrap">
-                        <input type="password" id="password" name="password" class="form-input" placeholder="Minimal 8 karakter" required>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="Minimal 7 karakter, gunakan huruf, angka, dan simbol" required>
                         <button type="button" class="toggle-pw" onclick="togglePassword('password', this)">👁️</button>
                     </div>
                 </div>

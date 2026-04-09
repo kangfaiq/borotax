@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Auth\Models\User;
 use App\Domain\Auth\Support\PasswordChangeRequirement;
+use App\Domain\Auth\Support\PasswordStandards;
 use App\Domain\Auth\Models\VerificationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +25,7 @@ class AuthController extends BaseController
             'name' => 'required|string|max:100',
             'nik' => 'required|string|size:16', // Format NIK
             'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => PasswordStandards::rules(),
             'no_whatsapp' => 'required|string',
             'tempat_lahir' => 'required|string',
             'tanggal_lahir' => 'required|date',
@@ -34,6 +35,9 @@ class AuthController extends BaseController
             'district_code' => 'required|string',
             'village_code' => 'required|string',
             'birth_regency_code' => 'required|string',
+        ], [
+            'password.required' => 'Password wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
         if ($validator->fails()) {
@@ -260,7 +264,10 @@ class AuthController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => PasswordStandards::rules(),
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
         ]);
 
         if ($validator->fails()) {

@@ -53,8 +53,8 @@ class PortalForcePasswordChangeTest extends TestCase
 
         $this->post(route('portal.force-password.update'), [
             'current_password' => '@Password123',
-            'password' => '@PasswordBaru123',
-            'password_confirmation' => '@PasswordBaru123',
+            'password' => '@PasswordBaru123!',
+            'password_confirmation' => '@PasswordBaru123!',
         ])
             ->assertRedirect(route('portal.dashboard'));
 
@@ -62,9 +62,38 @@ class PortalForcePasswordChangeTest extends TestCase
 
         $this->assertFalse((bool) $wajibPajak->user->must_change_password);
         $this->assertNotNull($wajibPajak->user->password_changed_at);
-        $this->assertTrue(Hash::check('@PasswordBaru123', $wajibPajak->user->password));
+        $this->assertTrue(Hash::check('@PasswordBaru123!', $wajibPajak->user->password));
 
         $this->get(route('portal.dashboard'))
             ->assertOk();
+    }
+
+    public function test_forced_password_change_page_shows_password_standards_and_rejects_weak_password(): void
+    {
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'portal-force-standards@example.test',
+            'password' => Hash::make('@Password123'),
+            'must_change_password' => true,
+            'password_changed_at' => null,
+        ]);
+
+        $this->actingAs($wajibPajak->user);
+
+        $this->get(route('portal.force-password.form'))
+            ->assertOk()
+            ->assertSee('Standar Password')
+            ->assertSee('Panjang minimal password adalah tujuh (7) karakter.')
+            ->assertSee('Terdiri dari minimal satu (1) karakter berupa huruf kapital (A-Z).')
+            ->assertSee('Terdiri dari minimal satu tanda baca atau karakter non-alphabetic seperti !, @, #, $, %, ^.');
+
+        $this->followingRedirects()->post(route('portal.force-password.update'), [
+            'current_password' => '@Password123',
+            'password' => 'abcdefg',
+            'password_confirmation' => 'abcdefg',
+        ])
+            ->assertOk()
+            ->assertSee('Password harus mengandung minimal satu huruf kapital (A-Z).')
+            ->assertSee('Password harus mengandung minimal satu angka (0-9).')
+            ->assertSee('Password harus mengandung minimal satu tanda baca atau karakter non-alphabetic seperti !, @, #, $, %, ^.');
     }
 }

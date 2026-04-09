@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Domain\Auth\Support\PasswordStandards;
 use App\Http\Controllers\Controller;
 use App\Domain\Auth\Models\User;
 use Illuminate\Http\Request;
@@ -149,11 +150,10 @@ class WebAuthController extends Controller
     {
         $request->validate([
             'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => PasswordStandards::rules(),
         ], [
             'current_password.required' => 'Password saat ini wajib diisi.',
             'password.required' => 'Password baru wajib diisi.',
-            'password.min' => 'Password baru minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
         ]);
 
@@ -194,11 +194,10 @@ class WebAuthController extends Controller
     {
         $request->validate([
             'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => PasswordStandards::rules(),
         ], [
             'current_password.required' => 'Password saat ini wajib diisi.',
             'password.required' => 'Password baru wajib diisi.',
-            'password.min' => 'Password baru minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
         ]);
 

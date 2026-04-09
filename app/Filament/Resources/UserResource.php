@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Domain\Auth\Support\PasswordStandards;
+use App\Domain\Auth\Support\StrongPassword;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -32,6 +34,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\HtmlString;
 
 class UserResource extends Resource
 {
@@ -70,7 +73,9 @@ class UserResource extends Resource
                             ->dehydrateStateUsing(fn(string $state): string => Hash::make($state))
                             ->dehydrated(fn(?string $state): bool => filled($state))
                             ->required(fn(string $operation): bool => $operation === 'create')
-                            ->minLength(8)
+                            ->minLength(7)
+                            ->rules([new StrongPassword()])
+                            ->helperText(static::passwordStandardsHelperText())
                             ->confirmed(),
                         TextInput::make('password_confirmation')
                             ->password()
@@ -212,7 +217,9 @@ class UserResource extends Resource
                                 ->label('Password Baru')
                                 ->password()
                                 ->required()
-                                ->minLength(8)
+                                ->minLength(7)
+                                ->rules([new StrongPassword()])
+                                ->helperText(static::passwordStandardsHelperText())
                                 ->confirmed(),
                             TextInput::make('new_password_confirmation')
                                 ->label('Konfirmasi Password')
@@ -270,5 +277,14 @@ class UserResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    protected static function passwordStandardsHelperText(): HtmlString
+    {
+        $items = collect(PasswordStandards::requirements())
+            ->map(fn (string $requirement): string => '<li>' . e($requirement) . '</li>')
+            ->implode('');
+
+        return new HtmlString('<div><strong>Standar Password</strong><ul style="margin:6px 0 0 18px; padding:0;">' . $items . '</ul></div>');
     }
 }

@@ -1500,6 +1500,7 @@ Semua data PII (Personally Identifiable Information) dienkripsi pada level kolom
 
 ### 17.2 Autentikasi & Keamanan Login
 - **Password:** Hashed (Laravel default bcrypt/argon2)
+- **Standar password aplikasi:** minimal 7 karakter, wajib mengandung minimal 1 huruf kapital, 1 huruf kecil, 1 angka, dan 1 tanda baca/karakter non-alphabetic; checklist standar ini ditampilkan pada form ubah password portal, form password user di backoffice, serta modal reset password backoffice, lalu divalidasi konsisten pada flow registrasi API, ubah password web/API, create/edit user backoffice, dan reset password user backoffice
 - **PIN:** 6 digit, hashed, untuk operasi sensitif di mobile app
 - **Account Lockout (portal web):** 5 kali gagal login → dikunci 15 menit
 - **State lockout:** disimpan pada `failed_login_attempts` dan `locked_until` di model `User`

@@ -178,6 +178,33 @@
         font-size: 0.86rem;
     }
 
+    .password-standards-card {
+        margin-bottom: 20px;
+        padding: 16px 18px;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(var(--primary-rgb), 0.18);
+        background: linear-gradient(135deg, rgba(235, 245, 250, 0.85), rgba(255, 255, 255, 0.95));
+    }
+
+    .password-standards-title {
+        margin-bottom: 10px;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--primary-dark);
+    }
+
+    .password-standards-list {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+
     .form-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -364,6 +391,8 @@
                 Untuk keamanan akun, gunakan password yang kuat dan jangan gunakan kembali password lama yang mudah ditebak.
             </div>
 
+            @include('portal.auth.partials.password-standards')
+
             @if($errors->any())
                 <div class="alert alert-danger">
                     <ul>
@@ -393,7 +422,7 @@
                     <div class="form-group">
                         <label class="form-label" for="password">Password Baru</label>
                         <div class="input-pw-wrap">
-                            <input type="password" id="password" name="password" class="form-input" placeholder="Minimal 8 karakter" required>
+                            <input type="password" id="password" name="password" class="form-input" placeholder="Minimal 7 karakter, gunakan huruf, angka, dan simbol" required>
                             <button type="button" class="toggle-pw" onclick="togglePassword('password', this)">👁️</button>
                         </div>
                     </div>

@@ -26,7 +26,7 @@ class PortalRegularPasswordChangeTest extends TestCase
         $this->get(route('portal.dashboard'))
             ->assertOk()
             ->assertSee('Password terakhir')
-            ->assertSee('Terakhir diubah: ' . $passwordChangedAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i'));
+            ->assertSee($passwordChangedAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i'));
     }
 
     public function test_portal_dashboard_shows_stronger_warning_badge_when_password_has_never_been_changed(): void
@@ -44,7 +44,8 @@ class PortalRegularPasswordChangeTest extends TestCase
             ->assertOk()
             ->assertSee('Belum pernah diubah')
             ->assertSee('Perlu diperbarui')
-            ->assertSee('Terakhir diubah: Belum pernah diubah');
+            ->assertSee('Password terakhir')
+            ->assertSee('Belum pernah diubah');
     }
 
     public function test_authenticated_portal_user_can_open_regular_change_password_page(): void
@@ -97,16 +98,44 @@ class PortalRegularPasswordChangeTest extends TestCase
 
         $this->post(route('portal.password.update'), [
             'current_password' => 'PasswordLama123',
-            'password' => 'PasswordBaru456',
-            'password_confirmation' => 'PasswordBaru456',
+            'password' => 'PasswordBaru456!',
+            'password_confirmation' => 'PasswordBaru456!',
         ])
             ->assertRedirect(route('portal.password.edit'))
             ->assertSessionHas('status', 'Password berhasil diperbarui.');
 
         $wajibPajak->user->refresh();
 
-        $this->assertTrue(Hash::check('PasswordBaru456', $wajibPajak->user->password));
+        $this->assertTrue(Hash::check('PasswordBaru456!', $wajibPajak->user->password));
         $this->assertFalse((bool) $wajibPajak->user->must_change_password);
         $this->assertNotNull($wajibPajak->user->password_changed_at);
+    }
+
+    public function test_regular_change_password_page_shows_password_standards_and_rejects_weak_password(): void
+    {
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'portal-password-rules@example.test',
+            'password' => Hash::make('PasswordLama123!'),
+            'must_change_password' => false,
+            'password_changed_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($wajibPajak->user);
+
+        $this->get(route('portal.password.edit'))
+            ->assertOk()
+            ->assertSee('Standar Password')
+            ->assertSee('Terdiri dari minimal satu (1) karakter berupa huruf kecil (a-z).')
+            ->assertSee('Terdiri dari minimal satu (1) karakter berupa angka (0-9).');
+
+        $this->followingRedirects()->post(route('portal.password.update'), [
+            'current_password' => 'PasswordLama123!',
+            'password' => 'ABCDEFG',
+            'password_confirmation' => 'ABCDEFG',
+        ])
+            ->assertOk()
+            ->assertSee('Password harus mengandung minimal satu huruf kecil (a-z).')
+            ->assertSee('Password harus mengandung minimal satu angka (0-9).')
+            ->assertSee('Password harus mengandung minimal satu tanda baca atau karakter non-alphabetic seperti !, @, #, $, %, ^.');
     }
 }
