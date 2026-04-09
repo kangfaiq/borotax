@@ -657,6 +657,31 @@
             padding: 28px;
         }
 
+        .portal-flash-stack {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .portal-flash {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .portal-flash.success {
+            background: rgba(34, 197, 94, 0.12);
+            border-color: rgba(34, 197, 94, 0.18);
+            color: #166534;
+        }
+
+        .portal-flash.info {
+            background: rgba(59, 130, 246, 0.10);
+            border-color: rgba(59, 130, 246, 0.18);
+            color: #1d4ed8;
+        }
+
         /* ============================================
            BADGES (shared)
            ============================================ */
@@ -919,6 +944,18 @@
 
         {{-- Page Content --}}
         <main class="page-content">
+            @if (session('status') || session('session_notice'))
+                <div class="portal-flash-stack">
+                    @session('status')
+                        <div class="portal-flash success">{{ $value }}</div>
+                    @endsession
+
+                    @session('session_notice')
+                        <div class="portal-flash info">{{ $value }}</div>
+                    @endsession
+                </div>
+            @endif
+
             @yield('content')
         </main>
     </div>

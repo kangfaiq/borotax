@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Domain\Auth\Support\SingleSessionManager;
 use App\Domain\Auth\Support\PasswordStandards;
 use App\Http\Controllers\Controller;
 use App\Domain\Auth\Models\User;
@@ -118,13 +119,26 @@ class WebAuthController extends Controller
         auth()->login($user, $request->boolean('remember'));
 
         $request->session()->regenerate();
+        $singleSessionResult = SingleSessionManager::startWebSession($user, $password, $request, 'portal_web');
 
         if ($user->must_change_password) {
-            return redirect()->route('portal.force-password.form')
+            $redirect = redirect()->route('portal.force-password.form')
                 ->with('status', 'Password awal harus diganti sebelum Anda dapat menggunakan portal.');
+
+            if ($singleSessionResult['replaced_session_notice']) {
+                $redirect->with('session_notice', $singleSessionResult['replaced_session_notice']);
+            }
+
+            return $redirect;
         }
 
-        return redirect()->intended(route('portal.dashboard'));
+        $redirect = redirect()->intended(route('portal.dashboard'));
+
+        if ($singleSessionResult['replaced_session_notice']) {
+            $redirect->with('session_notice', $singleSessionResult['replaced_session_notice']);
+        }
+
+        return $redirect;
     }
 
     /**
@@ -224,6 +238,10 @@ class WebAuthController extends Controller
      */
     public function logout(Request $request)
     {
+        if ($request->user()) {
+            SingleSessionManager::clearCurrentSession($request->user(), $request);
+        }
+
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

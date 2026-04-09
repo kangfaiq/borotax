@@ -71,11 +71,11 @@ Route::middleware('guest')->group(function () {
 
 // Logout (needs auth)
 Route::post('/logout', [WebAuthController::class, 'logout'])
-    ->middleware('auth')
+    ->middleware(['auth', 'single.session'])
     ->name('portal.logout');
 
 if (app()->environment(['local', 'testing'])) {
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'single.session'])->group(function () {
         Route::get('/document-previews', [DocumentPreviewController::class, 'index'])->name('document-previews.index');
         Route::get('/document-previews/{preview}', [DocumentPreviewController::class, 'show'])->name('document-previews.show');
     });
@@ -85,7 +85,7 @@ if (app()->environment(['local', 'testing'])) {
 // AUTHENTICATED PORTAL (Wajib Pajak)
 // =============================================
 
-Route::middleware('auth')->prefix('portal')->name('portal.')->group(function () {
+Route::middleware(['auth', 'single.session'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/password/change-first', [WebAuthController::class, 'showForceChangePassword'])
         ->name('force-password.form');
     Route::post('/password/change-first', [WebAuthController::class, 'updateForceChangePassword'])
@@ -161,13 +161,13 @@ Route::get('/admin/toggle-navigation', function () {
     $user->save();
 
     return redirect()->back();
-})->middleware('auth')->name('filament.toggle-navigation');
+})->middleware(['auth', 'single.session'])->name('filament.toggle-navigation');
 
 // =============================================
 // SKPD REKLAME DOCUMENTS (auth, no portal prefix)
 // =============================================
 use App\Http\Controllers\PermohonanSewaFileController;
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'single.session'])->group(function () {
     Route::get('/skpd-reklame/{skpdId}/download', [SkpdReklameDocumentController::class, 'download'])->name('skpd-reklame.download');
     Route::get('/skpd-reklame/{skpdId}/view', [SkpdReklameDocumentController::class, 'show'])->name('skpd-reklame.show');
 
@@ -178,7 +178,7 @@ Route::middleware('auth')->group(function () {
 // =============================================
 // SKPD AIR TANAH DOCUMENTS (auth, no portal prefix)
 // =============================================
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'single.session'])->group(function () {
     Route::get('/skpd-air-tanah/{skpdId}/download', [SkpdAirTanahDocumentController::class, 'download'])->name('skpd-air-tanah.download');
     Route::get('/skpd-air-tanah/{skpdId}/view', [SkpdAirTanahDocumentController::class, 'show'])->name('skpd-air-tanah.show');
 });
@@ -187,7 +187,7 @@ Route::middleware('auth')->group(function () {
 // SKRD SEWA TANAH DOCUMENTS (auth, no portal prefix)
 // =============================================
 use App\Http\Controllers\SkrdSewaDocumentController;
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'single.session'])->group(function () {
     Route::get('/skrd-sewa/{skrdId}/download', [SkrdSewaDocumentController::class, 'download'])->name('skrd-sewa.download');
     Route::get('/skrd-sewa/{skrdId}/view', [SkrdSewaDocumentController::class, 'show'])->name('skrd-sewa.show');
 });
@@ -195,7 +195,7 @@ Route::middleware('auth')->group(function () {
 // =============================================
 // STPD MANUAL DOCUMENTS (auth, no portal prefix)
 // =============================================
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'single.session'])->group(function () {
     Route::get('/stpd-manual/{stpdId}/download', [StpdManualDocumentController::class, 'download'])->name('stpd-manual.download');
     Route::get('/stpd-manual/{stpdId}/view', [StpdManualDocumentController::class, 'show'])->name('stpd-manual.show');
 

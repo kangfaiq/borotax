@@ -447,6 +447,10 @@
                 <div class="alert alert-success">{{ $value }}</div>
             @endsession
 
+            @session('session_notice')
+                <div class="alert alert-success">{{ $value }}</div>
+            @endsession
+
             <form method="POST" action="{{ route('portal.force-password.update') }}">
                 @csrf
 

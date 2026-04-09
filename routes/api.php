@@ -51,7 +51,7 @@ Route::prefix('v1')->group(function () {
     Route::get('billing/check', [\App\Http\Controllers\Api\V1\TransactionController::class, 'checkBilling']); // Check Billing Public
 
     // Auth Protected
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'single.session'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('profile', [AuthController::class, 'profile']);
         Route::post('update-password', [AuthController::class, 'updatePassword']);

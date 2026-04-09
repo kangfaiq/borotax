@@ -2,8 +2,10 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Domain\Auth\Support\SingleSessionManager;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
 use Illuminate\Validation\ValidationException;
 
@@ -42,6 +44,21 @@ class Login extends \Filament\Auth\Pages\Login
         // Update last login timestamp
         if ($user) {
             $user->update(['last_login_at' => now()]);
+
+            $singleSessionResult = SingleSessionManager::startWebSession(
+                $user,
+                (string) ($this->data['password'] ?? ''),
+                request(),
+                'admin_panel',
+            );
+
+            if ($singleSessionResult['replaced_session_notice']) {
+                Notification::make()
+                    ->info()
+                    ->title('Sesi Lama Diakhiri')
+                    ->body($singleSessionResult['replaced_session_notice'])
+                    ->send();
+            }
         }
 
         return $response;

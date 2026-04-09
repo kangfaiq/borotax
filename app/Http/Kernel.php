@@ -21,6 +21,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Auth\Middleware\Authorize;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\EnsureSingleSession;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use App\Http\Middleware\ValidateSignature;
@@ -86,6 +87,7 @@ class Kernel extends HttpKernel
         'password.confirm' => RequirePassword::class,
         'precognitive' => HandlePrecognitiveRequests::class,
         'password.changed' => EnsurePasswordIsChanged::class,
+        'single.session' => EnsureSingleSession::class,
         'signed' => ValidateSignature::class,
         'throttle' => ThrottleRequests::class,
         'verified' => EnsureEmailIsVerified::class,

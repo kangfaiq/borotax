@@ -227,6 +227,23 @@
             font-weight: 600;
         }
 
+        .login-status-alert {
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(59, 130, 246, 0.10);
+            border: 1px solid rgba(59, 130, 246, 0.18);
+            color: #1d4ed8;
+            font-size: 0.84rem;
+            line-height: 1.55;
+        }
+
+        .dark .login-status-alert {
+            background: rgba(96, 165, 250, 0.10);
+            border-color: rgba(96, 165, 250, 0.22);
+            color: #bfdbfe;
+        }
+
         /* Animated gradient accent */
         .login-accent-bar {
             height: 4px;
@@ -298,6 +315,10 @@
                     <h2>Masuk ke Sistem</h2>
                     <p>Silakan masuk dengan akun petugas Anda</p>
                 </div>
+
+                @session('status')
+                    <div class="login-status-alert">{{ $value }}</div>
+                @endsession
 
                 {{ $this->content }}
 

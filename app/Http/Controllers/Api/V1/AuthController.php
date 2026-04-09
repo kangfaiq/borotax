@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Auth\Models\User;
 use App\Domain\Auth\Support\PasswordChangeRequirement;
 use App\Domain\Auth\Support\PasswordStandards;
+use App\Domain\Auth\Support\SingleSessionManager;
 use App\Domain\Auth\Models\VerificationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -84,17 +85,19 @@ class AuthController extends BaseController
         // Invalidate verification token (one-time use)
         $otpRecord->update(['verification_token' => null, 'token_expires_at' => null]);
 
-        $token = $user->createToken('BorotaxApp')->plainTextToken;
+        $singleSessionResult = SingleSessionManager::startApiSession($user, $request);
 
         return $this->sendResponse([
-            'token' => $token,
+            'token' => $singleSessionResult['token'],
             'user' => [
                 'id' => $user->id,
                 'nama' => $user->nama_lengkap, // Decrypted
                 'email' => $user->email, // Decrypted
                 'nik' => $user->nik, // Decrypted
                 'role' => $user->role,
-            ]
+            ],
+            'session_notice' => $singleSessionResult['replaced_session_notice'],
+            'session_context' => $singleSessionResult['active_session'],
         ], 'Registrasi berhasil.');
     }
 
@@ -133,10 +136,7 @@ class AuthController extends BaseController
         $user->resetFailedAttempts();
         $user->update(['last_login_at' => now()]);
 
-        // Revoke old tokens if single session policy? (Optional)
-        // $user->tokens()->delete();
-
-        $token = $user->createToken('BorotaxApp')->plainTextToken;
+        $singleSessionResult = SingleSessionManager::startApiSession($user, $request);
         $authRequirements = PasswordChangeRequirement::forApi((bool) $user->must_change_password);
 
         $message = $user->must_change_password
@@ -144,7 +144,7 @@ class AuthController extends BaseController
             : 'Login berhasil.';
 
         return $this->sendResponse([
-            'token' => $token,
+            'token' => $singleSessionResult['token'],
             'user' => [
                 'id' => $user->id,
                 'nama' => $user->nama_lengkap,
@@ -154,6 +154,8 @@ class AuthController extends BaseController
                 'password_changed_at' => $user->password_changed_at,
             ],
             'auth_requirements' => $authRequirements,
+            'session_notice' => $singleSessionResult['replaced_session_notice'],
+            'session_context' => $singleSessionResult['active_session'],
         ], $message);
     }
 
@@ -162,7 +164,8 @@ class AuthController extends BaseController
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        SingleSessionManager::clearCurrentSession($request->user(), $request);
+
         return $this->sendResponse([], 'Logout berhasil.');
     }
 
