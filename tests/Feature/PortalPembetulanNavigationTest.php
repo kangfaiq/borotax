@@ -112,4 +112,50 @@ class PortalPembetulanNavigationTest extends TestCase
             ->assertDontSee(route('portal.pembetulan.create', $billingWithPendingRequest->id), false)
             ->assertSee('Menunggu Review');
     }
+
+    public function test_portal_pembetulan_index_is_paginated_and_preserves_search_query_in_links(): void
+    {
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'pembetulan-pagination@example.test',
+        ]);
+        $taxObject = $this->createTaxObjectFixture($wajibPajak, '41102');
+        $search = '352210100000262';
+        $billingCodes = [];
+
+        foreach (range(1, 11) as $sequence) {
+            $billingCode = $search . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+            $billingCodes[] = $billingCode;
+
+            $this->createTaxFixture($taxObject, $wajibPajak->user, [
+                'billing_code' => $billingCode,
+                'masa_pajak_bulan' => $sequence,
+                'masa_pajak_tahun' => 2033,
+                'created_at' => now()->subMinutes($sequence),
+            ]);
+        }
+
+        $firstPageResponse = $this->actingAs($wajibPajak->user)
+            ->get(route('portal.pembetulan.index', [
+                'search' => $search,
+            ]));
+
+        $firstPageResponse->assertOk()
+            ->assertSee('Menampilkan 1–10 dari 11 billing')
+            ->assertSee($billingCodes[0])
+            ->assertSee($billingCodes[9])
+            ->assertDontSee($billingCodes[10])
+            ->assertSee('search=' . $search, false)
+            ->assertSee('page=2', false);
+
+        $secondPageResponse = $this->actingAs($wajibPajak->user)
+            ->get(route('portal.pembetulan.index', [
+                'search' => $search,
+                'page' => 2,
+            ]));
+
+        $secondPageResponse->assertOk()
+            ->assertSee('Menampilkan 11–11 dari 11 billing')
+            ->assertSee($billingCodes[10])
+            ->assertDontSee($billingCodes[0]);
+    }
 }

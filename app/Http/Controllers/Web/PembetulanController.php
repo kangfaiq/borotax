@@ -15,6 +15,7 @@ class PembetulanController extends Controller
     {
         $user = auth()->user();
         $search = trim((string) $request->input('search'));
+        $perPage = 10;
 
         $taxes = Tax::query()
             ->where('user_id', $user->id)
@@ -33,10 +34,11 @@ class PembetulanController extends Controller
                 });
             })
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
 
         $pendingRequestTaxIds = PembetulanRequest::query()
-            ->whereIn('tax_id', $taxes->pluck('id'))
+            ->whereIn('tax_id', $taxes->getCollection()->pluck('id'))
             ->where('status', 'pending')
             ->pluck('tax_id')
             ->all();

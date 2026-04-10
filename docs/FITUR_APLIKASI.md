@@ -718,6 +718,7 @@ Catatan implementasi saat ini:
 - **Route daftar pembetulan:** `/portal/pembetulan`
 - Ajukan pembetulan untuk billing yang sudah ada (pending/paid/verified)
 - Side navigation portal menyediakan menu **Ajukan Pembetulan** agar WP bisa memilih billing aktif terbaru kapan saja, tidak hanya dari halaman sukses setelah membuat billing
+- Daftar billing pembetulan di portal menggunakan pagination agar tetap ringan saat data WP sudah banyak, dan filter pencarian tetap dipertahankan di URL saat pindah halaman
 - Form: alasan, omzet baru, lampiran (opsional)
 - Guard pengajuan: satu billing tidak boleh memiliki lebih dari satu `PembetulanRequest` berstatus `pending`
 - Lampiran portal bersifat opsional, menerima JPG/PNG/PDF maksimal 1 MB

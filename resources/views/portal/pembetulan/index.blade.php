@@ -240,6 +240,60 @@
         margin: 0 auto;
     }
 
+    .pagination-info {
+        margin-top: 16px;
+        padding: 16px 4px 0;
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .pagination-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .pagination-nav a,
+    .pagination-nav span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 8px;
+        border-radius: var(--radius-sm);
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all var(--transition);
+        background: var(--bg-card);
+    }
+
+    .pagination-nav a:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .pagination-nav .active-page {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .pagination-nav .disabled-page {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     @media (max-width: 1024px) {
         .pemb-meta {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -365,7 +419,63 @@
         <div class="pemb-empty">
             <i class="bi bi-inbox"></i>
             <h3>Tidak ada billing yang siap diajukan pembetulan</h3>
-            <p>Belum ada billing aktif terbaru yang memenuhi syarat untuk pembetulan, atau hasil pencarian Anda tidak menemukan data yang cocok.</p>
+            @if($search !== '')
+                <p>Tidak ada billing yang cocok dengan pencarian Anda. Coba kata kunci lain atau reset pencarian untuk melihat seluruh billing yang bisa diajukan pembetulan.</p>
+                <a href="{{ route('portal.pembetulan.index') }}" style="color:var(--primary); font-size:0.85rem; margin-top:10px; display:inline-block; font-weight:700;">Reset Pencarian</a>
+            @else
+                <p>Belum ada billing aktif terbaru yang memenuhi syarat untuk pembetulan.</p>
+            @endif
         </div>
     @endforelse
+
+    @if($taxes->count() > 0)
+        <div class="pagination-info">
+            <span>Menampilkan {{ $taxes->firstItem() }}–{{ $taxes->lastItem() }} dari {{ $taxes->total() }} billing</span>
+
+            @if($taxes->hasPages())
+                <div class="pagination-nav">
+                    @if($taxes->onFirstPage())
+                        <span class="disabled-page"><i class="bi bi-chevron-left"></i></span>
+                    @else
+                        <a href="{{ $taxes->previousPageUrl() }}"><i class="bi bi-chevron-left"></i></a>
+                    @endif
+
+                    @php
+                        $current = $taxes->currentPage();
+                        $last = $taxes->lastPage();
+                        $start = max(1, $current - 2);
+                        $end = min($last, $current + 2);
+                    @endphp
+
+                    @if($start > 1)
+                        <a href="{{ $taxes->url(1) }}">1</a>
+                        @if($start > 2)
+                            <span style="border:none; color:var(--text-tertiary); background:transparent;">…</span>
+                        @endif
+                    @endif
+
+                    @for($i = $start; $i <= $end; $i++)
+                        @if($i === $current)
+                            <span class="active-page">{{ $i }}</span>
+                        @else
+                            <a href="{{ $taxes->url($i) }}">{{ $i }}</a>
+                        @endif
+                    @endfor
+
+                    @if($end < $last)
+                        @if($end < $last - 1)
+                            <span style="border:none; color:var(--text-tertiary); background:transparent;">…</span>
+                        @endif
+                        <a href="{{ $taxes->url($last) }}">{{ $last }}</a>
+                    @endif
+
+                    @if($taxes->hasMorePages())
+                        <a href="{{ $taxes->nextPageUrl() }}"><i class="bi bi-chevron-right"></i></a>
+                    @else
+                        <span class="disabled-page"><i class="bi bi-chevron-right"></i></span>
+                    @endif
+                </div>
+            @endif
+        </div>
+    @endif
 @endsection
