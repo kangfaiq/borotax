@@ -679,9 +679,9 @@ Catatan implementasi saat ini:
 - **Bahasa visual first-login konsisten:** halaman `/portal/password/change-first` memakai status banner dan warning card yang sama agar alur first-login dan settings reguler tetap terasa satu sistem.
 
 ### 7.1 Dashboard Portal
-- Total tagihan pending (IDR)
-- Total sudah dibayar (IDR)
-- Jumlah objek pajak aktif
+- Total tagihan belum dibayar dihitung dari sisa kewajiban billing milik WP yang login, termasuk billing `partially_paid`
+- Total sudah dibayar mengikuti nominal billing `paid` / `verified` milik WP yang login
+- Jumlah objek pajak aktif mengikuti data WP yang login melalui NPWPD portalnya
 - Transaksi terbaru (5 terakhir)
 - Kupon undian Gebyar
 

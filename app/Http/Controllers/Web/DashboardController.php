@@ -5,45 +5,53 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TaxObject;
-use App\Domain\Gebyar\Models\GebyarSubmission;
 use App\Enums\TaxStatus;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
-        $userNikHash = $user->nik_hash;
+        /** @var \App\Domain\Auth\Models\User $user */
+        $user = auth('portal')->user();
+        $wajibPajak = $user->wajibPajak;
 
-        // Pending taxes / billing
         $pendingTaxes = Tax::where('user_id', $user->id)
-            ->where('status', TaxStatus::Pending)
+            ->whereIn('status', [
+                TaxStatus::Pending,
+                TaxStatus::PartiallyPaid,
+                TaxStatus::Expired,
+            ])
+            ->with('payments')
             ->orderBy('created_at', 'desc')
-            ->limit(5)
             ->get();
 
-        $pendingAmount = Tax::where('user_id', $user->id)
-            ->where('status', TaxStatus::Pending)
-            ->sum('amount');
+        $pendingAmount = (float) $pendingTaxes->sum(function (Tax $tax): float {
+            return $tax->getRemainingAmount();
+        });
 
-        // Total paid taxes
-        $paidAmount = Tax::where('user_id', $user->id)
-            ->where('status', TaxStatus::Paid)
-            ->sum('amount');
+        $paidTaxes = Tax::where('user_id', $user->id)
+            ->whereIn('status', [TaxStatus::Paid, TaxStatus::Verified])
+            ->with('payments')
+            ->get();
 
-        // Tax objects count (unified)
-        $taxObjectsCount = TaxObject::where('nik_hash', $userNikHash)->count();
+        $paidAmount = (float) $paidTaxes->sum(function (Tax $tax): float {
+            $totalPaid = $tax->getTotalPaid();
 
-        // Recent transactions (last 5)
+            if ($totalPaid > 0) {
+                return $totalPaid;
+            }
+
+            return (float) $tax->amount + (float) $tax->sanksi;
+        });
+
+        $taxObjectsCount = $this->resolveTaxObjectsQuery($user->nik_hash, $wajibPajak?->npwpd)->count();
+
         $recentTransactions = Tax::where('user_id', $user->id)
             ->with(['jenisPajak', 'taxObject', 'children:id,parent_tax_id'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
-        // Gebyar coupons
         $totalCoupons = $user->total_kupon_undian ?? 0;
 
         return view('portal.dashboard', compact(
@@ -55,5 +63,16 @@ class DashboardController extends Controller
             'recentTransactions',
             'totalCoupons'
         ));
+    }
+
+    private function resolveTaxObjectsQuery(?string $nikHash, ?string $npwpd): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = TaxObject::query();
+
+        if ($npwpd) {
+            return $query->where('npwpd', $npwpd);
+        }
+
+        return $query->where('nik_hash', $nikHash);
     }
 }
