@@ -1320,7 +1320,7 @@
                 attachmentPreviewBadge.textContent = badge;
                 attachmentPreviewCard.style.display = 'block';
 
-                if (file.type === 'application/pdf') {
+                if (isSupportedPdfFile(file)) {
                     attachmentPreviewPdf.src = attachmentPreviewUrl;
                     attachmentPreviewPdf.style.display = 'block';
                     attachmentPreviewImage.style.display = 'none';
@@ -1373,7 +1373,31 @@
                 return baseName + '-compressed.jpg';
             }
 
-            function loadImageFile(file) {
+            function getFileExtension(fileName) {
+                return (fileName.split('.').pop() || '').toLowerCase();
+            }
+
+            function isSupportedImageFile(file) {
+                const extension = getFileExtension(file.name || '');
+
+                return file.type.startsWith('image/') || ['jpg', 'jpeg', 'png'].includes(extension);
+            }
+
+            function isSupportedPdfFile(file) {
+                return file.type === 'application/pdf' || getFileExtension(file.name || '') === 'pdf';
+            }
+
+            function normalizeImageMimeType(file) {
+                const extension = getFileExtension(file.name || '');
+
+                if (file.type === 'image/png' || extension === 'png') {
+                    return 'image/png';
+                }
+
+                return 'image/jpeg';
+            }
+
+            function loadImageFromObjectUrl(file) {
                 return new Promise(function (resolve, reject) {
                     const imageUrl = URL.createObjectURL(file);
                     const image = new Image();
@@ -1385,10 +1409,54 @@
 
                     image.onerror = function () {
                         URL.revokeObjectURL(imageUrl);
-                        reject(new Error('Gambar tidak dapat dibaca.'));
+                        reject(new Error('decode-object-url-failed'));
                     };
 
                     image.src = imageUrl;
+                });
+            }
+
+            function loadImageFromDataUrl(file) {
+                return new Promise(function (resolve, reject) {
+                    const reader = new FileReader();
+
+                    reader.onload = function () {
+                        const image = new Image();
+
+                        image.onload = function () {
+                            resolve(image);
+                        };
+
+                        image.onerror = function () {
+                            reject(new Error('decode-data-url-failed'));
+                        };
+
+                        image.src = reader.result;
+                    };
+
+                    reader.onerror = function () {
+                        reject(new Error('read-file-failed'));
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            function loadImageFile(file) {
+                if (typeof createImageBitmap === 'function') {
+                    return createImageBitmap(file).catch(function () {
+                        return loadImageFromObjectUrl(file).catch(function () {
+                            return loadImageFromDataUrl(file);
+                        });
+                    }).catch(function () {
+                        throw new Error('Gambar tidak dapat dibaca. Pastikan file menggunakan format JPG atau PNG yang valid.');
+                    });
+                }
+
+                return loadImageFromObjectUrl(file).catch(function () {
+                    return loadImageFromDataUrl(file);
+                }).catch(function () {
+                    throw new Error('Gambar tidak dapat dibaca. Pastikan file menggunakan format JPG atau PNG yang valid.');
                 });
             }
 
@@ -1418,6 +1486,10 @@
                     canvas.height = height;
 
                     const context = canvas.getContext('2d', { alpha: false });
+                    if (!context) {
+                        throw new Error('Browser tidak dapat memproses gambar ini untuk kompresi.');
+                    }
+
                     context.fillStyle = '#ffffff';
                     context.fillRect(0, 0, width, height);
                     context.drawImage(image, 0, 0, width, height);
@@ -1465,8 +1537,8 @@
                 clearAttachmentClientError();
                 setFileProcessingMessage('');
 
-                const isImage = file.type === 'image/jpeg' || file.type === 'image/png';
-                const isPdf = file.type === 'application/pdf';
+                const isImage = isSupportedImageFile(file);
+                const isPdf = isSupportedPdfFile(file);
 
                 if (!isImage && !isPdf) {
                     resetAttachmentState();
@@ -1483,9 +1555,16 @@
                         return;
                     }
 
-                    syncAttachmentFile(file);
-                    updateSelectedFileInfo(file, formatFileSize(file.size) + ' • Siap diupload');
-                    updateAttachmentPreview(file, 'PDF');
+                    const normalizedPdfFile = file.type
+                        ? file
+                        : new File([file], file.name, {
+                            type: 'application/pdf',
+                            lastModified: file.lastModified,
+                        });
+
+                    syncAttachmentFile(normalizedPdfFile);
+                    updateSelectedFileInfo(normalizedPdfFile, formatFileSize(normalizedPdfFile.size) + ' • Siap diupload');
+                    updateAttachmentPreview(normalizedPdfFile, 'PDF');
 
                     return;
                 }
@@ -1497,15 +1576,23 @@
                     : 'Menyiapkan preview gambar...');
 
                 try {
+                    const normalizedFile = file.type
+                        ? file
+                        : new File([file], file.name, {
+                            type: normalizeImageMimeType(file),
+                            lastModified: file.lastModified,
+                        });
                     const result = await compressImageFile(file);
-                    syncAttachmentFile(result.file);
+                    const finalFile = result.compressed ? result.file : normalizedFile;
+
+                    syncAttachmentFile(finalFile);
 
                     const detail = result.compressed
-                        ? formatFileSize(result.originalSize) + ' → ' + formatFileSize(result.file.size) + ' • Dikompres otomatis'
-                        : formatFileSize(result.file.size) + ' • Siap diupload';
+                        ? formatFileSize(result.originalSize) + ' → ' + formatFileSize(finalFile.size) + ' • Dikompres otomatis'
+                        : formatFileSize(finalFile.size) + ' • Siap diupload';
 
-                    updateSelectedFileInfo(result.file, detail);
-                    updateAttachmentPreview(result.file, result.compressed ? 'Gambar Terkompres' : 'Gambar');
+                    updateSelectedFileInfo(finalFile, detail);
+                    updateAttachmentPreview(finalFile, result.compressed ? 'Gambar Terkompres' : 'Gambar');
                     setFileProcessingMessage(result.compressed ? 'Kompresi selesai. Preview menampilkan file yang akan dikirim.' : 'Preview menampilkan file yang akan dikirim.');
                 } catch (error) {
                     resetAttachmentState();
