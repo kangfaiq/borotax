@@ -115,6 +115,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
             Route::get('/self-assessment/mblb-submissions/{submissionId}/success', [SelfAssessmentController::class, 'submissionSuccess'])->name('self-assessment.submission-success');
 
             // Pembetulan (Koreksi Billing)
+            Route::get('/pembetulan', [PembetulanController::class, 'index'])->name('pembetulan.index');
             Route::get('/pembetulan/{taxId}', [PembetulanController::class, 'create'])->name('pembetulan.create');
             Route::post('/pembetulan', [PembetulanController::class, 'store'])->name('pembetulan.store');
 

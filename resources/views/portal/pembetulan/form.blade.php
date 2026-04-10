@@ -205,8 +205,8 @@
 @endsection
 
 @section('content')
-    <a href="{{ route('portal.history') }}" class="pemb-back">
-        <i class="bi bi-arrow-left"></i> Kembali ke Riwayat
+    <a href="{{ route('portal.pembetulan.index') }}" class="pemb-back">
+        <i class="bi bi-arrow-left"></i> Kembali ke Daftar Billing
     </a>
 
     @if($errors->any())

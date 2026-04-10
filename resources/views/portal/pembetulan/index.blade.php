@@ -1,0 +1,371 @@
+@extends('layouts.portal-dashboard')
+
+@section('title', 'Ajukan Pembetulan - Borotax Portal')
+@section('page-title', 'Ajukan Pembetulan')
+
+@section('styles')
+<style>
+    .pemb-index-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .pemb-index-copy h2 {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .pemb-index-copy p {
+        max-width: 720px;
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+    }
+
+    .pemb-search-form {
+        width: min(360px, 100%);
+    }
+
+    .pemb-search-wrap {
+        position: relative;
+    }
+
+    .pemb-search-wrap i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-tertiary);
+        font-size: 0.92rem;
+    }
+
+    .pemb-search-wrap input {
+        width: 100%;
+        padding: 12px 14px 12px 38px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-md);
+        font: inherit;
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+
+    .pemb-search-wrap input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+    }
+
+    .pemb-grid {
+        display: grid;
+        gap: 16px;
+    }
+
+    .pemb-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        box-shadow: var(--shadow-xs);
+    }
+
+    .pemb-item-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+
+    .pemb-billing-code {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: var(--radius-full);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        font-weight: 800;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: 0.02em;
+    }
+
+    .pemb-item-title {
+        margin-top: 10px;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .pemb-item-subtitle {
+        margin-top: 3px;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+    }
+
+    .pemb-status,
+    .pemb-pending-flag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--radius-full);
+        font-size: 0.74rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .pemb-status.pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .pemb-status.paid {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .pemb-status.verified {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .pemb-pending-flag {
+        margin-top: 10px;
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .pemb-meta {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .pemb-meta-item {
+        padding: 14px;
+        border-radius: var(--radius-md);
+        background: var(--bg-surface);
+    }
+
+    .pemb-meta-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 6px;
+    }
+
+    .pemb-meta-value {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        word-break: break-word;
+    }
+
+    .pemb-item-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-light);
+    }
+
+    .pemb-item-actions p {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .pemb-action-link,
+    .pemb-action-disabled {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 16px;
+        border-radius: var(--radius-md);
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+
+    .pemb-action-link {
+        background: var(--primary);
+        color: #fff;
+        transition: all var(--transition);
+    }
+
+    .pemb-action-link:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.2);
+    }
+
+    .pemb-action-disabled {
+        background: #fff7ed;
+        color: #9a3412;
+    }
+
+    .pemb-empty {
+        background: var(--bg-card);
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-lg);
+        padding: 42px 24px;
+        text-align: center;
+    }
+
+    .pemb-empty i {
+        font-size: 2rem;
+        color: var(--text-tertiary);
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .pemb-empty h3 {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    .pemb-empty p {
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+        .pemb-meta {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .pemb-index-head,
+        .pemb-item-head,
+        .pemb-item-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .pemb-search-form {
+            width: 100%;
+        }
+
+        .pemb-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+@endsection
+
+@section('content')
+    <div class="pemb-index-head">
+        <div class="pemb-index-copy">
+            <h2>Pilih Billing untuk Pembetulan</h2>
+            <p>Gunakan menu ini untuk mengajukan pembetulan kapan saja dari portal. Daftar di bawah hanya menampilkan billing aktif terbaru milik Anda yang masih dapat diajukan koreksi.</p>
+        </div>
+
+        <form method="GET" action="{{ route('portal.pembetulan.index') }}" class="pemb-search-form">
+            <div class="pemb-search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="search" name="search" value="{{ $search }}" placeholder="Cari kode billing, jenis pajak, atau objek pajak">
+            </div>
+        </form>
+    </div>
+
+    @php
+        $pendingRequestTaxLookup = array_flip($pendingRequestTaxIds);
+    @endphp
+
+    @forelse($taxes as $tax)
+        @php
+            $statusClass = match ($tax->status) {
+                App\Enums\TaxStatus::Paid => 'paid',
+                App\Enums\TaxStatus::Verified => 'verified',
+                default => 'pending',
+            };
+
+            $statusLabel = match ($tax->status) {
+                App\Enums\TaxStatus::Paid => 'Sudah Dibayar',
+                App\Enums\TaxStatus::Verified => 'Terverifikasi',
+                default => 'Belum Dibayar',
+            };
+
+            $masaPajakLabel = $tax->masa_pajak_bulan
+                ? \Carbon\Carbon::create($tax->masa_pajak_tahun, $tax->masa_pajak_bulan, 1)->translatedFormat('F Y')
+                : 'Tahun ' . $tax->masa_pajak_tahun;
+
+            $hasPendingRequest = isset($pendingRequestTaxLookup[$tax->id]);
+        @endphp
+
+        <div class="pemb-item">
+            <div class="pemb-item-head">
+                <div>
+                    <span class="pemb-billing-code">
+                        <i class="bi bi-upc-scan"></i>
+                        {{ $tax->billing_code }}
+                    </span>
+                    <div class="pemb-item-title">{{ $tax->jenisPajak->nama ?? 'Billing Pajak' }}</div>
+                    <div class="pemb-item-subtitle">{{ $tax->taxObject->nama_objek_pajak ?? '-' }}</div>
+
+                    @if($hasPendingRequest)
+                        <div class="pemb-pending-flag">
+                            <i class="bi bi-hourglass-split"></i>
+                            Permohonan pembetulan untuk billing ini sedang menunggu review
+                        </div>
+                    @endif
+                </div>
+
+                <span class="pemb-status {{ $statusClass }}">{{ $statusLabel }}</span>
+            </div>
+
+            <div class="pemb-meta">
+                <div class="pemb-meta-item">
+                    <div class="pemb-meta-label">Masa Pajak</div>
+                    <div class="pemb-meta-value">{{ $masaPajakLabel }}</div>
+                </div>
+                <div class="pemb-meta-item">
+                    <div class="pemb-meta-label">Omzet</div>
+                    <div class="pemb-meta-value">Rp {{ number_format($tax->omzet, 0, ',', '.') }}</div>
+                </div>
+                <div class="pemb-meta-item">
+                    <div class="pemb-meta-label">Jumlah Pajak</div>
+                    <div class="pemb-meta-value">Rp {{ number_format($tax->amount, 0, ',', '.') }}</div>
+                </div>
+                <div class="pemb-meta-item">
+                    <div class="pemb-meta-label">Dibuat</div>
+                    <div class="pemb-meta-value">{{ $tax->created_at->translatedFormat('d M Y H:i') }}</div>
+                </div>
+            </div>
+
+            <div class="pemb-item-actions">
+                <p>Ajukan koreksi jika ada kesalahan omzet, data objek, atau informasi billing lain yang perlu diperbarui.</p>
+
+                @if($hasPendingRequest)
+                    <span class="pemb-action-disabled">
+                        <i class="bi bi-clock-history"></i>
+                        Menunggu Review
+                    </span>
+                @else
+                    <a href="{{ route('portal.pembetulan.create', $tax->id) }}" class="pemb-action-link">
+                        <i class="bi bi-pencil-square"></i>
+                        Ajukan Pembetulan
+                    </a>
+                @endif
+            </div>
+        </div>
+    @empty
+        <div class="pemb-empty">
+            <i class="bi bi-inbox"></i>
+            <h3>Tidak ada billing yang siap diajukan pembetulan</h3>
+            <p>Belum ada billing aktif terbaru yang memenuhi syarat untuk pembetulan, atau hasil pencarian Anda tidak menemukan data yang cocok.</p>
+        </div>
+    @endforelse
+@endsection

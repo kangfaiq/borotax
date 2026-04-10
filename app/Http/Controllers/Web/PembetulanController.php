@@ -11,6 +11,43 @@ use Illuminate\Http\Request;
 
 class PembetulanController extends Controller
 {
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $search = trim((string) $request->input('search'));
+
+        $taxes = Tax::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified])
+            ->doesntHave('children')
+            ->with(['jenisPajak', 'taxObject'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($nestedQuery) use ($search) {
+                    $nestedQuery->where('billing_code', 'like', "%{$search}%")
+                        ->orWhereHas('jenisPajak', function ($jenisPajakQuery) use ($search) {
+                            $jenisPajakQuery->where('nama', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('taxObject', function ($taxObjectQuery) use ($search) {
+                            $taxObjectQuery->where('nama_objek_pajak', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $pendingRequestTaxIds = PembetulanRequest::query()
+            ->whereIn('tax_id', $taxes->pluck('id'))
+            ->where('status', 'pending')
+            ->pluck('tax_id')
+            ->all();
+
+        return view('portal.pembetulan.index', [
+            'taxes' => $taxes,
+            'pendingRequestTaxIds' => $pendingRequestTaxIds,
+            'search' => $search,
+        ]);
+    }
+
     /**
      * Show the pembetulan request form
      */

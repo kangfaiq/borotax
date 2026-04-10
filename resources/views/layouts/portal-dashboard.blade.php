@@ -876,6 +876,11 @@
                     <i class="bi bi-file-earmark-text"></i>
                     Self Assessment
                 </a>
+                <a href="{{ route('portal.pembetulan.index') }}"
+                   class="nav-item {{ request()->routeIs('portal.pembetulan.*') ? 'active' : '' }}">
+                    <i class="bi bi-pencil-square"></i>
+                    Ajukan Pembetulan
+                </a>
                 <a href="{{ route('portal.air-tanah.index') }}"
                    class="nav-item {{ request()->routeIs('portal.air-tanah.*') ? 'active' : '' }}">
                     <i class="bi bi-droplet"></i>
