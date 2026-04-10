@@ -305,6 +305,87 @@
             font-weight: 500;
         }
 
+        .file-upload-area.is-dragover {
+            border-color: var(--primary);
+            background: var(--primary-50);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+        }
+
+        .file-selected-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-selected-meta span,
+        .file-selected-meta small {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-selected-meta small {
+            margin-top: 2px;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+
+        .file-processing {
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--primary-dark);
+        }
+
+        .file-preview-card {
+            margin-top: 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            padding: 14px;
+        }
+
+        .file-preview-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .file-preview-head span:first-child {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .file-preview-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: var(--primary-50);
+            color: var(--primary-dark);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .file-preview-card img,
+        .file-preview-card iframe {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius-md) - 4px);
+            background: #fff;
+        }
+
+        .file-preview-card img {
+            max-height: 320px;
+            object-fit: contain;
+        }
+
+        .file-preview-card iframe {
+            min-height: 360px;
+        }
+
         /* Calculation box */
         .calc-box {
             background: var(--bg-surface);
@@ -392,6 +473,17 @@
         .mblb-note i {
             font-size: 1rem;
             margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .file-preview-head {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .file-preview-card iframe {
+                min-height: 280px;
+            }
         }
 
         /* Masa pajak auto */
@@ -989,21 +1081,30 @@
                 </div>
                 <div class="form-group">
                     <label>Upload Bukti (foto/scan) <span class="req">*</span></label>
-                    <div class="file-upload-area" id="fileUploadArea">
+                    <div class="file-upload-area" id="fileUploadArea" data-max-file-size="{{ 1024 * 1024 }}" data-auto-compress-images="true">
                         <i class="bi bi-cloud-arrow-up"></i>
                         <p><strong>Klik untuk upload</strong> atau drag & drop</p>
                         <p style="font-size:0.72rem; margin-top:4px;">
-                            @if($isMblb)
-                                JPG, PNG, PDF &bull; PDF maks 1MB, gambar otomatis dikompres
-                            @else
-                                JPG, PNG, PDF &bull; Maks 1MB
-                            @endif
+                            JPG, PNG, PDF &bull; Maks 1MB &bull; Gambar di atas 1MB dikompres otomatis sebelum upload
                         </p>
-                        <input type="file" name="attachment" id="inputAttachment" accept=".jpg,.jpeg,.png,.pdf">
+                        <input type="file" name="attachment" id="inputAttachment" accept=".jpg,.jpeg,.png,.pdf" data-max-file-size="{{ 1024 * 1024 }}" data-auto-compress-images="true">
                     </div>
                     <div class="file-selected" id="fileSelected" style="display:none;">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span id="fileName">-</span>
+                        <div class="file-selected-meta">
+                            <span id="fileName">-</span>
+                            <small id="fileMeta">-</small>
+                        </div>
+                    </div>
+                    <div class="file-processing" id="fileProcessing" style="display:none;"></div>
+                    <div class="form-error" id="attachmentClientError" style="display:none;"></div>
+                    <div class="file-preview-card" id="attachmentPreviewCard" style="display:none;">
+                        <div class="file-preview-head">
+                            <span>Preview Dokumen</span>
+                            <span class="file-preview-badge" id="attachmentPreviewBadge">-</span>
+                        </div>
+                        <img id="attachmentPreviewImage" alt="Preview dokumen lampiran" style="display:none;">
+                        <iframe id="attachmentPreviewPdf" title="Preview dokumen lampiran" style="display:none;"></iframe>
                     </div>
                     @error('attachment')
                         <div class="form-error">{{ $message }}</div>
@@ -1053,9 +1154,27 @@
             const calcOmzet = document.getElementById('calcOmzet');
             const calcTarif = document.getElementById('calcTarif');
             const calcTotal = document.getElementById('calcTotal');
+            const saForm = document.getElementById('saForm');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const fileUploadArea = document.getElementById('fileUploadArea');
             const fileInput = document.getElementById('inputAttachment');
             const fileSelected = document.getElementById('fileSelected');
             const fileName = document.getElementById('fileName');
+            const fileMeta = document.getElementById('fileMeta');
+            const fileProcessing = document.getElementById('fileProcessing');
+            const attachmentClientError = document.getElementById('attachmentClientError');
+            const attachmentPreviewCard = document.getElementById('attachmentPreviewCard');
+            const attachmentPreviewBadge = document.getElementById('attachmentPreviewBadge');
+            const attachmentPreviewImage = document.getElementById('attachmentPreviewImage');
+            const attachmentPreviewPdf = document.getElementById('attachmentPreviewPdf');
+            const maxAttachmentBytes = fileInput
+                ? parseInt(fileInput.dataset.maxFileSize || '1048576', 10)
+                : 1048576;
+            const initialSubmitLabel = btnSubmit ? btnSubmit.innerHTML : '';
+            let attachmentPreviewUrl = null;
+            let attachmentProcessingPromise = Promise.resolve();
+            let attachmentIsProcessing = false;
+            let resubmitAfterAttachmentProcessing = false;
 
             // Sarang Walet elements
             const jenisSarangSelect = document.getElementById('inputJenisSarang');
@@ -1109,6 +1228,300 @@
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 2,
                 });
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes < 1024) {
+                    return bytes + ' B';
+                }
+
+                if (bytes < 1024 * 1024) {
+                    return (bytes / 1024).toFixed(0) + ' KB';
+                }
+
+                return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+            }
+
+            function setSubmitProcessingState(isProcessing, label) {
+                if (!btnSubmit) {
+                    return;
+                }
+
+                btnSubmit.disabled = isProcessing;
+                btnSubmit.innerHTML = isProcessing ? label : initialSubmitLabel;
+            }
+
+            function clearAttachmentClientError() {
+                if (!attachmentClientError) {
+                    return;
+                }
+
+                attachmentClientError.textContent = '';
+                attachmentClientError.style.display = 'none';
+            }
+
+            function showAttachmentClientError(message) {
+                if (!attachmentClientError) {
+                    return;
+                }
+
+                attachmentClientError.textContent = message;
+                attachmentClientError.style.display = 'block';
+            }
+
+            function setFileProcessingMessage(message) {
+                if (!fileProcessing) {
+                    return;
+                }
+
+                if (!message) {
+                    fileProcessing.textContent = '';
+                    fileProcessing.style.display = 'none';
+
+                    return;
+                }
+
+                fileProcessing.textContent = message;
+                fileProcessing.style.display = 'block';
+            }
+
+            function revokeAttachmentPreview() {
+                if (attachmentPreviewUrl) {
+                    URL.revokeObjectURL(attachmentPreviewUrl);
+                    attachmentPreviewUrl = null;
+                }
+            }
+
+            function hideAttachmentPreview() {
+                revokeAttachmentPreview();
+
+                if (attachmentPreviewImage) {
+                    attachmentPreviewImage.removeAttribute('src');
+                    attachmentPreviewImage.style.display = 'none';
+                }
+
+                if (attachmentPreviewPdf) {
+                    attachmentPreviewPdf.removeAttribute('src');
+                    attachmentPreviewPdf.style.display = 'none';
+                }
+
+                if (attachmentPreviewCard) {
+                    attachmentPreviewCard.style.display = 'none';
+                }
+            }
+
+            function updateAttachmentPreview(file, badge) {
+                if (!file || !attachmentPreviewCard || !attachmentPreviewBadge) {
+                    return;
+                }
+
+                revokeAttachmentPreview();
+                attachmentPreviewUrl = URL.createObjectURL(file);
+                attachmentPreviewBadge.textContent = badge;
+                attachmentPreviewCard.style.display = 'block';
+
+                if (file.type === 'application/pdf') {
+                    attachmentPreviewPdf.src = attachmentPreviewUrl;
+                    attachmentPreviewPdf.style.display = 'block';
+                    attachmentPreviewImage.style.display = 'none';
+
+                    return;
+                }
+
+                attachmentPreviewImage.src = attachmentPreviewUrl;
+                attachmentPreviewImage.style.display = 'block';
+                attachmentPreviewPdf.style.display = 'none';
+            }
+
+            function updateSelectedFileInfo(file, detail) {
+                if (!fileSelected || !fileName || !fileMeta) {
+                    return;
+                }
+
+                fileName.textContent = file.name;
+                fileMeta.textContent = detail;
+                fileSelected.style.display = 'flex';
+            }
+
+            function resetAttachmentState(clearInput = true) {
+                if (clearInput && fileInput) {
+                    fileInput.value = '';
+                }
+
+                if (fileSelected) {
+                    fileSelected.style.display = 'none';
+                }
+
+                setFileProcessingMessage('');
+                clearAttachmentClientError();
+                hideAttachmentPreview();
+            }
+
+            function syncAttachmentFile(file) {
+                if (!fileInput) {
+                    return;
+                }
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+            }
+
+            function createCompressedFileName(originalName) {
+                const baseName = originalName.replace(/\.[^.]+$/, '');
+
+                return baseName + '-compressed.jpg';
+            }
+
+            function loadImageFile(file) {
+                return new Promise(function (resolve, reject) {
+                    const imageUrl = URL.createObjectURL(file);
+                    const image = new Image();
+
+                    image.onload = function () {
+                        URL.revokeObjectURL(imageUrl);
+                        resolve(image);
+                    };
+
+                    image.onerror = function () {
+                        URL.revokeObjectURL(imageUrl);
+                        reject(new Error('Gambar tidak dapat dibaca.'));
+                    };
+
+                    image.src = imageUrl;
+                });
+            }
+
+            function canvasToBlob(canvas, type, quality) {
+                return new Promise(function (resolve) {
+                    canvas.toBlob(resolve, type, quality);
+                });
+            }
+
+            async function compressImageFile(file) {
+                if (file.size <= maxAttachmentBytes) {
+                    return {
+                        file,
+                        compressed: false,
+                        originalSize: file.size,
+                    };
+                }
+
+                const image = await loadImageFile(file);
+                let width = image.naturalWidth || image.width;
+                let height = image.naturalHeight || image.height;
+                let quality = 0.9;
+
+                for (let attempt = 0; attempt < 12; attempt++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const context = canvas.getContext('2d', { alpha: false });
+                    context.fillStyle = '#ffffff';
+                    context.fillRect(0, 0, width, height);
+                    context.drawImage(image, 0, 0, width, height);
+
+                    const blob = await canvasToBlob(canvas, 'image/jpeg', quality);
+
+                    if (blob && blob.size <= maxAttachmentBytes) {
+                        return {
+                            file: new File([blob], createCompressedFileName(file.name), {
+                                type: 'image/jpeg',
+                                lastModified: Date.now(),
+                            }),
+                            compressed: true,
+                            originalSize: file.size,
+                        };
+                    }
+
+                    if (quality > 0.45) {
+                        quality -= 0.1;
+                        continue;
+                    }
+
+                    const nextWidth = Math.max(Math.round(width * 0.85), 720);
+                    const nextHeight = Math.max(Math.round(height * 0.85), 720);
+
+                    if (nextWidth === width && nextHeight === height) {
+                        break;
+                    }
+
+                    width = nextWidth;
+                    height = nextHeight;
+                    quality = 0.82;
+                }
+
+                throw new Error('Gambar tidak dapat dikompres hingga maksimal 1 MB. Silakan gunakan gambar dengan resolusi lebih kecil.');
+            }
+
+            async function processSelectedAttachment(file) {
+                if (!file) {
+                    resetAttachmentState(false);
+
+                    return;
+                }
+
+                clearAttachmentClientError();
+                setFileProcessingMessage('');
+
+                const isImage = file.type === 'image/jpeg' || file.type === 'image/png';
+                const isPdf = file.type === 'application/pdf';
+
+                if (!isImage && !isPdf) {
+                    resetAttachmentState();
+                    showAttachmentClientError('Lampiran harus berupa JPG, PNG, atau PDF.');
+
+                    return;
+                }
+
+                if (isPdf) {
+                    if (file.size > maxAttachmentBytes) {
+                        resetAttachmentState();
+                        showAttachmentClientError('Ukuran file PDF maksimal 1 MB.');
+
+                        return;
+                    }
+
+                    syncAttachmentFile(file);
+                    updateSelectedFileInfo(file, formatFileSize(file.size) + ' • Siap diupload');
+                    updateAttachmentPreview(file, 'PDF');
+
+                    return;
+                }
+
+                attachmentIsProcessing = true;
+                setSubmitProcessingState(true, '<i class="bi bi-hourglass-split"></i> Memproses lampiran...');
+                setFileProcessingMessage(file.size > maxAttachmentBytes
+                    ? 'Gambar sedang dikompres agar ukuran upload maksimal 1 MB...'
+                    : 'Menyiapkan preview gambar...');
+
+                try {
+                    const result = await compressImageFile(file);
+                    syncAttachmentFile(result.file);
+
+                    const detail = result.compressed
+                        ? formatFileSize(result.originalSize) + ' → ' + formatFileSize(result.file.size) + ' • Dikompres otomatis'
+                        : formatFileSize(result.file.size) + ' • Siap diupload';
+
+                    updateSelectedFileInfo(result.file, detail);
+                    updateAttachmentPreview(result.file, result.compressed ? 'Gambar Terkompres' : 'Gambar');
+                    setFileProcessingMessage(result.compressed ? 'Kompresi selesai. Preview menampilkan file yang akan dikirim.' : 'Preview menampilkan file yang akan dikirim.');
+                } catch (error) {
+                    resetAttachmentState();
+                    showAttachmentClientError(error.message || 'Lampiran tidak dapat diproses.');
+                } finally {
+                    attachmentIsProcessing = false;
+                    setSubmitProcessingState(false);
+
+                    if (resubmitAfterAttachmentProcessing) {
+                        resubmitAfterAttachmentProcessing = false;
+
+                        if (fileInput && fileInput.files.length > 0) {
+                            saForm.requestSubmit();
+                        }
+                    }
+                }
             }
 
             function updatePpjSectionVisibility() {
@@ -1359,26 +1772,51 @@
             // File input
             if (fileInput) {
                 fileInput.addEventListener('change', function () {
-                    if (this.files.length > 0) {
-                        var file = this.files[0];
-                        var maxSize = 1 * 1024 * 1024; // 1MB
-                        var maxImageUploadSize = 8 * 1024 * 1024;
-                        var isImage = file.type.startsWith('image/');
+                    attachmentProcessingPromise = processSelectedAttachment(this.files[0] || null);
+                });
+            }
 
-                        if ((isMblb && isImage && file.size > maxImageUploadSize) || (!isMblb || !isImage) && file.size > maxSize) {
-                            alert(isMblb && isImage
-                                ? 'Ukuran gambar maksimal 8MB sebelum kompresi. File yang dipilih: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB'
-                                : 'Ukuran file maksimal 1MB. File yang dipilih: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
-                            this.value = '';
-                            fileSelected.style.display = 'none';
-                            return;
-                        }
-                        fileSelected.style.display = 'flex';
-                        fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB'
-                            + (isMblb && isImage ? ', akan dikompres otomatis' : '') + ')';
-                    } else {
-                        fileSelected.style.display = 'none';
+            if (fileUploadArea && fileInput) {
+                ['dragenter', 'dragover'].forEach(function (eventName) {
+                    fileUploadArea.addEventListener(eventName, function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        fileUploadArea.classList.add('is-dragover');
+                    });
+                });
+
+                ['dragleave', 'dragend', 'drop'].forEach(function (eventName) {
+                    fileUploadArea.addEventListener(eventName, function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        fileUploadArea.classList.remove('is-dragover');
+                    });
+                });
+
+                fileUploadArea.addEventListener('drop', function (event) {
+                    const droppedFile = event.dataTransfer?.files?.[0];
+
+                    if (!droppedFile) {
+                        return;
                     }
+
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(droppedFile);
+                    fileInput.files = dataTransfer.files;
+                    fileInput.dispatchEvent(new Event('change'));
+                });
+            }
+
+            if (saForm) {
+                saForm.addEventListener('submit', function (event) {
+                    if (attachmentIsProcessing) {
+                        event.preventDefault();
+                        resubmitAfterAttachmentProcessing = true;
+
+                        return;
+                    }
+
+                    clearAttachmentClientError();
                 });
             }
 

@@ -91,6 +91,23 @@ class PortalSelfAssessmentBranchWorkflowTest extends TestCase
         $this->assertDatabaseCount('taxes', 0);
     }
 
+    public function test_portal_self_assessment_create_page_includes_attachment_preview_and_auto_compress_hooks(): void
+    {
+        $context = $this->createStandardPortalContext();
+
+        $response = $this->actingAs($context['portalUser'])
+            ->get(route('portal.self-assessment.create', $context['jenisPajak']->id));
+
+        $response->assertOk()
+            ->assertSee('id="inputAttachment"', false)
+            ->assertSee('data-max-file-size="1048576"', false)
+            ->assertSee('data-auto-compress-images="true"', false)
+            ->assertSee('id="attachmentPreviewCard"', false)
+            ->assertSee('id="attachmentPreviewImage"', false)
+            ->assertSee('id="attachmentPreviewPdf"', false)
+            ->assertSee('id="attachmentClientError"', false);
+    }
+
     public function test_portal_sarang_walet_generates_billing_and_detail(): void
     {
         Storage::fake('local');

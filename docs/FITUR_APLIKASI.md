@@ -703,7 +703,8 @@ Catatan implementasi saat ini:
     - PPJ `PPJ_DIHASILKAN_SENDIRI` → input kapasitas kVA, tingkat penggunaan, jangka waktu jam, dan harga satuan listrik aktif
     - Sarang Walet → pilih jenis sarang dan input volume (kg)
     - MBLB → input volume per mineral aktif, lalu submit sebagai pengajuan verifikasi
-  - Upload lampiran wajib pada flow portal
+  - Upload lampiran wajib pada flow portal, dengan preview dokumen sebelum submit
+  - Gambar lampiran yang melebihi 1 MB dikompres otomatis di browser sebelum dikirim; PDF tetap dibatasi 1 MB
 3. **Sistem menghitung:**
   - Lookup tarif berlaku
   - Hitung pajak terutang sesuai tipe form yang dipilih
