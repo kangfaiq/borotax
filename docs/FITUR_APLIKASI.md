@@ -766,6 +766,7 @@ Wajib pajak dapat melihat dan mengunduh:
 - Daftar semua notifikasi (judul, isi, waktu)
 - Mark as read satu per satu atau semua
 - Endpoint portal yang dipakai UI: `/portal/notifications`, `/portal/notifications/unread-count`, `/portal/notifications/{id}/read`, `/portal/notifications/read-all`
+- Endpoint portal notifikasi hanya dapat membaca dan mengubah notifikasi milik wajib pajak yang sedang login; akses ke notifikasi user lain akan ditolak
 - Logout portal menggunakan `POST /logout`
 
 ---
