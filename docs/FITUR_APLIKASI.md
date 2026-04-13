@@ -720,6 +720,7 @@ Catatan implementasi saat ini:
 - Side navigation portal menyediakan menu **Ajukan Pembetulan** agar WP bisa memilih billing aktif terbaru kapan saja, tidak hanya dari halaman sukses setelah membuat billing
 - Daftar billing pembetulan di portal menggunakan pagination agar tetap ringan saat data WP sudah banyak, dan filter pencarian tetap dipertahankan di URL saat pindah halaman
 - Form: alasan, omzet baru, lampiran (opsional)
+- Form pembetulan portal menampilkan preview dokumen sebelum submit, dan gambar lampiran di atas 1 MB dikompres otomatis di browser sebelum dikirim; PDF tetap dibatasi 1 MB
 - Guard pengajuan: satu billing tidak boleh memiliki lebih dari satu `PembetulanRequest` berstatus `pending`
 - Lampiran portal bersifat opsional, menerima JPG/PNG/PDF maksimal 1 MB
 - Review pembetulan dilakukan dari backoffice oleh admin/petugas sampai menghasilkan billing pengganti atau penolakan

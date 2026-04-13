@@ -158,4 +158,28 @@ class PortalPembetulanNavigationTest extends TestCase
             ->assertSee($billingCodes[10])
             ->assertDontSee($billingCodes[0]);
     }
+
+    public function test_portal_pembetulan_create_page_includes_attachment_preview_and_auto_compress_hooks(): void
+    {
+        $wajibPajak = $this->createApprovedWajibPajakFixture([], [
+            'email' => 'pembetulan-form@example.test',
+        ]);
+        $taxObject = $this->createTaxObjectFixture($wajibPajak, '41102');
+        $tax = $this->createTaxFixture($taxObject, $wajibPajak->user, [
+            'billing_code' => '352210100000263001',
+            'status' => TaxStatus::Pending,
+        ]);
+
+        $response = $this->actingAs($wajibPajak->user)
+            ->get(route('portal.pembetulan.create', $tax->id));
+
+        $response->assertOk()
+            ->assertSee('id="inputLampiranPembetulan"', false)
+            ->assertSee('data-max-file-size="1048576"', false)
+            ->assertSee('data-auto-compress-images="true"', false)
+            ->assertSee('id="pembetulanAttachmentPreviewCard"', false)
+            ->assertSee('id="pembetulanAttachmentPreviewImage"', false)
+            ->assertSee('id="pembetulanAttachmentPreviewPdf"', false)
+            ->assertSee('id="pembetulanAttachmentClientError"', false);
+    }
 }
