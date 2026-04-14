@@ -377,6 +377,8 @@ class AsetReklamePemkabResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,

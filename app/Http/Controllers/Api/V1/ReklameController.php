@@ -20,7 +20,7 @@ class ReklameController extends BaseController
         $user = $request->user();
 
         $objects = ReklameObject::where('nik_hash', $user->nik_hash)
-            ->where('status', 'aktif') // Only active objects
+            ->aktif()
             ->get();
 
         return $this->sendResponse($objects, 'Daftar Objek Reklame.');
@@ -101,6 +101,8 @@ class ReklameController extends BaseController
      */
     public function getAsetPemkab(Request $request)
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $query = AsetReklamePemkab::where('is_active', true);
 
         if ($request->filled('jenis')) {
@@ -134,6 +136,8 @@ class ReklameController extends BaseController
      */
     public function submitSewa(Request $request)
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $validator = Validator::make($request->all(), [
             'aset_reklame_pemkab_id'   => 'required|exists:aset_reklame_pemkab,id',
             'jenis_reklame_dipasang'   => 'required|string|max:255',

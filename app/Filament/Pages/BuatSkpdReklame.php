@@ -451,6 +451,8 @@ class BuatSkpdReklame extends Page implements HasForms
 
     public function searchAset(): void
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $keyword = trim($this->searchAsetKeyword ?? '');
 
         if (strlen($keyword) < 2) {
@@ -491,8 +493,12 @@ class BuatSkpdReklame extends Page implements HasForms
 
     public function selectAsetPemkab(string $id): void
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $aset = AsetReklamePemkab::find($id);
-        if (!$aset) return;
+        if (! $aset) {
+            return;
+        }
 
         $this->selectedAsetPemkabId = $id;
         $this->selectedAsetPemkabData = [

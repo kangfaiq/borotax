@@ -224,6 +224,8 @@ class ReklameController extends Controller
 
     public function sewaForm(string $asetId)
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $aset = AsetReklamePemkab::where('is_active', true)->findOrFail($asetId);
 
         return view('portal.reklame.sewa-form', compact('aset'));
@@ -231,6 +233,8 @@ class ReklameController extends Controller
 
     public function sewaStore(Request $request, string $asetId)
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $aset = AsetReklamePemkab::where('is_active', true)->findOrFail($asetId);
 
         if ($aset->status_ketersediaan !== 'tersedia') {

@@ -238,6 +238,8 @@ class PublicMenuController extends Controller
      */
     public function sewaReklame()
     {
+        AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $asetReklame = AsetReklamePemkab::where('is_active', true)
             ->with(['skpdReklame' => function ($q) {
                 $q->whereIn('status', ['disetujui', 'draft', 'menungguVerifikasi'])

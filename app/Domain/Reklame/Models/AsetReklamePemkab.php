@@ -95,6 +95,8 @@ class AsetReklamePemkab extends Model
 
     public function scopeTersedia($query)
     {
+        static::syncExpiredOpdBorrowings();
+
         return $query->where('status_ketersediaan', 'tersedia')->where('is_active', true);
     }
 
@@ -118,14 +120,80 @@ class AsetReklamePemkab extends Model
         return $this->is_active && $this->status_ketersediaan === 'tersedia';
     }
 
+    public function getStatusKetersediaanAttribute($value): string
+    {
+        if ($value === 'dipinjam_opd') {
+            $this->syncExpiredOpdBorrowing();
+
+            return $this->attributes['status_ketersediaan'] ?? $value;
+        }
+
+        return $value;
+    }
+
+    public static function syncExpiredOpdBorrowings(): int
+    {
+        $updated = 0;
+
+        static::query()
+            ->where('is_active', true)
+            ->where('status_ketersediaan', 'dipinjam_opd')
+            ->whereDate('pinjam_selesai', '<', today())
+            ->get()
+            ->each(function (self $aset) use (&$updated): void {
+                if ($aset->syncExpiredOpdBorrowing()) {
+                    $updated++;
+                }
+            });
+
+        return $updated;
+    }
+
+    public function syncExpiredOpdBorrowing(): bool
+    {
+        if (! $this->shouldAutoReleaseExpiredOpdBorrowing()) {
+            return false;
+        }
+
+        $tanggalSelesai = $this->pinjam_selesai?->format('d-m-Y');
+
+        $this->peminjamanAktif()->update(['status' => 'selesai']);
+
+        $this->update([
+            'status_ketersediaan' => 'tersedia',
+            'catatan_status' => $tanggalSelesai
+                ? 'Otomatis: masa pinjam OPD berakhir pada ' . $tanggalSelesai
+                : 'Otomatis: masa pinjam OPD berakhir',
+            'peminjam_opd' => null,
+            'materi_pinjam' => null,
+            'pinjam_mulai' => null,
+            'pinjam_selesai' => null,
+            'catatan_pinjam' => null,
+        ]);
+
+        return true;
+    }
+
+    protected function shouldAutoReleaseExpiredOpdBorrowing(): bool
+    {
+        return $this->exists
+            && $this->getRawOriginal('status_ketersediaan') === 'dipinjam_opd'
+            && $this->is_active
+            && $this->pinjam_selesai?->lt(today());
+    }
+
     /**
      * Sinkronisasi status ketersediaan berdasarkan SKPD aktif.
      * Status 'maintenance' dan 'tidak_aktif' tidak akan ditimpa.
      */
     public function syncKetersediaan(): void
     {
+        if ($this->syncExpiredOpdBorrowing()) {
+            return;
+        }
+
         // Jangan override status manual
-        if (in_array($this->status_ketersediaan, ['maintenance', 'tidak_aktif', 'dipinjam_opd'])) {
+        if (in_array($this->getRawOriginal('status_ketersediaan'), ['maintenance', 'tidak_aktif', 'dipinjam_opd'], true)) {
             return;
         }
 
@@ -136,7 +204,7 @@ class AsetReklamePemkab extends Model
 
         $newStatus = $hasActiveSkpd ? 'disewa' : 'tersedia';
 
-        if ($this->status_ketersediaan !== $newStatus) {
+        if ($this->getRawOriginal('status_ketersediaan') !== $newStatus) {
             $this->update([
                 'status_ketersediaan' => $newStatus,
                 'catatan_status' => $hasActiveSkpd ? 'Otomatis: SKPD aktif' : 'Otomatis: semua SKPD expired',

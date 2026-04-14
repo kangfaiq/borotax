@@ -232,11 +232,15 @@ class ReklameObject extends Model
 
     public function scopeAktif($query)
     {
+        static::syncExpiredStatuses();
+
         return $query->where('status', 'aktif');
     }
 
     public function scopeKadaluarsa($query)
     {
+        static::syncExpiredStatuses();
+
         return $query->where('status', 'kadaluarsa')
             ->orWhere('masa_berlaku_sampai', '<', now());
     }
@@ -247,6 +251,54 @@ class ReklameObject extends Model
     }
 
     // ── Helpers ─────────────────────────────────────────────
+
+    public function getStatusAttribute($value): ?string
+    {
+        if ($value === 'aktif') {
+            $this->syncExpiredStatus();
+
+            return $this->attributes['status'] ?? $value;
+        }
+
+        return $value;
+    }
+
+    public static function syncExpiredStatuses(): int
+    {
+        $updated = 0;
+
+        static::query()
+            ->where('status', 'aktif')
+            ->whereDate('masa_berlaku_sampai', '<', today())
+            ->get()
+            ->each(function (self $reklameObject) use (&$updated): void {
+                if ($reklameObject->syncExpiredStatus()) {
+                    $updated++;
+                }
+            });
+
+        return $updated;
+    }
+
+    public function syncExpiredStatus(): bool
+    {
+        if (! $this->shouldSyncExpiredStatus()) {
+            return false;
+        }
+
+        $this->update([
+            'status' => 'kadaluarsa',
+        ]);
+
+        return true;
+    }
+
+    protected function shouldSyncExpiredStatus(): bool
+    {
+        return $this->exists
+            && $this->getRawOriginal('status') === 'aktif'
+            && $this->masa_berlaku_sampai?->lt(today());
+    }
 
     public function isKadaluarsa(): bool
     {

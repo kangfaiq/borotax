@@ -9,10 +9,12 @@ class SyncKetersediaanAsetReklame extends Command
 {
     protected $signature = 'reklame:sync-ketersediaan';
 
-    protected $description = 'Sinkronisasi status ketersediaan aset reklame pemkab berdasarkan SKPD aktif';
+    protected $description = 'Sinkronisasi status ketersediaan aset reklame pemkab berdasarkan SKPD aktif dan masa pinjam OPD';
 
     public function handle(): int
     {
+        $opdAutoReleased = AsetReklamePemkab::syncExpiredOpdBorrowings();
+
         $asets = AsetReklamePemkab::where('is_active', true)
             ->where('status_ketersediaan', 'disewa')
             ->get();
@@ -29,7 +31,7 @@ class SyncKetersediaanAsetReklame extends Command
             }
         }
 
-        $this->info("Selesai. {$updated} aset diperbarui dari total {$asets->count()} aset disewa.");
+        $this->info("Selesai. {$updated} aset disewa diperbarui dan {$opdAutoReleased} aset pinjam OPD otomatis dikembalikan tersedia.");
 
         return self::SUCCESS;
     }
