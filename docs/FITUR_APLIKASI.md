@@ -1428,6 +1428,8 @@ Retribusi Sewa Tanah adalah retribusi daerah atas pemakaian tanah milik pemerint
 | Format Nomor | `SKRD/{YYYY}/{MM}/{000001}` |
 | Workflow | Draft oleh petugas → Verifikator setujui/tolak |
 | Halaman Input | `BuatSkrdSewaTanah` (navigasi: Laporan Petugas) |
+| Sub Jenis pada Draft SKRD | Read-only di halaman buat SKRD dan selalu diwariskan dari `ObjekRetribusiSewaTanah` yang dipilih |
+| Informasi Tarif di Halaman Input | Menampilkan tarif aktif, satuan masa sub jenis, masa tarif aktif, dan menghitung otomatis `masa berlaku sampai` dari tanggal mulai + durasi sesuai satuan waktu tarif |
 | Halaman Verifikasi | `SkrdSewaRetribusiResource` (navigasi: Verifikasi, sort 4, badge count draft) |
 | On Approve | Generate nomor SKRD resmi, kode billing (prefix 41104 via `billing_kode_override`), jatuh tempo, record Tax |
 | Kode Billing | Menggunakan `JenisPajak::getBillingKode()` yang mengembalikan `41104` (bukan `42101`) untuk kompatibilitas sistem billing lama |

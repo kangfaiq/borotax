@@ -50,8 +50,15 @@ class RetribusiSewaTanahService
 
     public function createDraftSkrd(array $data): SkrdSewaRetribusi
     {
+        $objekRetribusi = ObjekRetribusiSewaTanah::findOrFail($data['objek_retribusi_id']);
+        $subJenisPajakId = $objekRetribusi->sub_jenis_pajak_id;
+
+        if (! $subJenisPajakId) {
+            throw new Exception('Objek retribusi belum memiliki sub jenis retribusi.');
+        }
+
         $candidates = SkrdSewaRetribusi::whereIn('status', ['draft', 'disetujui'])
-            ->where('sub_jenis_pajak_id', $data['sub_jenis_pajak_id'])
+            ->where('sub_jenis_pajak_id', $subJenisPajakId)
             ->where('masa_berlaku_sampai', '>=', $data['masa_berlaku_mulai'])
             ->where('masa_berlaku_mulai', '<=', $data['masa_berlaku_sampai'])
             ->get();
@@ -64,16 +71,15 @@ class RetribusiSewaTanahService
             throw new Exception('Sudah ada SKRD aktif (No: ' . $existing->nomor_skrd . ') dengan masa retribusi yang masih berlaku untuk sub jenis dan wajib bayar yang sama.');
         }
 
-        $objekRetribusi = ObjekRetribusiSewaTanah::findOrFail($data['objek_retribusi_id']);
         $luasM2 = (float) $objekRetribusi->luas_m2;
 
         $tarifPajakPersen = (float) ($data['tarif_pajak_persen']
             ?? JenisPajak::where('kode', '41104')->value('tarif_default')
             ?? 25.00);
 
-        return DB::transaction(function () use ($data, $objekRetribusi, $luasM2, $tarifPajakPersen) {
+        return DB::transaction(function () use ($data, $objekRetribusi, $luasM2, $tarifPajakPersen, $subJenisPajakId) {
             $calc = $this->calculateRetribusi(
-                $data['sub_jenis_pajak_id'],
+                $subJenisPajakId,
                 $luasM2,
                 (int) $data['jumlah_reklame'],
                 (int) $data['durasi'],
@@ -86,7 +92,7 @@ class RetribusiSewaTanahService
             return SkrdSewaRetribusi::create([
                 'nomor_skrd' => SkrdSewaRetribusi::generateNomorSkrd() . ' (DRAFT)',
                 'jenis_pajak_id' => $jenisPajak?->id,
-                'sub_jenis_pajak_id' => $data['sub_jenis_pajak_id'],
+                'sub_jenis_pajak_id' => $subJenisPajakId,
                 'objek_retribusi_id' => $objekRetribusi->id,
                 'npwpd' => $data['npwpd'] ?? $objekRetribusi->npwpd,
                 'nik_wajib_pajak' => $data['nik_wajib_pajak'] ?? $objekRetribusi->nik,

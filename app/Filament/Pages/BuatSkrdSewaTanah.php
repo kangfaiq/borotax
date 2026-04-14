@@ -3,7 +3,6 @@
 namespace App\Filament\Pages;
 
 use App\Domain\Master\Models\JenisPajak;
-use App\Domain\Master\Models\SubJenisPajak;
 use App\Domain\Retribusi\Models\ObjekRetribusiSewaTanah;
 use App\Domain\Retribusi\Models\TarifSewaTanah;
 use App\Domain\Retribusi\Services\RetribusiSewaTanahService;
@@ -54,35 +53,22 @@ class BuatSkrdSewaTanah extends Page
     public ?string $npwpd = null;
     public ?string $namaObjek = null;
     public ?string $alamatObjek = null;
+    public ?string $subJenisPajakNama = null;
     public ?float $luasM2 = null;
 
     // Computed preview
     public ?float $previewTarif = null;
     public ?string $previewSatuanLabel = null;
+    public ?string $previewTarifMasa = null;
     public ?float $previewJumlahRetribusi = null;
     public float $tarifPajakPersen = 25.00;
 
     // Options
-    public array $subJenisOptions = [];
     public array $objekRetribusiOptions = [];
 
     public function mount(): void
     {
         $this->masaBerlakuMulai = now()->format('Y-m-d');
-
-        $jenisPajak = JenisPajak::where('kode', '42101')->first();
-        if ($jenisPajak) {
-            $this->subJenisOptions = SubJenisPajak::where('jenis_pajak_id', $jenisPajak->id)
-                ->active()
-                ->ordered()
-                ->get()
-                ->map(fn (SubJenisPajak $sub) => [
-                    'id' => $sub->id,
-                    'nama' => $sub->nama,
-                    'kode' => $sub->kode,
-                ])
-                ->toArray();
-        }
 
         $this->objekRetribusiOptions = ObjekRetribusiSewaTanah::query()
             ->with('subJenisPajak:id,nama')
@@ -151,13 +137,9 @@ class BuatSkrdSewaTanah extends Page
             $this->namaObjek = $objek->nama_objek;
             $this->alamatObjek = $objek->alamat_objek;
             $this->subJenisPajakId = $objek->sub_jenis_pajak_id;
+            $this->subJenisPajakNama = $objek->subJenisPajak?->nama;
         }
 
-        $this->recalculate();
-    }
-
-    public function updatedSubJenisPajakId(): void
-    {
         $this->recalculate();
     }
 
@@ -187,23 +169,29 @@ class BuatSkrdSewaTanah extends Page
         $this->npwpd = null;
         $this->namaObjek = null;
         $this->alamatObjek = null;
+        $this->subJenisPajakNama = null;
         $this->previewTarif = null;
         $this->previewSatuanLabel = null;
+        $this->previewTarifMasa = null;
         $this->previewJumlahRetribusi = null;
+        $this->masaBerlakuSampai = null;
     }
 
     private function recalculate(): void
     {
         $this->previewTarif = null;
         $this->previewSatuanLabel = null;
+        $this->previewTarifMasa = null;
         $this->previewJumlahRetribusi = null;
 
         if (! $this->subJenisPajakId || ! $this->durasi || $this->durasi < 1 || ! $this->luasM2) {
+            $this->masaBerlakuSampai = null;
             return;
         }
 
-        $tarif = TarifSewaTanah::lookupTarif($this->subJenisPajakId);
+        $tarif = TarifSewaTanah::lookupTarif($this->subJenisPajakId, $this->masaBerlakuMulai);
         if (! $tarif) {
+            $this->masaBerlakuSampai = null;
             return;
         }
 
@@ -213,21 +201,26 @@ class BuatSkrdSewaTanah extends Page
             'perBulan' => 'per Bulan',
             default => $tarif->satuan_waktu,
         };
+        $this->previewTarifMasa = $this->formatTarifMasa($tarif->berlaku_mulai?->toDateString(), $tarif->berlaku_sampai?->toDateString());
 
         $jumlahReklame = max(1, $this->jumlahReklame ?? 1);
         $this->previewJumlahRetribusi = round(
             $this->luasM2 * $jumlahReklame * $this->previewTarif * ($this->tarifPajakPersen / 100) * $this->durasi
         );
+
+        $this->updateMasaBerlakuSampai();
     }
 
     private function updateMasaBerlakuSampai(): void
     {
         if (! $this->masaBerlakuMulai || ! $this->subJenisPajakId || ! $this->durasi) {
+            $this->masaBerlakuSampai = null;
             return;
         }
 
-        $tarif = TarifSewaTanah::lookupTarif($this->subJenisPajakId);
+        $tarif = TarifSewaTanah::lookupTarif($this->subJenisPajakId, $this->masaBerlakuMulai);
         if (! $tarif) {
+            $this->masaBerlakuSampai = null;
             return;
         }
 
@@ -240,11 +233,22 @@ class BuatSkrdSewaTanah extends Page
         };
     }
 
+    private function formatTarifMasa(?string $berlakuMulai, ?string $berlakuSampai): ?string
+    {
+        if (! $berlakuMulai && ! $berlakuSampai) {
+            return null;
+        }
+
+        $mulai = $berlakuMulai ? Carbon::parse($berlakuMulai)->translatedFormat('d M Y') : 'Awal';
+        $sampai = $berlakuSampai ? Carbon::parse($berlakuSampai)->translatedFormat('d M Y') : 'Sekarang';
+
+        return $mulai . ' - ' . $sampai;
+    }
+
     public function simpanDraft(RetribusiSewaTanahService $service): void
     {
         $this->validate([
             'objekRetribusiId' => 'required|exists:objek_retribusi_sewa_tanah,id',
-            'subJenisPajakId' => 'required|exists:sub_jenis_pajak,id',
             'jumlahReklame' => 'required|integer|min:1',
             'durasi' => 'required|integer|min:1',
             'masaBerlakuMulai' => 'required|date',
@@ -254,7 +258,6 @@ class BuatSkrdSewaTanah extends Page
         try {
             $skrd = $service->createDraftSkrd([
                 'objek_retribusi_id' => $this->objekRetribusiId,
-                'sub_jenis_pajak_id' => $this->subJenisPajakId,
                 'npwpd' => $this->npwpd,
                 'nik_wajib_pajak' => $this->nikWajibPajak,
                 'nama_wajib_pajak' => $this->namaWajibPajak,

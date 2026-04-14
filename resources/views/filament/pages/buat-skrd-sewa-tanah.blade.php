@@ -193,16 +193,31 @@
                                 <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
                                 Sub Jenis Retribusi
                             </label>
-                            <select wire:model.live="subJenisPajakId"
-                                class="ring-primary block w-full py-2 px-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white">
-                                <option value="">-- Pilih sub jenis --</option>
-                                @foreach($subJenisOptions as $opt)
-                                    <option value="{{ $opt['id'] }}">{{ $opt['nama'] }}</option>
-                                @endforeach
-                            </select>
-                            @error('subJenisPajakId')
-                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
-                            @enderror
+                            <input type="text"
+                                value="{{ $subJenisPajakNama ?? '-' }}"
+                                readonly
+                                class="block w-full py-2 px-3 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Sub jenis selalu mengikuti objek retribusi yang dipilih.</p>
+
+                            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tarif Aktif</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                                        @if($previewTarif)
+                                            Rp {{ number_format($previewTarif, 0, ',', '.') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{{ $previewSatuanLabel ?: 'Satuan waktu belum tersedia' }}</p>
+                                </div>
+
+                                <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Masa Tarif Sub Jenis</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ $previewTarifMasa ?: '-' }}</p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Dipakai untuk menghitung tarif pada tanggal mulai yang dipilih.</p>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -254,6 +269,7 @@
                                 </label>
                                 <input type="date" wire:model="masaBerlakuSampai" readonly
                                     class="block w-full py-2 px-3 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Tanggal ini dihitung otomatis dari tanggal mulai, durasi, dan satuan masa sub jenis.</p>
                                 @error('masaBerlakuSampai')
                                     <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
                                 @enderror

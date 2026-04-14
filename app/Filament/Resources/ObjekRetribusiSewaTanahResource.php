@@ -66,16 +66,7 @@ class ObjekRetribusiSewaTanahResource extends Resource
                         Forms\Components\Select::make('npwpd')
                             ->label('NPWPD')
                             ->searchable()
-                            ->getSearchResultsUsing(function (string $search): array {
-                                return WajibPajak::where('status', 'disetujui')
-                                    ->where('npwpd', 'like', "%{$search}%")
-                                    ->limit(20)
-                                    ->get()
-                                    ->mapWithKeys(fn (WajibPajak $wp) => [
-                                        $wp->npwpd => "{$wp->npwpd} - {$wp->nama_lengkap}",
-                                    ])
-                                    ->toArray();
-                            })
+                            ->getSearchResultsUsing(fn (string $search): array => static::searchApprovedWajibPajakOptions($search))
                             ->getOptionLabelUsing(function (?string $value): ?string {
                                 $wp = static::resolveApprovedWajibPajakByNpwpd($value);
 
@@ -366,6 +357,48 @@ class ObjekRetribusiSewaTanahResource extends Resource
         return WajibPajak::where('npwpd', $npwpd)
             ->where('status', 'disetujui')
             ->first();
+    }
+
+    public static function searchApprovedWajibPajakOptions(string $search): array
+    {
+        $keyword = trim($search);
+
+        if ($keyword === '') {
+            return [];
+        }
+
+        $results = collect();
+
+        if (ctype_digit($keyword) && strlen($keyword) >= 5) {
+            $nikHash = WajibPajak::generateHash($keyword);
+
+            $results = WajibPajak::query()
+                ->where('status', 'disetujui')
+                ->where('nik_hash', $nikHash)
+                ->limit(20)
+                ->get();
+        }
+
+        if ($results->isEmpty()) {
+            $keyword = str($keyword)->lower()->toString();
+
+            $results = WajibPajak::query()
+                ->where('status', 'disetujui')
+                ->get()
+                ->filter(fn (WajibPajak $wp): bool =>
+                    str_contains(strtolower((string) $wp->npwpd), $keyword)
+                    || str_contains(strtolower((string) $wp->nik), $keyword)
+                    || str_contains(strtolower((string) $wp->nama_lengkap), $keyword)
+                )
+                ->take(20)
+                ->values();
+        }
+
+        return $results
+            ->mapWithKeys(fn (WajibPajak $wp) => [
+                $wp->npwpd => "{$wp->npwpd} - {$wp->nama_lengkap}",
+            ])
+            ->toArray();
     }
 
     protected static function formatReklameObjectLabel(ReklameObject $objek): string

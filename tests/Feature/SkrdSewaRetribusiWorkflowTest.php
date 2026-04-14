@@ -13,6 +13,7 @@ use App\Domain\Retribusi\Services\RetribusiSewaTanahService;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TaxObject;
 use App\Enums\TaxStatus;
+use App\Filament\Pages\BuatSkrdSewaTanah;
 use App\Filament\Resources\SkrdSewaRetribusiResource\Pages\ListSkrdSewaRetribusi;
 use Database\Seeders\JenisPajakSeeder;
 use Database\Seeders\RetribusiSewaTanahTarifSeeder;
@@ -161,6 +162,58 @@ class SkrdSewaRetribusiWorkflowTest extends TestCase
         // 12 * 3 * 80000 * 0.25 * 1 = 720000
         $this->assertEquals(720000, (float) $skrd->jumlah_retribusi);
         $this->assertSame('perTahun', $skrd->satuan_waktu);
+    }
+
+    public function test_service_always_inherits_sub_jenis_from_objek_retribusi(): void
+    {
+        $this->seedRetribusiReferences();
+        $this->seedPimpinanReferences();
+
+        $service = new RetribusiSewaTanahService();
+        $petugas = $this->createAdminPanelUser('petugas');
+        $subJenisObjek = SubJenisPajak::where('kode', 'SEWA_TANAH_PERMANEN')->firstOrFail();
+        $subJenisLain = SubJenisPajak::where('kode', 'SEWA_TANAH_KAIN')->firstOrFail();
+        $objekRetribusi = $this->createObjekRetribusi($subJenisObjek, luasM2: 12.0);
+
+        $skrd = $service->createDraftSkrd([
+            'objek_retribusi_id' => $objekRetribusi->id,
+            'sub_jenis_pajak_id' => $subJenisLain->id,
+            'nik_wajib_pajak' => '3522123456789012',
+            'nama_wajib_pajak' => 'Budi Santoso',
+            'alamat_wajib_pajak' => 'Jl. Mawar No. 1',
+            'nama_objek' => 'Lokasi Reklame Permanen',
+            'alamat_objek' => 'Jl. Gajah Mada No. 10',
+            'jumlah_reklame' => 1,
+            'durasi' => 1,
+            'masa_berlaku_mulai' => '2026-04-01',
+            'masa_berlaku_sampai' => '2027-03-31',
+            'petugas_id' => $petugas->id,
+            'petugas_nama' => $petugas->nama_lengkap,
+        ]);
+
+        $this->assertSame($subJenisObjek->id, $skrd->sub_jenis_pajak_id);
+        $this->assertEquals(80000, (float) $skrd->tarif_nominal);
+        $this->assertSame('perTahun', $skrd->satuan_waktu);
+    }
+
+    public function test_buat_skrd_page_prefills_sub_jenis_from_selected_objek(): void
+    {
+        $this->seedRetribusiReferences();
+
+        $subJenisObjek = SubJenisPajak::where('kode', 'SEWA_TANAH_RUMIJA')->firstOrFail();
+        $objekRetribusi = $this->createObjekRetribusi($subJenisObjek);
+        $petugas = $this->createAdminPanelUser('petugas');
+
+        $this->actingAs($petugas);
+
+        Livewire::test(BuatSkrdSewaTanah::class)
+            ->set('objekRetribusiId', $objekRetribusi->id)
+            ->assertSet('subJenisPajakId', $subJenisObjek->id)
+            ->assertSet('masaBerlakuSampai', now()->addYear()->subDay()->toDateString())
+            ->assertSee($subJenisObjek->nama)
+            ->assertSee('Tarif Aktif')
+            ->assertSee('Masa Tarif Sub Jenis')
+            ->assertSee('Sub jenis selalu mengikuti objek retribusi yang dipilih.');
     }
 
     public function test_service_prevents_overlapping_draft_skrd(): void

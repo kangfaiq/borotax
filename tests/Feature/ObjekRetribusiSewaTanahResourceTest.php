@@ -15,6 +15,34 @@ class ObjekRetribusiSewaTanahResourceTest extends TestCase
     use BuildsDomainFixtures;
     use RefreshDatabase;
 
+    public function test_search_approved_wajib_pajak_options_supports_npwpd_nik_and_name(): void
+    {
+        $this->seedReferences();
+
+        $budi = $this->createApprovedWajibPajakFixture([
+            'npwpd' => 'P100000000101',
+        ], [
+            'nik' => '3522123412341301',
+            'nama_lengkap' => 'Budi Santoso',
+        ]);
+
+        $this->createApprovedWajibPajakFixture([
+            'npwpd' => 'P100000000102',
+        ], [
+            'nik' => '3522123412341302',
+            'nama_lengkap' => 'Siti Aminah',
+        ]);
+
+        $npwpdResults = ObjekRetribusiSewaTanahResource::searchApprovedWajibPajakOptions('0000101');
+        $nikResults = ObjekRetribusiSewaTanahResource::searchApprovedWajibPajakOptions('3522123412341301');
+        $nameResults = ObjekRetribusiSewaTanahResource::searchApprovedWajibPajakOptions('budi santoso');
+
+        $this->assertArrayHasKey($budi->npwpd, $npwpdResults);
+        $this->assertArrayHasKey($budi->npwpd, $nikResults);
+        $this->assertArrayHasKey($budi->npwpd, $nameResults);
+        $this->assertSame('P100000000101 - Budi Santoso', $nameResults[$budi->npwpd]);
+    }
+
     public function test_sync_owner_data_uses_wajib_pajak_from_selected_npwpd(): void
     {
         $this->seedReferences();
