@@ -521,8 +521,7 @@
         Aksi Cepat
     </div>
     <div class="quick-actions">
-        {{-- Fitur Buat Billing Self Assessment dinonaktifkan sementara --}}
-        <a href="{{ App\Filament\Resources\TaxResource::getUrl('index') }}" class="qa-btn">
+        <a href="{{ App\Filament\Pages\LaporanPendapatan::getUrl() }}" class="qa-btn">
             <div class="qa-icon" style="background: rgba(59,130,246,0.12);">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#3b82f6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
             </div>
@@ -540,6 +539,72 @@
                 <div class="qa-desc">Kelola data WP</div>
             </div>
         </a>
+        @if(App\Filament\Resources\TaxObjectResource::canAccess())
+            <a href="{{ App\Filament\Resources\TaxObjectResource::getUrl('index') }}" class="qa-btn">
+                <div class="qa-icon" style="background: rgba(16,185,129,0.12);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#10b981"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3.75h15A1.5 1.5 0 0121 5.25v11.379a1.5 1.5 0 01-.44 1.06l-1.621 1.621a1.5 1.5 0 01-1.06.44H6.121a1.5 1.5 0 01-1.06-.44L3.44 17.689A1.5 1.5 0 013 16.629V5.25a1.5 1.5 0 011.5-1.5zM9 8.25h6M9 12h6" /></svg>
+                </div>
+                <div>
+                    <div class="qa-text">Objek Pajak</div>
+                    <div class="qa-desc">Kelola data objek pajak</div>
+                </div>
+            </a>
+        @endif
+        @if(App\Filament\Pages\BuatBillingSelfAssessment::canAccess())
+            <a href="{{ App\Filament\Pages\BuatBillingSelfAssessment::getUrl() }}" class="qa-btn">
+                <div class="qa-icon" style="background: rgba(14,165,233,0.12);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#0ea5e9"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25H15M9 11.25H15M9 8.25H12M7.5 3.75h9A2.25 2.25 0 0118.75 6v12A2.25 2.25 0 0116.5 20.25h-9A2.25 2.25 0 015.25 18V6A2.25 2.25 0 017.5 3.75z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25h.008v.008h-.008v-.008z" /></svg>
+                </div>
+                <div>
+                    <div class="qa-text">Billing Self Assessment</div>
+                    <div class="qa-desc">Buat billing self assessment</div>
+                </div>
+            </a>
+        @endif
+        @if(App\Filament\Pages\BuatBillingMblb::canAccess())
+            <a href="{{ App\Filament\Pages\BuatBillingMblb::getUrl() }}" class="qa-btn">
+                <div class="qa-icon" style="background: rgba(245,158,11,0.12);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#f59e0b"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 4.5h9l3 5.25-7.5 9.75L4.5 9.75 7.5 4.5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5l3 15m3-15-3 15" /></svg>
+                </div>
+                <div>
+                    <div class="qa-text">Billing MBLB</div>
+                    <div class="qa-desc">Buat billing MBLB</div>
+                </div>
+            </a>
+        @endif
+        @if(App\Filament\Pages\BuatBillingSarangWalet::canAccess())
+            <a href="{{ App\Filament\Pages\BuatBillingSarangWalet::getUrl() }}" class="qa-btn">
+                <div class="qa-icon" style="background: rgba(217,70,239,0.12);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#d946ef"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 9.75l7.5-6 7.5 6v9a1.5 1.5 0 01-1.5 1.5h-12A1.5 1.5 0 014.5 18.75v-9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 20.25v-4.5a3 3 0 116 0v4.5" /></svg>
+                </div>
+                <div>
+                    <div class="qa-text">Billing Sarang Walet</div>
+                    <div class="qa-desc">Buat billing sarang burung walet</div>
+                </div>
+            </a>
+        @endif
+        @if(App\Filament\Pages\BuatSkpdReklame::canAccess())
+            <a href="{{ App\Filament\Pages\BuatSkpdReklame::getUrl() }}" class="qa-btn">
+                <div class="qa-icon" style="background: rgba(239,68,68,0.12);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#ef4444"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3.75h7.5L18.75 8.25v12a.75.75 0 01-.75.75h-11.25a.75.75 0 01-.75-.75V4.5a.75.75 0 01.75-.75z" /><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 3.75v4.5h4.5M9 12.75h6M9 15.75h6" /></svg>
+                </div>
+                <div>
+                    <div class="qa-text">SKPD Reklame</div>
+                    <div class="qa-desc">Buat SKPD reklame</div>
+                </div>
+            </a>
+        @endif
+        @if(App\Filament\Pages\BuatSkpdAirTanah::canAccess())
+            <a href="{{ App\Filament\Pages\BuatSkpdAirTanah::getUrl() }}" class="qa-btn">
+                <div class="qa-icon" style="background: rgba(20,184,166,0.12);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#14b8a6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c2.55 3.053 5.25 6.636 5.25 9.75a5.25 5.25 0 11-10.5 0c0-3.114 2.7-6.697 5.25-9.75z" /><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 14.25a1.5 1.5 0 003 0" /></svg>
+                </div>
+                <div>
+                    <div class="qa-text">SKPD Air Tanah</div>
+                    <div class="qa-desc">Buat SKPD air tanah</div>
+                </div>
+            </a>
+        @endif
     </div>
 
     {{-- CONTENT: Charts + Recent Transactions --}}

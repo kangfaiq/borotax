@@ -511,6 +511,7 @@ Dashboard menampilkan:
   - Total Wajib Pajak (status disetujui) + indikator pertambahan bulan ini
   - Billing Pending (transaksi `pending` + `verified` yang belum lunas)
   - Transaksi Bulan Ini (billing lunas bulan berjalan)
+- **Aksi Cepat:** shortcut ke `Laporan Pendapatan` (`/admin/laporan-pendapatan`), `Wajib Pajak`, `Kelola Data Objek Pajak`, `Buat Billing Self Assessment`, `Buat Billing MBLB`, `Buat Billing Sarang Burung Walet`, `Buat SKPD Reklame`, dan `Buat SKPD Air Tanah` dengan visibilitas mengikuti akses role halaman tujuan
 - **Blok Perlu Tindakan:** shortcut verifikasi dengan counter untuk Wajib Pajak, Pengajuan Reklame Portal, Permintaan Pembetulan, SKPD Reklame, dan SKPD Air Tanah jika ada item menunggu sesuai akses role
 - **Chart Line:** Tren pendapatan 6 bulan terakhir
 - **Visual pendapatan per jenis pajak:** ringkasan bulan ini per jenis pajak dalam bentuk bar/progress list
