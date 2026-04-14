@@ -8,7 +8,9 @@ use App\Domain\Reklame\Models\PermohonanSewaReklame;
 use App\Domain\Reklame\Models\ReklameObject;
 use App\Domain\Reklame\Models\ReklameRequest;
 use App\Domain\Reklame\Models\SkpdReklame;
+use App\Domain\Shared\Models\ActivityLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ReklameController extends Controller
 {
@@ -77,6 +79,22 @@ class ReklameController extends Controller
             ])
             ->findOrFail($objectId);
 
+        $fotoHistories = $this->buildMediaHistories(
+            ActivityLog::forTarget('tax_objects', $object->id)
+                ->with('actor')
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get(),
+            'foto_objek_path',
+            'Foto Objek',
+        );
+
+        $materiHistories = $this->buildMediaHistories(
+            $this->resolvePermohonanMaterialLogsForObject($object),
+            'file_desain_reklame',
+            'Materi Reklame',
+        );
+
         // Cek apakah bisa mengajukan perpanjangan:
         // Kadaluarsa ATAU sisa hari <= 30 DAN tidak ada pengajuan aktif
         $hasActiveRequest = $object->reklameRequests
@@ -86,7 +104,7 @@ class ReklameController extends Controller
         $canRequestExtension = !$hasActiveRequest &&
             ($object->isKadaluarsa() || $object->sisa_hari <= 30);
 
-        return view('portal.reklame.object-detail', compact('object', 'canRequestExtension', 'hasActiveRequest'));
+        return view('portal.reklame.object-detail', compact('object', 'canRequestExtension', 'hasActiveRequest', 'fotoHistories', 'materiHistories'));
     }
 
     /* ======================================================
@@ -198,10 +216,26 @@ class ReklameController extends Controller
 
         $skpd = SkpdReklame::whereHas('reklameObject', function ($q) use ($nikHash) {
             $q->where('nik_hash', $nikHash);
-        })->with(['reklameObject', 'reklameRequest'])
+        })->with(['reklameObject', 'reklameRequest', 'permohonanSewa'])
           ->findOrFail($skpdId);
 
-        return view('portal.reklame.skpd-detail', compact('skpd'));
+        $fotoHistories = $this->buildMediaHistories(
+            ActivityLog::forTarget('tax_objects', $skpd->tax_object_id)
+                ->with('actor')
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get(),
+            'foto_objek_path',
+            'Foto Objek',
+        );
+
+        $materiHistories = $this->buildMediaHistories(
+            $this->resolvePermohonanMaterialLogsForSkpd($skpd),
+            'file_desain_reklame',
+            'Materi Reklame',
+        );
+
+        return view('portal.reklame.skpd-detail', compact('skpd', 'fotoHistories', 'materiHistories'));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -354,6 +388,8 @@ class ReklameController extends Controller
             ->where('status', 'perlu_revisi')
             ->firstOrFail();
 
+        $oldDesainPath = $permohonan->file_desain_reklame;
+
         $validated = $request->validate([
             'jenis_reklame_dipasang'   => 'required|string|max:255',
             'jumlah_sewa'              => 'required|integer|min:1',
@@ -419,7 +455,93 @@ class ReklameController extends Controller
 
         $permohonan->update($data);
 
+        if (array_key_exists('file_desain_reklame', $data) && $oldDesainPath !== ($data['file_desain_reklame'] ?? null)) {
+            ActivityLog::log(
+                action: ActivityLog::ACTION_UPDATE_REKLAME_MATERIAL_FILE,
+                targetTable: $permohonan->getTable(),
+                targetId: $permohonan->id,
+                description: 'Revisi file materi reklame untuk permohonan sewa dengan nomor tiket ' . $permohonan->nomor_tiket . '.',
+                oldValues: ['file_desain_reklame' => $oldDesainPath],
+                newValues: ['file_desain_reklame' => $data['file_desain_reklame']],
+            );
+        }
+
         return redirect()->route('sewa-reklame.detail', $permohonan->nomor_tiket)
             ->with('success', 'Permohonan berhasil direvisi dan diajukan kembali.');
+    }
+
+    private function resolvePermohonanMaterialLogsForObject(ReklameObject $object): Collection
+    {
+        $permohonanIds = PermohonanSewaReklame::query()
+            ->whereHas('skpdReklame', fn ($query) => $query->where('tax_object_id', $object->id))
+            ->pluck('id');
+
+        if ($permohonanIds->isEmpty()) {
+            return collect();
+        }
+
+        return ActivityLog::query()
+            ->where('target_table', 'permohonan_sewa_reklame')
+            ->whereIn('target_id', $permohonanIds)
+            ->with('actor')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+    }
+
+    private function resolvePermohonanMaterialLogsForSkpd(SkpdReklame $skpd): Collection
+    {
+        if (! $skpd->permohonan_sewa_id) {
+            return collect();
+        }
+
+        return ActivityLog::query()
+            ->where('target_table', 'permohonan_sewa_reklame')
+            ->where('target_id', $skpd->permohonan_sewa_id)
+            ->with('actor')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+    }
+
+    private function buildMediaHistories(Collection $logs, string $field, string $label): Collection
+    {
+        return $logs
+            ->filter(fn (ActivityLog $log): bool => filled(data_get($log->old_values, $field)) || filled(data_get($log->new_values, $field)))
+            ->map(fn (ActivityLog $log): array => [
+                'id' => $log->id,
+                'label' => $label,
+                'action_label' => $log->action_label,
+                'description' => $log->description,
+                'actor_name' => $log->actor?->name ?? 'System',
+                'created_at' => $log->created_at,
+                'old' => $this->buildMediaHistoryVersion($log, 'old', $field),
+                'new' => $this->buildMediaHistoryVersion($log, 'new', $field),
+            ])
+            ->values();
+    }
+
+    private function buildMediaHistoryVersion(ActivityLog $log, string $version, string $field): ?array
+    {
+        $values = $version === 'old' ? $log->old_values : $log->new_values;
+        $path = data_get($values, $field);
+
+        if (! filled($path)) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return [
+            'path' => $path,
+            'filename' => basename($path),
+            'url' => route('activity-logs.file-preview', [
+                'activityLog' => $log,
+                'version' => $version,
+                'field' => $field,
+            ]),
+            'is_image' => in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true),
+            'is_pdf' => $extension === 'pdf',
+        ];
     }
 }

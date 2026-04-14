@@ -93,18 +93,61 @@
                                 </td>
                                 <td class="border border-gray-200 dark:border-gray-700 px-3 py-2">
                                     @if($log->old_values || $log->new_values)
+                                        @php
+                                            $previewableFields = [
+                                                'foto_objek_path' => 'Foto Objek',
+                                                'file_desain_reklame' => 'Materi Reklame',
+                                            ];
+                                        @endphp
                                         <details class="cursor-pointer">
                                             <summary class="text-primary-600 dark:text-primary-400 text-xs">
                                                 Lihat detail ({{ count($log->old_values ?? []) }} field)
                                             </summary>
                                             <div class="mt-2 space-y-1">
                                                 @foreach(($log->old_values ?? []) as $field => $oldVal)
-                                                    <div class="text-xs">
-                                                        <span class="font-medium">{{ str_replace('_', ' ', ucfirst($field)) }}:</span>
-                                                        <span class="text-red-600 dark:text-red-400 line-through">{{ $oldVal ?? '-' }}</span>
-                                                        →
-                                                        <span class="text-green-600 dark:text-green-400">{{ ($log->new_values[$field] ?? '-') }}</span>
-                                                    </div>
+                                                    @php
+                                                        $newVal = $log->new_values[$field] ?? null;
+                                                        $isPreviewable = array_key_exists($field, $previewableFields);
+                                                        $oldUrl = $oldVal ? route('activity-logs.file-preview', ['activityLog' => $log, 'version' => 'old', 'field' => $field]) : null;
+                                                        $newUrl = $newVal ? route('activity-logs.file-preview', ['activityLog' => $log, 'version' => 'new', 'field' => $field]) : null;
+                                                        $oldExt = strtolower(pathinfo((string) $oldVal, PATHINFO_EXTENSION));
+                                                        $newExt = strtolower(pathinfo((string) $newVal, PATHINFO_EXTENSION));
+                                                    @endphp
+
+                                                    @if($isPreviewable)
+                                                        <div class="rounded border border-gray-200 p-3 dark:border-gray-700">
+                                                            <div class="mb-2 text-xs font-medium">{{ $previewableFields[$field] }}</div>
+                                                            <div class="grid gap-3 md:grid-cols-2">
+                                                                <div>
+                                                                    <div class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">Versi Lama</div>
+                                                                    @if($oldUrl && in_array($oldExt, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true))
+                                                                        <img src="{{ $oldUrl }}" alt="Versi lama {{ $previewableFields[$field] }}" class="h-32 w-full rounded border border-gray-200 object-cover dark:border-gray-700">
+                                                                    @elseif($oldUrl)
+                                                                        <a href="{{ $oldUrl }}" target="_blank" class="text-xs font-semibold text-red-600 dark:text-red-400">Buka file lama</a>
+                                                                    @else
+                                                                        <span class="text-xs text-gray-400">-</span>
+                                                                    @endif
+                                                                </div>
+                                                                <div>
+                                                                    <div class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">Versi Baru</div>
+                                                                    @if($newUrl && in_array($newExt, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true))
+                                                                        <img src="{{ $newUrl }}" alt="Versi baru {{ $previewableFields[$field] }}" class="h-32 w-full rounded border border-gray-200 object-cover dark:border-gray-700">
+                                                                    @elseif($newUrl)
+                                                                        <a href="{{ $newUrl }}" target="_blank" class="text-xs font-semibold text-green-600 dark:text-green-400">Buka file baru</a>
+                                                                    @else
+                                                                        <span class="text-xs text-gray-400">-</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <div class="text-xs">
+                                                            <span class="font-medium">{{ str_replace('_', ' ', ucfirst($field)) }}:</span>
+                                                            <span class="text-red-600 dark:text-red-400 line-through">{{ $oldVal ?? '-' }}</span>
+                                                            →
+                                                            <span class="text-green-600 dark:text-green-400">{{ $newVal ?? '-' }}</span>
+                                                        </div>
+                                                    @endif
                                                 @endforeach
                                             </div>
                                         </details>

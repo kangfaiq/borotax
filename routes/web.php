@@ -16,6 +16,7 @@ use App\Http\Controllers\SkpdReklameDocumentController;
 use App\Http\Controllers\SkpdAirTanahDocumentController;
 use App\Http\Controllers\StpdManualDocumentController;
 use App\Http\Controllers\TaxAssessmentLetterDocumentController;
+use App\Http\Controllers\ActivityLogFilePreviewController;
 
 use App\Http\Controllers\Web\PembetulanController;
 
@@ -174,6 +175,7 @@ Route::middleware(['auth:web,portal', 'single.session'])->group(function () {
 
     // Serve permohonan sewa reklame files (KTP, NPWP, Desain)
     Route::get('/permohonan-sewa/{id}/file/{field}', PermohonanSewaFileController::class)->name('permohonan-sewa.file');
+    Route::get('/activity-logs/{activityLog}/file-preview/{version}/{field}', ActivityLogFilePreviewController::class)->name('activity-logs.file-preview');
 });
 
 // =============================================

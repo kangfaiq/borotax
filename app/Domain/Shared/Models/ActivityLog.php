@@ -17,9 +17,12 @@ class ActivityLog extends Model
 
     public const ACTION_SYNC_EXPIRED_TAX_STATUSES = 'SYNC_EXPIRED_TAX_STATUSES';
 
+    public const ACTION_UPDATE_REKLAME_MATERIAL_FILE = 'UPDATE_REKLAME_MATERIAL_FILE';
+
     protected const ACTION_LABELS = [
         'UPDATE_TAX_OBJECT_FROM_SKPD_REKLAME_APPROVAL' => 'Sinkronisasi Objek dari Persetujuan SKPD Reklame',
         self::ACTION_SYNC_EXPIRED_TAX_STATUSES => 'Sinkronisasi Billing Kedaluwarsa',
+        self::ACTION_UPDATE_REKLAME_MATERIAL_FILE => 'Perubahan File Materi Reklame',
     ];
 
     protected $table = 'activity_logs';

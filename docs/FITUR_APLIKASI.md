@@ -1251,6 +1251,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - Atribut: NIK, NPWPD, NOPD, nama reklame, alamat, kelurahan, kecamatan, kelompok lokasi, bentuk, dimensi (panjang/lebar/tinggi/dll), luas otomatis, jumlah muka, tarif, foto, GPS, tanggal pasang, masa berlaku
 - Objek reklame menyimpan sub jenis pajak operasional reklame, bukan detail tarif `RKL_*`
 - Status objek reklame otomatis berubah dari `aktif` ke `kadaluarsa` ketika `masa_berlaku_sampai` lewat, sehingga daftar objek aktif portal/mobile tidak menampilkan izin yang sudah habis masa berlakunya
+- Detail objek portal dan detail SKPD portal menampilkan histori visual foto objek lama-vs-baru dari `activity_logs`, lengkap dengan preview file historis yang aman untuk pemilik data maupun petugas backoffice
 
 ### 13.2 Tarif Reklame
 - Per detail harga patokan reklame + kelompok lokasi + satuan waktu
@@ -1326,6 +1327,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - **Aksi backoffice petugas:** `proses`, `tolak`, `cek NPWPD`, `buat NPWPD`, `perlu revisi`, dan `buat SKPD` sesuai status permohonan
 - **Fallback email akun WP:** Saat `buat NPWPD`, petugas boleh mengosongkan email dan sistem akan membuat email login otomatis yang terbaca dari nama, alamat, nomor telepon, dan suffix acak
 - **Penanda username di UI:** Notifikasi sukses `buat NPWPD` menampilkan label berbeda antara `Username login otomatis` dan `Email login WP` agar petugas tidak salah menyampaikan username
+- **Audit revisi materi reklame:** Saat pemohon mengunggah ulang `file_desain_reklame` pada status `perlu_revisi`, sistem menyimpan versi file lama dan file baru ke `activity_logs` dengan preview historis. Riwayat materi ini tampil di detail objek reklame dan detail SKPD terkait
 - **Alur lengkap:**
   1. Pilih aset tersedia → isi form + upload dokumen → terima nomor tiket
   2. Petugas proses → cek/buat NPWPD → buat SKPD draft
