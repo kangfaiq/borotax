@@ -6,6 +6,7 @@ use App\Domain\Shared\Traits\HasEncryptedAttributes;
 use App\Domain\Auth\Models\User;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
+use App\Domain\Tax\Models\StpdManual;
 use App\Domain\Tax\Models\TaxAssessmentLetter;
 use App\Domain\Tax\Observers\TaxObserver;
 use App\Enums\TaxStatus;
@@ -363,15 +364,221 @@ class Tax extends Model
         return $this->stpd_payment_code ?: $this->billing_code;
     }
 
-    public function canBePaidManually(): bool
+    public static function syncExpiredStatuses(): int
+    {
+        return static::syncExpiredStatusesWithDetails()['count'];
+    }
+
+    public static function syncExpiredStatusesWithDetails(): array
+    {
+        $updated = 0;
+        $billingCodes = [];
+        $jenisPajakBreakdown = [];
+        $sourceStatusBreakdown = [];
+
+        static::query()
+            ->with('jenisPajak:id,kode,nama')
+            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::PartiallyPaid])
+            ->whereNotNull('payment_expired_at')
+            ->where('payment_expired_at', '<', now())
+            ->get()
+            ->each(function (self $tax) use (&$updated, &$billingCodes, &$jenisPajakBreakdown, &$sourceStatusBreakdown): void {
+                $sourceStatus = $tax->status;
+
+                if ($tax->syncExpiredStatus()) {
+                    $updated++;
+                    $billingCodes[] = $tax->billing_code;
+
+                    $sourceStatusKey = $sourceStatus->value;
+                    $sourceStatusBreakdown[$sourceStatusKey] ??= [
+                        'label' => $sourceStatus->getLabel() ?? str($sourceStatus->value)->headline()->toString(),
+                        'count' => 0,
+                    ];
+
+                    $sourceStatusBreakdown[$sourceStatusKey]['count']++;
+
+                    $jenisPajakKey = $tax->jenisPajak?->kode ?? 'unknown';
+                    $jenisPajakLabel = trim(collect([
+                        $tax->jenisPajak?->nama,
+                        $tax->jenisPajak?->kode,
+                    ])->filter()->implode(' ('), ' (');
+
+                    if ($tax->jenisPajak?->nama && $tax->jenisPajak?->kode) {
+                        $jenisPajakLabel = sprintf('%s (%s)', $tax->jenisPajak->nama, $tax->jenisPajak->kode);
+                    }
+
+                    $jenisPajakBreakdown[$jenisPajakKey] ??= [
+                        'label' => $jenisPajakLabel ?: 'Jenis Pajak Tidak Dikenal',
+                        'count' => 0,
+                    ];
+
+                    $jenisPajakBreakdown[$jenisPajakKey]['count']++;
+                }
+            });
+
+        $jenisPajakBreakdown = collect($jenisPajakBreakdown)
+            ->sort(fn (array $left, array $right): int => [$right['count'], $left['label']] <=> [$left['count'], $right['label']])
+            ->values()
+            ->all();
+
+        $sourceStatusBreakdown = collect($sourceStatusBreakdown)
+            ->sort(fn (array $left, array $right): int => [$right['count'], $left['label']] <=> [$left['count'], $right['label']])
+            ->values()
+            ->all();
+
+        return [
+            'count' => $updated,
+            'billing_codes' => $billingCodes,
+            'jenis_pajak_breakdown' => $jenisPajakBreakdown,
+            'source_status_breakdown' => $sourceStatusBreakdown,
+        ];
+    }
+
+    public function syncExpiredStatus(): bool
+    {
+        if (! $this->shouldPersistExpiredStatus()) {
+            return false;
+        }
+
+        $this->forceFill([
+            'status' => TaxStatus::Expired,
+        ])->saveQuietly();
+
+        return true;
+    }
+
+    public function getDisplayStatusAttribute(): TaxStatus
+    {
+        return $this->resolveDisplayStatus();
+    }
+
+    public function getDisplayStatusLabelAttribute(): string
+    {
+        return $this->display_status->getLabel() ?? str($this->display_status->value)->headline()->toString();
+    }
+
+    public function getDisplayStatusValueAttribute(): string
+    {
+        return $this->display_status->value;
+    }
+
+    public function resolveDisplayStatus(): TaxStatus
+    {
+        if ($this->status === TaxStatus::Expired || $this->shouldDisplayAsExpired()) {
+            return TaxStatus::Expired;
+        }
+
+        return $this->status;
+    }
+
+    public function shouldDisplayAsExpired(): bool
     {
         return in_array($this->status, [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::PartiallyPaid], true)
+            && $this->payment_expired_at?->isPast()
+            && $this->getRemainingAmount() > 0;
+    }
+
+    public function shouldPersistExpiredStatus(): bool
+    {
+        return in_array($this->status, [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::PartiallyPaid], true)
+            && $this->payment_expired_at?->isPast()
+            && $this->getRemainingAmount() > 0;
+    }
+
+    public function isOfficialAssessment(): bool
+    {
+        $jenisPajak = $this->jenisPajak ?? JenisPajak::find($this->jenis_pajak_id);
+
+        return $jenisPajak?->tipe_assessment === 'official_assessment';
+    }
+
+    public function isSelfAssessment(): bool
+    {
+        return ! $this->isOfficialAssessment();
+    }
+
+    public function resolveOpenStatus(): TaxStatus
+    {
+        if ($this->payment_expired_at?->isPast() && $this->getRemainingAmount() > 0) {
+            return TaxStatus::Expired;
+        }
+
+        return $this->isOfficialAssessment()
+            ? TaxStatus::Verified
+            : TaxStatus::Pending;
+    }
+
+    public function resolveStatusAfterPaymentRollback(): TaxStatus
+    {
+        $remainingAmount = $this->getRemainingAmount();
+        $totalPaid = $this->getTotalPaid();
+
+        if ($remainingAmount <= 0) {
+            return TaxStatus::Paid;
+        }
+
+        if ($totalPaid > 0) {
+            return TaxStatus::PartiallyPaid;
+        }
+
+        return $this->resolveOpenStatus();
+    }
+
+    public function hasPrincipalPaidInFull(): bool
+    {
+        return $this->getTotalPrincipalPaid() >= (float) $this->amount;
+    }
+
+    public function getApprovedManualStpd(): ?StpdManual
+    {
+        return $this->stpdManuals()
+            ->where('status', 'disetujui')
+            ->latest('tanggal_verifikasi')
+            ->first();
+    }
+
+    public function canExposeSptpdDocument(): bool
+    {
+        return filled($this->sptpd_number) && $this->hasPrincipalPaidInFull();
+    }
+
+    public function canExposeStpdDocument(): bool
+    {
+        if (! filled($this->stpd_number) || $this->isOpd() || ! $this->hasPrincipalPaidInFull()) {
+            return false;
+        }
+
+        if (! filled($this->stpd_payment_code)) {
+            return true;
+        }
+
+        return $this->getApprovedManualStpd()?->isTipeSanksi()
+            && $this->getSanksiBelumDibayar() > 0;
+    }
+
+    public function resolveDocumentStateAfterPaymentRollback(): array
+    {
+        $retainSptpd = $this->canExposeSptpdDocument();
+        $retainStpd = $this->canExposeStpdDocument();
+
+        return [
+            'sptpd_number' => $retainSptpd ? $this->sptpd_number : null,
+            'stpd_number' => $retainStpd ? $this->stpd_number : null,
+            'stpd_payment_code' => $retainStpd && filled($this->stpd_payment_code)
+                ? $this->stpd_payment_code
+                : null,
+        ];
+    }
+
+    public function canBePaidManually(): bool
+    {
+        return in_array($this->status->value, TaxStatus::payableStatuses(), true)
             || ($this->status === TaxStatus::Paid && $this->getRemainingAmount() > 0);
     }
 
     public function canCreateManualStpd(): bool
     {
-        return in_array($this->status, [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::PartiallyPaid], true)
+        return in_array($this->status->value, TaxStatus::payableStatuses(), true)
             || ($this->status === TaxStatus::Paid && $this->getSanksiBelumDibayar() > 0);
     }
 

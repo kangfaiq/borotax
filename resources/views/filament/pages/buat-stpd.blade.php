@@ -144,11 +144,12 @@
                             $statusColors = [
                                 'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
                                 'verified' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                'expired' => 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
                                 'partially_paid' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
                             ];
                         @endphp
                         <span class="text-xs font-bold px-2 py-0.5 rounded {{ $statusColors[$result['status']] ?? 'bg-gray-100 text-gray-600' }}">
-                            {{ strtoupper(str_replace('_', ' ', $result['status'])) }}
+                            {{ strtoupper($result['status_label']) }}
                         </span>
                     </div>
                     <div class="text-xs text-slate-500 dark:text-slate-400">
@@ -185,11 +186,12 @@
                 $statusColors = [
                     'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
                     'verified' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                    'expired' => 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
                     'partially_paid' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
                 ];
             @endphp
             <span class="text-xs font-bold px-2 py-0.5 rounded {{ $statusColors[$taxData['status']] ?? 'bg-gray-100 text-gray-600' }}">
-                {{ strtoupper(str_replace('_', ' ', $taxData['status'])) }}
+                {{ strtoupper($taxData['status_label']) }}
             </span>
         </div>
 

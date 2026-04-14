@@ -69,6 +69,8 @@ class BuatStpd extends Page implements HasForms
 
     public function cariBilling(): void
     {
+        Tax::syncExpiredStatuses();
+
         $keyword = trim($this->searchKeyword ?? '');
 
         if (empty($keyword)) {
@@ -95,7 +97,7 @@ class BuatStpd extends Page implements HasForms
                 Notification::make()
                     ->warning()
                     ->title('Billing tidak valid untuk STPD')
-                    ->body("Status Billing Sumber: " . strtoupper($tax->status->value) . ". Hanya billing Pending, Terverifikasi, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dibuatkan STPD.")
+                    ->body("Status Billing Sumber: " . strtoupper($tax->display_status->value) . ". Hanya billing Pending, Terverifikasi, Kedaluwarsa, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dibuatkan STPD.")
                     ->send();
                 return;
             }
@@ -112,7 +114,7 @@ class BuatStpd extends Page implements HasForms
 
             $taxes = Tax::with(['taxObject', 'jenisPajak', 'subJenisPajak'])
                 ->where('user_id', $wp->user_id)
-                ->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::PartiallyPaid, TaxStatus::Paid])
+                ->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::Expired, TaxStatus::PartiallyPaid, TaxStatus::Paid])
                 ->get()
                 ->filter(fn (Tax $tax) => $tax->canCreateManualStpd())
                 ->values();
@@ -136,7 +138,8 @@ class BuatStpd extends Page implements HasForms
                             : ($t->masa_pajak_tahun ?? '-'),
                         'pokok' => (float) $t->amount,
                         'sanksi' => (float) $t->sanksi,
-                        'status' => $t->status->value,
+                        'status' => $t->display_status->value,
+                        'status_label' => $t->display_status_label,
                         'total_dibayar' => $t->getTotalPaid(),
                         'sisa' => $t->getRemainingAmount(),
                     ];
@@ -202,7 +205,8 @@ class BuatStpd extends Page implements HasForms
             'pokok_belum_dibayar' => $pokokBelumDibayar,
             'sanksi_belum_dibayar' => $sanksiBelumDibayar,
             'is_pokok_lunas' => $isPokokLunas,
-            'status' => $tax->status->value,
+            'status' => $tax->display_status->value,
+            'status_label' => $tax->display_status_label,
             'jatuh_tempo' => $tax->payment_expired_at
                 ? Carbon::parse($tax->payment_expired_at)->format('Y-m-d')
                 : null,

@@ -15,8 +15,11 @@ class ActivityLog extends Model
 {
     use HasFactory, HasUuids;
 
+    public const ACTION_SYNC_EXPIRED_TAX_STATUSES = 'SYNC_EXPIRED_TAX_STATUSES';
+
     protected const ACTION_LABELS = [
         'UPDATE_TAX_OBJECT_FROM_SKPD_REKLAME_APPROVAL' => 'Sinkronisasi Objek dari Persetujuan SKPD Reklame',
+        self::ACTION_SYNC_EXPIRED_TAX_STATUSES => 'Sinkronisasi Billing Kedaluwarsa',
     ];
 
     protected $table = 'activity_logs';
@@ -25,6 +28,8 @@ class ActivityLog extends Model
         'actor_id',
         'actor_type',
         'action',
+        'summary_count',
+        'source_statuses',
         'target_table',
         'target_id',
         'description',
@@ -89,6 +94,78 @@ class ActivityLog extends Model
                 ->toString();
     }
 
+    public function isExpiredTaxSync(): bool
+    {
+        return $this->action === self::ACTION_SYNC_EXPIRED_TAX_STATUSES;
+    }
+
+    public function getAutoExpireCountAttribute(): ?int
+    {
+        if (! $this->isExpiredTaxSync()) {
+            return null;
+        }
+
+        return (int) data_get($this->new_values, 'count');
+    }
+
+    public function getAutoExpireSourceStatusSummaryAttribute(): ?string
+    {
+        if (! $this->isExpiredTaxSync()) {
+            return null;
+        }
+
+        $breakdown = collect(data_get($this->new_values, 'source_status_breakdown', []));
+
+        if ($breakdown->isEmpty()) {
+            return null;
+        }
+
+        return $breakdown
+            ->map(fn (array $item): string => sprintf('%s: %d billing', $item['label'], $item['count']))
+            ->implode('; ');
+    }
+
+    public function hasSourceStatus(string $status): bool
+    {
+        return str_contains((string) $this->source_statuses, ',' . $status . ',');
+    }
+
+    public function getAutoExpireBillingSummaryAttribute(): ?string
+    {
+        if (! $this->isExpiredTaxSync()) {
+            return null;
+        }
+
+        $billingCodes = collect(data_get($this->new_values, 'billing_codes', []));
+
+        if ($billingCodes->isEmpty()) {
+            return null;
+        }
+
+        $visibleCodes = $billingCodes->take(5);
+        $remainingCount = $billingCodes->count() - $visibleCodes->count();
+
+        return $visibleCodes->implode(', ')
+            . ($remainingCount > 0 ? " (+{$remainingCount} lainnya)" : '');
+    }
+
+    public function getAutoExpireJenisPajakSummaryAttribute(): ?string
+    {
+        if (! $this->isExpiredTaxSync()) {
+            return null;
+        }
+
+        $breakdown = collect(data_get($this->new_values, 'jenis_pajak_breakdown', []));
+
+        if ($breakdown->isEmpty()) {
+            return null;
+        }
+
+        return $breakdown
+            ->map(fn (array $item): string => sprintf('%s: %d billing', $item['label'], $item['count']))
+            ->implode('; ');
+    }
+
     /**
      * Scope untuk actor tertentu
      */
@@ -126,11 +203,15 @@ class ActivityLog extends Model
         ?string $description = null,
         ?array $oldValues = null,
         ?array $newValues = null,
+        ?int $summaryCount = null,
+        ?string $sourceStatuses = null,
     ): self {
         return self::create([
             'actor_id' => $actorId ?? auth()->id(),
             'actor_type' => $actorType,
             'action' => $action,
+            'summary_count' => $summaryCount,
+            'source_statuses' => $sourceStatuses,
             'target_table' => $targetTable,
             'target_id' => $targetId,
             'description' => $description,

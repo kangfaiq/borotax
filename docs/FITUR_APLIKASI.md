@@ -610,6 +610,7 @@ Catatan implementasi saat ini:
 - **Flow:** Cari billing by kode/NPWPD → input jumlah pokok + sanksi + tanggal bayar + lokasi + referensi + bukti (upload)
 - **Deteksi otomatis:** Lebih bayar, kurang bayar (pembayaran parsial), atau tepat
 - **Hasil:** Buat record `TaxPayment`, update status ke `paid`/`partially_paid`
+- **Status overdue:** Billing `expired` tetap dapat dicari dan dilunaskan manual selama masih ada sisa tagihan
 - **Observer/model otomatis:** `sptpd_number` diterbitkan saat billing menjadi `paid` dan syarat `isTriwulanComplete()` terpenuhi; `stpd_number` otomatis diterbitkan saat billing memiliki sanksi dan syarat `isTriwulanComplete()` juga sudah terpenuhi
 - **Catatan STPD:** Billing `partially_paid` tidak lagi menerbitkan STPD otomatis sebelum triwulan lengkap; untuk kebutuhan penagihan sebelum itu gunakan flow STPD manual
 
@@ -617,6 +618,9 @@ Catatan implementasi saat ini:
 - **Akses:** Admin only
 - **Flow:** Cari billing → lihat daftar pembayaran → pilih dan batalkan (with reason)
 - **Efek:** Soft-delete pembayaran, recalculate sisa tagihan, revoke SPTPD jika tidak lagi lunas, revoke STPD jika pokok tidak lagi lunas
+- **Aturan status buka kembali:** Jika semua pembayaran dibatalkan, billing kembali ke status open yang sesuai domain: `pending` untuk self-assessment yang belum jatuh tempo, `verified` untuk official assessment yang belum jatuh tempo, dan `expired` jika jatuh tempo sudah lewat. Jika masih ada sebagian pembayaran tersisa, status tetap `partially_paid`.
+- **Retensi dokumen saat rollback parsial:** Nomor `SPTPD` dan `STPD` tetap dipertahankan selama pokok pajak masih lunas penuh. Karena itu rollback sanksi yang menyisakan pokok tetap lunas masih dapat menampilkan dokumen turunan walau status billing kembali ke `partially_paid`.
+- **Portal dokumen pasca rollback sanksi:** Billing `partially_paid` yang masih menyimpan pokok lunas penuh tetap menampilkan aksi `SPTPD` dan `STPD` di portal selama nomor dokumen dan syarat STPD manualnya masih valid.
 
 ### 6.8 Daftar SKPD Saya (Petugas)
 - **Akses:** Petugas only
@@ -631,6 +635,7 @@ Catatan implementasi saat ini:
 - **Akses:** Admin, Petugas, Verifikator
 - **Navigasi:** Laporan Petugas → Buat STPD
 - **Flow:** Cari billing by kode (18 digit) atau NPWPD (13 digit) → Pilih tipe STPD → Isi parameter → Buat draft
+- **Status overdue:** Billing `expired` tetap valid untuk flow STPD manual selama masih ada tagihan yang bisa ditagih
 - **Tipe STPD:**
   - **Pokok & Sanksi:** Billing belum dibayar sama sekali. Input proyeksi tanggal bayar → auto-hitung bulan terlambat + sanksi.
   - **Sanksi Saja:** Pokok sudah lunas, sanksi belum terbayar. Sanksi diambil dari data billing.
@@ -1096,11 +1101,33 @@ Kode billing terdiri dari **18 karakter** dengan pola umum: `35221XX[PADDING]YY[
 | `paid` | Lunas | success | ✅ |
 | `verified` | Terverifikasi | info | ✅ |
 | `partially_paid` | Dibayar Sebagian | info | ✅ |
-| `expired` | Kedaluwarsa | gray | ❌ |
+| `expired` | Kedaluwarsa | gray | ✅ |
 | `rejected` | Ditolak | danger | ❌ |
 | `cancelled` | Dibatalkan | gray | ❌ |
 
-**Status aktif** (blocking duplikat): `pending`, `paid`, `verified`, `partially_paid`
+**Status aktif** (blocking duplikat): `pending`, `paid`, `verified`, `expired`, `partially_paid`
+
+**Sinkronisasi jatuh tempo:** Jika `payment_expired_at` sudah lewat dan billing masih berstatus `pending`, `verified`, atau `partially_paid`, sistem menyinkronkan status tersimpan menjadi `expired` atau `Kedaluwarsa`. Billing `expired` tetap diperlakukan sebagai kewajiban aktif untuk pembayaran manual, pembuatan STPD manual, pembetulan, dashboard tagihan, dan blocking duplikat sampai ada proses bisnis lain yang menutupnya.
+
+**Scheduler:** Command `tax:sync-expired-statuses` dijalankan terjadwal setiap jam agar sinkronisasi status overdue tidak menunggu halaman portal/backoffice diakses.
+
+**Ringkasan notifikasi operator:** Saat scheduler mengubah billing ke `expired`, sistem mengirim notifikasi backoffice berisi total billing terdampak, daftar kode billing dalam batch, dan ringkasan jumlah per jenis pajak agar operator bisa membaca dampak perubahan otomatis tanpa membuka log terlebih dahulu.
+
+**Batas aman notifikasi batch besar:** Jika batch auto-expire sangat besar, daftar kode billing dan ringkasan jenis pajak dipotong otomatis menjadi sampel terdepan dengan penanda `+N lainnya` agar body notifikasi tetap ringkas dan stabil di panel operator.
+
+**Histori auto-expire backoffice:** Halaman `Activity Log` di backoffice menyediakan shortcut `Histori Auto-Expire` dan filter `Riwayat Otomatis = Auto-Expire Billing` untuk melihat jejak sinkronisasi billing kedaluwarsa tanpa query manual.
+
+**Filter tanggal cepat:** Operator dapat memfilter `Activity Log` dengan opsi cepat `Hari ini`, `7 hari terakhir`, dan `30 hari terakhir` untuk membaca batch auto-expire terbaru lebih cepat tanpa mengisi rentang tanggal manual.
+
+**Deep-link notifikasi backoffice:** Notifikasi sinkronisasi billing kedaluwarsa di bell icon Filament menyertakan tombol `Lihat Histori Auto-Expire` yang langsung membuka halaman histori auto-expire backoffice.
+
+**Prioritas histori auto-expire:** Halaman `Histori Auto-Expire` menonjolkan batch dengan `Jumlah Billing` terbesar terlebih dahulu agar operator langsung melihat batch paling berdampak.
+
+**Ringkasan status asal:** Body notifikasi scheduler dan tabel histori auto-expire menampilkan komposisi status asal billing sebelum disinkronkan, misalnya `Menunggu Pembayaran`, `Terverifikasi`, atau `Dibayar Sebagian`, sehingga operator bisa membedakan sumber batch auto-expire dengan cepat.
+
+**Filter status asal:** `Activity Log` menyediakan filter cepat `Status Asal` untuk melihat hanya batch auto-expire yang berasal dari `Menunggu Pembayaran`, `Terverifikasi`, atau `Dibayar Sebagian`.
+
+**Widget dashboard auto-expire:** Dashboard backoffice menampilkan widget `Batch Auto-Expire Terbesar (7 Hari)` yang mengambil data dari `ActivityLog`, menyorot jumlah billing terbesar, komposisi status asal, dan sampel billing batch terbesar dalam 7 hari terakhir.
 
 ### 11.3 Kanal Pembayaran
 
@@ -1223,6 +1250,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - Terdaftar di tabel `tax_objects` dengan scope jenis pajak `41104`
 - Atribut: NIK, NPWPD, NOPD, nama reklame, alamat, kelurahan, kecamatan, kelompok lokasi, bentuk, dimensi (panjang/lebar/tinggi/dll), luas otomatis, jumlah muka, tarif, foto, GPS, tanggal pasang, masa berlaku
 - Objek reklame menyimpan sub jenis pajak operasional reklame, bukan detail tarif `RKL_*`
+- Status objek reklame otomatis berubah dari `aktif` ke `kadaluarsa` ketika `masa_berlaku_sampai` lewat, sehingga daftar objek aktif portal/mobile tidak menampilkan izin yang sudah habis masa berlakunya
 
 ### 13.2 Tarif Reklame
 - Per detail harga patokan reklame + kelompok lokasi + satuan waktu
@@ -1280,9 +1308,9 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 | `disewa` | Sedang disewa | ✅ |
 | `maintenance` | Sedang perbaikan | ❌ (manual) |
 | `tidak_aktif` | Tidak aktif | ❌ (manual) |
-| `dipinjam_opd` | Dipinjam OPD | ❌ (manual) |
+| `dipinjam_opd` | Dipinjam OPD | ✅ (otomatis setelah masa pinjam lewat) |
 
-**Observer:** Perubahan status SKPD yang terkait aset Pemkab memicu sinkronisasi status aset berdasarkan ada/tidaknya SKPD `disetujui` yang masih aktif; status manual `maintenance`, `tidak_aktif`, dan `dipinjam_opd` tidak ditimpa.
+**Observer:** Perubahan status SKPD yang terkait aset Pemkab memicu sinkronisasi status aset berdasarkan ada/tidaknya SKPD `disetujui` yang masih aktif; status manual `maintenance` dan `tidak_aktif` tidak ditimpa. Khusus `dipinjam_opd`, sistem akan otomatis menutup riwayat pinjam aktif dan mengembalikan aset ke `tersedia` ketika `pinjam_selesai` sudah lewat.
 
 ### 13.7 Peminjaman Aset Reklame (OPD)
 - Fitur terpisah dari sewa komersial

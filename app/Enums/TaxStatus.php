@@ -64,6 +64,17 @@ enum TaxStatus: string implements HasLabel, HasColor, HasIcon
             self::Pending->value,
             self::Paid->value,
             self::Verified->value,
+            self::Expired->value,
+            self::PartiallyPaid->value,
+        ];
+    }
+
+    public static function payableStatuses(): array
+    {
+        return [
+            self::Pending->value,
+            self::Verified->value,
+            self::Expired->value,
             self::PartiallyPaid->value,
         ];
     }

@@ -17,6 +17,8 @@ class BillingController extends Controller
         $code = $request->input('code');
 
         if ($code) {
+            Tax::syncExpiredStatuses();
+
             $billing = Tax::wherePaymentCode($code)
                 ->with(['jenisPajak', 'children:id,parent_tax_id', 'taxObject'])
                 ->first();
@@ -34,6 +36,8 @@ class BillingController extends Controller
         $code = $request->input('code');
 
         if ($code) {
+            Tax::syncExpiredStatuses();
+
             $billing = Tax::wherePaymentCode($code)
                 ->with(['jenisPajak', 'children:id,parent_tax_id', 'taxObject'])
                 ->first();

@@ -191,8 +191,10 @@
 
 @section('content')
 @php
-    $scannedStatus = $scannedTax->status->value;
-    $latestStatus = $latestTax->status->value;
+    $scannedDisplayStatus = $scannedTax->display_status;
+    $latestDisplayStatus = $latestTax->display_status;
+    $scannedStatus = $scannedDisplayStatus->value;
+    $latestStatus = $latestDisplayStatus->value;
 @endphp
 
 <div class="status-wrap">
@@ -205,7 +207,7 @@
     <div class="status-grid">
         <section class="status-card scanned">
             <header>
-                <span class="status-badge {{ $scannedStatus }}">{{ $scannedTax->status->getLabel() }}</span>
+                <span class="status-badge {{ $scannedStatus }}">{{ $scannedTax->display_status_label }}</span>
                 <h3>Dokumen yang Dipindai</h3>
                 <p>QR pada cetakan lama tetap mengarah ke billing asal agar jejak audit tidak berubah.</p>
             </header>
@@ -249,7 +251,7 @@
 
         <section class="status-card current">
             <header>
-                <span class="status-badge {{ $latestStatus }}">{{ $latestTax->status->getLabel() }}</span>
+                <span class="status-badge {{ $latestStatus }}">{{ $latestTax->display_status_label }}</span>
                 <h3>Dokumen Terbaru yang Berlaku</h3>
                 <p>Gunakan dokumen ini untuk melihat status kewajiban paling mutakhir setelah pembetulan terakhir.</p>
             </header>
@@ -261,7 +263,7 @@
                 </div>
                 <div class="status-row">
                     <span class="status-label">Status</span>
-                    <span class="status-value">{{ $latestTax->status->getLabel() }}</span>
+                    <span class="status-value">{{ $latestTax->display_status_label }}</span>
                 </div>
                 <div class="status-row">
                     <span class="status-label">Pembetulan</span>

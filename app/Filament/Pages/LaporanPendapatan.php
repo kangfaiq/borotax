@@ -52,6 +52,8 @@ class LaporanPendapatan extends Page
 
     public function getViewData(): array
     {
+        Tax::syncExpiredStatuses();
+
         $currentYear = (int) date('Y');
         $years = range($currentYear, 2019);
 
@@ -67,7 +69,7 @@ class LaporanPendapatan extends Page
                     ->where('status', TaxStatus::Paid)
                     ->get()
                     ->sum(fn ($t) => (float) $t->amount + (float) ($t->opsen ?? 0));
-                $taxPending = (clone $taxBase)->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified])->count();
+                $taxPending = (clone $taxBase)->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::Expired])->count();
 
                 // SKPD yang belum terbit (belum ada record Tax)
                 $skpdReklamePending = SkpdReklame::whereYear('created_at', $y)
@@ -111,7 +113,7 @@ class LaporanPendapatan extends Page
                 ->whereYear('paid_at', $this->tahun)
                 ->get()
                 ->sum(fn ($t) => (float) $t->amount + (float) ($t->opsen ?? 0));
-            $taxPending = (clone $taxBase)->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified])->count();
+            $taxPending = (clone $taxBase)->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::Expired])->count();
 
             // SKPD yang belum terbit (belum ada record Tax)
             $skpdReklamePending = SkpdReklame::where('jenis_pajak_id', $jp->id)

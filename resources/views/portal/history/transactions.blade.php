@@ -365,22 +365,25 @@
                                 </td>
                                 <td style="font-weight: 600;">Rp {{ number_format($tx->amount ?? 0, 0, ',', '.') }}</td>
                                 <td>
-                                    @switch($tx->status)
-                                        @case(App\Enums\TaxStatus::Pending)
-                                            <span class="badge badge-pending">Menunggu</span>
-                                            @break
-                                        @case(App\Enums\TaxStatus::Paid)
-                                            <span class="badge badge-paid">Lunas</span>
-                                            @break
-                                        @case(App\Enums\TaxStatus::Verified)
-                                            <span class="badge badge-verified">Terverifikasi</span>
-                                            @break
-                                        @case(App\Enums\TaxStatus::Expired)
-                                            <span class="badge badge-expired">Kedaluwarsa</span>
-                                            @break
-                                        @default
-                                            <span class="badge badge-rejected">{{ ucfirst($tx->status->value) }}</span>
-                                    @endswitch
+                                    @php
+                                        $displayStatus = $tx->display_status;
+                                        $statusBadgeClass = match ($displayStatus) {
+                                            App\Enums\TaxStatus::Pending => 'badge-pending',
+                                            App\Enums\TaxStatus::PartiallyPaid, App\Enums\TaxStatus::Verified => 'badge-verified',
+                                            App\Enums\TaxStatus::Paid => 'badge-paid',
+                                            App\Enums\TaxStatus::Expired => 'badge-expired',
+                                            default => 'badge-rejected',
+                                        };
+                                        $statusLabel = match ($displayStatus) {
+                                            App\Enums\TaxStatus::Pending => 'Menunggu',
+                                            App\Enums\TaxStatus::PartiallyPaid => 'Dibayar Sebagian',
+                                            App\Enums\TaxStatus::Paid => 'Lunas',
+                                            App\Enums\TaxStatus::Verified => 'Terverifikasi',
+                                            App\Enums\TaxStatus::Expired => 'Kedaluwarsa',
+                                            default => ucfirst($displayStatus->value),
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statusBadgeClass }}">{{ $statusLabel }}</span>
                                 </td>
                                 <td style="text-align:center;">
                                     <div style="display:flex; align-items:center; justify-content:center; gap:12px;">

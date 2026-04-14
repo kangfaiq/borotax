@@ -340,15 +340,19 @@
 
     @forelse($taxes as $tax)
         @php
-            $statusClass = match ($tax->status) {
+            $displayStatus = $tax->display_status;
+
+            $statusClass = match ($displayStatus) {
                 App\Enums\TaxStatus::Paid => 'paid',
                 App\Enums\TaxStatus::Verified => 'verified',
+                App\Enums\TaxStatus::Expired => 'rejected',
                 default => 'pending',
             };
 
-            $statusLabel = match ($tax->status) {
+            $statusLabel = match ($displayStatus) {
                 App\Enums\TaxStatus::Paid => 'Sudah Dibayar',
                 App\Enums\TaxStatus::Verified => 'Terverifikasi',
+                App\Enums\TaxStatus::Expired => 'Kedaluwarsa',
                 default => 'Belum Dibayar',
             };
 

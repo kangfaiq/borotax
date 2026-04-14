@@ -242,25 +242,27 @@
         @if($code)
             @if($billing)
                 @php
+                    $displayStatus = $billing->display_status;
                     $hasNewerPembetulan = $billing->hasNewerPembetulan();
                     $showSptpdActions = ! $hasNewerPembetulan
-                        && $billing->status === App\Enums\TaxStatus::Paid
-                        && filled($billing->sptpd_number);
-                    $showStpdActions = $showSptpdActions
-                        && filled($billing->stpd_number)
-                        && ! ($billing->taxObject && $billing->taxObject->is_opd);
+                        && $billing->canExposeSptpdDocument();
+                    $showStpdActions = ! $hasNewerPembetulan
+                        && $billing->canExposeStpdDocument();
                     $showBillingActions = $hasNewerPembetulan || ! $showSptpdActions;
                     $showSptpdFallbackNotice = ! $hasNewerPembetulan
-                        && $billing->status === App\Enums\TaxStatus::Paid
+                        && $billing->hasPrincipalPaidInFull()
                         && blank($billing->sptpd_number);
                 @endphp
 
                 <div class="result-card">
-                    <div class="result-header {{ $billing->status->value }}">
+                    <div class="result-header {{ $displayStatus->value }}">
                         <span>Detail Billing</span>
-                        @switch($billing->status->value)
+                        @switch($displayStatus->value)
                             @case('pending')
                                 <span class="badge badge-pending">Belum Dibayar</span>
+                                @break
+                            @case('partially_paid')
+                                <span class="badge badge-verified">Dibayar Sebagian</span>
                                 @break
                             @case('paid')
                                 <span class="badge badge-paid">Lunas</span>
@@ -272,7 +274,7 @@
                                 <span class="badge badge-expired">Kedaluwarsa</span>
                                 @break
                             @default
-                                <span class="badge badge-rejected">{{ ucfirst($billing->status->value) }}</span>
+                                <span class="badge badge-rejected">{{ ucfirst($displayStatus->value) }}</span>
                         @endswitch
                     </div>
                     <div class="result-body">

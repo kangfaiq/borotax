@@ -105,8 +105,8 @@
                     </div>
                     <div class="text-right flex flex-col items-end">
                         <div class="text-sm font-black text-emerald-600 dark:text-emerald-500">Masuk: Rp {{ number_format($taxOption['total_dibayar'], 0, ',', '.') }}</div>
-                        <span class="mt-1 px-1.5 py-0.5 text-[10px] uppercase font-bold rounded bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                            {{ str_replace('_', ' ', $taxOption['status']) }}
+                        <span class="mt-1 px-1.5 py-0.5 text-[10px] uppercase font-bold rounded {{ $taxOption['status'] === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : ($taxOption['status'] === 'expired' ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400') }}">
+                            {{ strtoupper($taxOption['status_label']) }}
                         </span>
                     </div>
                 </div>
@@ -124,8 +124,8 @@
                     <div class="flex items-center justify-between mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
                         <h3 class="font-bold text-slate-900 dark:text-white">Ringkasan Tagihan</h3>
                         <span class="px-2.5 py-1 text-xs font-bold rounded-full 
-                            {{ $taxDetails['status'] === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' }} border border-slate-200 dark:border-slate-800/50">
-                            {{ strtoupper($taxDetails['status'] === 'paid' ? 'LUNAS' : str_replace('_', ' ', $taxDetails['status'])) }}
+                            {{ $taxDetails['status'] === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : ($taxDetails['status'] === 'expired' ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400') }} border border-slate-200 dark:border-slate-800/50">
+                            {{ strtoupper($taxDetails['status_label']) }}
                         </span>
                     </div>
 

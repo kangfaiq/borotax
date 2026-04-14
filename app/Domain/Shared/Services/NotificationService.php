@@ -4,6 +4,7 @@ namespace App\Domain\Shared\Services;
 
 use App\Domain\Auth\Models\User;
 use App\Domain\Shared\Models\Notification as AppNotification;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 
 class NotificationService
@@ -29,7 +30,9 @@ class NotificationService
         string|array $roles,
         string $title,
         string $body,
-        ?array $data = null
+        ?array $data = null,
+        ?string $actionLabel = null,
+        ?string $actionUrl = null,
     ): void {
         $roles = is_array($roles) ? $roles : [$roles];
 
@@ -38,10 +41,20 @@ class NotificationService
             ->get();
 
         foreach ($users as $user) {
-            FilamentNotification::make()
+            $notification = FilamentNotification::make()
                 ->title($title)
-                ->body($body)
-                ->sendToDatabase($user);
+                ->body($body);
+
+            if (filled($actionLabel) && filled($actionUrl)) {
+                $notification->actions([
+                    Action::make('view_auto_expire_history')
+                        ->label($actionLabel)
+                        ->button()
+                        ->url($actionUrl),
+                ]);
+            }
+
+            $notification->sendToDatabase($user);
         }
     }
 

@@ -13,7 +13,9 @@ use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use Filament\Actions\ViewAction;
 use App\Filament\Resources\ActivityLogResource\Pages\ListActivityLogs;
+use App\Filament\Resources\ActivityLogResource\Pages\ListAutoExpireActivityLogs;
 use App\Filament\Resources\ActivityLogResource\Pages\ViewActivityLog;
+use App\Enums\TaxStatus;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Resources\ActivityLogResource\Pages;
 use App\Domain\Shared\Models\ActivityLog;
@@ -24,6 +26,20 @@ use Filament\Tables\Table;
 
 class ActivityLogResource extends Resource
 {
+    public const AUTO_EXPIRE_FILTER_VALUE = 'auto_expire';
+
+    public const QUICK_DATE_TODAY = 'today';
+
+    public const QUICK_DATE_LAST_7_DAYS = 'last_7_days';
+
+    public const QUICK_DATE_LAST_30_DAYS = 'last_30_days';
+
+    public const SOURCE_STATUS_PENDING = 'pending';
+
+    public const SOURCE_STATUS_VERIFIED = 'verified';
+
+    public const SOURCE_STATUS_PARTIALLY_PAID = 'partially_paid';
+
     protected static ?string $model = ActivityLog::class;
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
@@ -101,8 +117,17 @@ class ActivityLogResource extends Resource
                     }),
                 TextColumn::make('action')
                     ->label('Aksi')
+                    ->formatStateUsing(fn (ActivityLog $record): string => $record->action_label)
                     ->badge()
                     ->searchable(),
+                TextColumn::make('summary_count')
+                    ->label('Jumlah Billing')
+                    ->badge()
+                    ->placeholder('-')
+                    ->state(fn (ActivityLog $record): ?int => $record->auto_expire_count)
+                    ->color('warning')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('target_table')
                     ->label('Target')
                     ->placeholder('-'),
@@ -111,6 +136,24 @@ class ActivityLogResource extends Resource
                     ->limit(50)
                     ->wrap()
                     ->toggleable(),
+                TextColumn::make('auto_expire_billing_summary')
+                    ->label('Batch Billing')
+                    ->state(fn (ActivityLog $record): ?string => $record->auto_expire_billing_summary)
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(),
+                TextColumn::make('auto_expire_source_status_summary')
+                    ->label('Status Asal')
+                    ->state(fn (ActivityLog $record): ?string => $record->auto_expire_source_status_summary)
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(),
+                TextColumn::make('auto_expire_jenis_pajak_summary')
+                    ->label('Ringkasan Jenis Pajak')
+                    ->state(fn (ActivityLog $record): ?string => $record->auto_expire_jenis_pajak_summary)
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('ip_address')
                     ->label('IP')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -124,6 +167,49 @@ class ActivityLogResource extends Resource
                         'user' => 'User',
                         'system' => 'System',
                     ]),
+                SelectFilter::make('history_scope')
+                    ->label('Riwayat Otomatis')
+                    ->options([
+                        self::AUTO_EXPIRE_FILTER_VALUE => 'Auto-Expire Billing',
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query->when(
+                            ($data['value'] ?? null) === self::AUTO_EXPIRE_FILTER_VALUE,
+                            fn ($query) => $query->where('action', ActivityLog::ACTION_SYNC_EXPIRED_TAX_STATUSES)
+                        );
+                    }),
+                SelectFilter::make('source_status')
+                    ->label('Status Asal')
+                    ->options([
+                        self::SOURCE_STATUS_PENDING => TaxStatus::Pending->getLabel(),
+                        self::SOURCE_STATUS_VERIFIED => TaxStatus::Verified->getLabel(),
+                        self::SOURCE_STATUS_PARTIALLY_PAID => TaxStatus::PartiallyPaid->getLabel(),
+                    ])
+                    ->query(function ($query, array $data) {
+                        $value = $data['value'] ?? null;
+
+                        return $query->when(
+                            filled($value),
+                            fn ($query) => $query
+                                ->where('action', ActivityLog::ACTION_SYNC_EXPIRED_TAX_STATUSES)
+                                ->where('source_statuses', 'like', '%,' . $value . ',%')
+                        );
+                    }),
+                SelectFilter::make('quick_date_range')
+                    ->label('Tanggal Cepat')
+                    ->options([
+                        self::QUICK_DATE_TODAY => 'Hari ini',
+                        self::QUICK_DATE_LAST_7_DAYS => '7 hari terakhir',
+                        self::QUICK_DATE_LAST_30_DAYS => '30 hari terakhir',
+                    ])
+                    ->query(function ($query, array $data) {
+                        return match ($data['value'] ?? null) {
+                            self::QUICK_DATE_TODAY => $query->whereDate('created_at', today()),
+                            self::QUICK_DATE_LAST_7_DAYS => $query->where('created_at', '>=', now()->startOfDay()->subDays(6)),
+                            self::QUICK_DATE_LAST_30_DAYS => $query->where('created_at', '>=', now()->startOfDay()->subDays(29)),
+                            default => $query,
+                        };
+                    }),
                 Filter::make('created_at')
                     ->schema([
                         DatePicker::make('from')
@@ -156,8 +242,14 @@ class ActivityLogResource extends Resource
     {
         return [
             'index' => ListActivityLogs::route('/'),
+            'auto-expire-history' => ListAutoExpireActivityLogs::route('/auto-expire-history'),
             'view' => ViewActivityLog::route('/{record}'),
         ];
+    }
+
+    public static function getAutoExpireHistoryUrl(): string
+    {
+        return static::getUrl('auto-expire-history');
     }
 
     public static function canCreate(): bool

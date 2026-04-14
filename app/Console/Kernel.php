@@ -12,6 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('tax:sync-expired-statuses')->hourly();
         $schedule->command('reklame:sync-ketersediaan')->dailyAt('02:00');
         $schedule->command('news:scrape-bapenda')->everySixHours();
     }

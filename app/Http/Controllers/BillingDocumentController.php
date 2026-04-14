@@ -30,7 +30,7 @@ class BillingDocumentController extends Controller
             return $this->renderResolutionView($tax, $latestPembetulan, 'qr');
         }
 
-        if ($tax->status === TaxStatus::Paid && $tax->sptpd_number) {
+        if ($tax->canExposeSptpdDocument()) {
             return redirect()->route('portal.sptpd.show', $tax->id);
         }
 
@@ -98,7 +98,7 @@ class BillingDocumentController extends Controller
     {
         $tax = $this->loadTaxWithRelations($taxId);
 
-        if (!$tax->sptpd_number) {
+        if (! $tax->canExposeSptpdDocument()) {
             abort(404, 'SPTPD belum terbit (Billing belum lunas/terverifikasi).');
         }
 
@@ -110,12 +110,9 @@ class BillingDocumentController extends Controller
     private function generateStpdPdf(string $taxId, string $mode): SymfonyResponse
     {
         $tax = $this->loadTaxWithRelations($taxId);
-        $approvedManual = $tax->stpdManuals()
-            ->where('status', 'disetujui')
-            ->latest('tanggal_verifikasi')
-            ->first();
+        $approvedManual = $tax->getApprovedManualStpd();
 
-        if (!$tax->stpd_number) {
+        if (! $tax->canExposeStpdDocument()) {
             abort(404, 'STPD tidak tersedia untuk billing ini (Tidak ada sanksi atau belum lunas/terverifikasi).');
         }
 
@@ -237,7 +234,7 @@ class BillingDocumentController extends Controller
 
     private function resolvePrimaryDocument(Tax $tax, bool $isLatestPembetulan = false): array
     {
-        if ($tax->status === TaxStatus::Paid && $tax->sptpd_number) {
+        if ($tax->canExposeSptpdDocument()) {
             return [
                 'url' => route('portal.sptpd.show', $tax->id),
                 'label' => $isLatestPembetulan ? 'Lihat SPTPD Pembetulan Terbaru' : 'Lihat SPTPD',

@@ -53,6 +53,8 @@ class BatalBayar extends Page
 
     public function searchBilling(): void
     {
+        Tax::syncExpiredStatuses();
+
         $code = trim($this->searchBillingCode ?? '');
 
         if (empty($code)) {
@@ -118,7 +120,8 @@ class BatalBayar extends Page
                         'masa_pajak' => Carbon::create()->month((int) $t->masa_pajak_bulan)->translatedFormat('F') . ' ' . $t->masa_pajak_tahun,
                         'total_tagihan' => (float) $t->amount + (float) $t->sanksi,
                         'total_dibayar' => $t->payments->sum('amount_paid'),
-                        'status' => $t->status->value,
+                        'status' => $t->display_status->value,
+                        'status_label' => $t->display_status_label,
                     ];
                 })->toArray();
             }
@@ -154,7 +157,8 @@ class BatalBayar extends Page
             'masa_pajak' => Carbon::create()->month((int) $tax->masa_pajak_bulan)->translatedFormat('F') . ' ' . $tax->masa_pajak_tahun,
             'total_tagihan' => (float) $tax->amount + (float) $tax->sanksi,
             'total_dibayar' => $tax->getTotalPaid(),
-            'status' => $tax->status->value,
+            'status' => $tax->display_status->value,
+            'status_label' => $tax->display_status_label,
         ];
 
         // Format payments specifically for blade iteration
@@ -227,33 +231,31 @@ class BatalBayar extends Page
             // 2. Recalculate Tax Status
             $newTotalPaid = $tax->getTotalPaid(); // fresh sum excluding soft-deleted
             $totalTagihan = (float) $tax->amount + (float) $tax->sanksi;
+            $rollbackStatus = $tax->resolveStatusAfterPaymentRollback();
 
             if ($newTotalPaid <= 0) {
-                // Completely reversed, return to pending
                 $tax->update([
-                    'status' => TaxStatus::Pending,
+                    'status' => $rollbackStatus,
                     'paid_at' => null,
                     'payment_channel' => null,
                     'payment_ref' => null,
                     'sptpd_number' => null,
                     'stpd_number' => null,
+                    'stpd_payment_code' => null,
                 ]);
-                $newStatus = 'pending (Menunggu Pembayaran)';
+                $newStatus = $rollbackStatus->value . ' (' . ($rollbackStatus->getLabel() ?? $rollbackStatus->value) . ')';
             } elseif ($newTotalPaid < $totalTagihan) {
-                // Now partially paid — check if pokok still fully paid for STPD
-                $pokokPajak = (float) $tax->amount;
-                $totalPrincipalPaid = $tax->getTotalPrincipalPaid();
-                $stpdNumber = ($totalPrincipalPaid >= $pokokPajak) ? $tax->stpd_number : null;
+                $documentState = $tax->resolveDocumentStateAfterPaymentRollback();
 
                 $tax->update([
-                    'status' => TaxStatus::PartiallyPaid,
+                    'status' => $rollbackStatus,
                     'paid_at' => null,
-                    'sptpd_number' => null,
-                    'stpd_number' => $stpdNumber,
+                    'sptpd_number' => $documentState['sptpd_number'],
+                    'stpd_number' => $documentState['stpd_number'],
+                    'stpd_payment_code' => $documentState['stpd_payment_code'],
                 ]);
-                $newStatus = 'partially_paid (Dibayar Sebagian)';
+                $newStatus = $rollbackStatus->value . ' (' . ($rollbackStatus->getLabel() ?? $rollbackStatus->value) . ')';
             } else {
-                // Should nominally not happen unless overpaid, but just in case:
                 $tax->update(['status' => TaxStatus::Paid]);
                 $newStatus = 'paid (Lunas)';
             }
@@ -267,7 +269,8 @@ class BatalBayar extends Page
 
             // Refresh UI state
             $this->taxDetails['total_dibayar'] = $tax->getTotalPaid();
-            $this->taxDetails['status'] = $tax->status;
+            $this->taxDetails['status'] = $tax->fresh()->display_status->value;
+            $this->taxDetails['status_label'] = $tax->fresh()->display_status_label;
             $this->refreshPaymentsList();
             
             // Close dialog

@@ -11,6 +11,8 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        Tax::syncExpiredStatuses();
+
         /** @var \App\Domain\Auth\Models\User $user */
         $user = auth('portal')->user();
         $wajibPajak = $user->wajibPajak;

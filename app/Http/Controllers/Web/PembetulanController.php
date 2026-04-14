@@ -13,13 +13,15 @@ class PembetulanController extends Controller
 {
     public function index(Request $request)
     {
+        Tax::syncExpiredStatuses();
+
         $user = auth()->user();
         $search = trim((string) $request->input('search'));
         $perPage = 10;
 
         $taxes = Tax::query()
             ->where('user_id', $user->id)
-            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified])
+            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified, TaxStatus::Expired])
             ->doesntHave('children')
             ->with(['jenisPajak', 'taxObject'])
             ->when($search !== '', function ($query) use ($search) {
@@ -55,12 +57,14 @@ class PembetulanController extends Controller
      */
     public function create(string $taxId)
     {
+        Tax::syncExpiredStatuses();
+
         $user = auth()->user();
 
         $tax = Tax::with(['jenisPajak', 'taxObject'])
             ->where('id', $taxId)
             ->where('user_id', $user->id)
-            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified])
+            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified, TaxStatus::Expired])
             ->firstOrFail();
 
         // Check if there's already a pending pembetulan request for this tax
@@ -79,6 +83,8 @@ class PembetulanController extends Controller
      */
     public function store(Request $request)
     {
+        Tax::syncExpiredStatuses();
+
         $request->validate([
             'tax_id' => 'required|uuid|exists:taxes,id',
             'alasan' => 'required|string|min:10|max:1000',
@@ -97,7 +103,7 @@ class PembetulanController extends Controller
         // Verify ownership
         $tax = Tax::where('id', $request->tax_id)
             ->where('user_id', $user->id)
-            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified])
+            ->whereIn('status', [TaxStatus::Pending, TaxStatus::Paid, TaxStatus::Verified, TaxStatus::Expired])
             ->firstOrFail();
 
         // Check if there's already a pending request

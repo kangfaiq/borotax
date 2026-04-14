@@ -26,6 +26,8 @@ class Dashboard extends Page
 
     public function getViewData(): array
     {
+        Tax::syncExpiredStatuses();
+
         $now = Carbon::now();
         $userName = auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Petugas';
 
@@ -62,7 +64,7 @@ class Dashboard extends Page
             : ($pendapatanBulanIni > 0 ? 100 : 0);
 
         // Billing pending (termasuk SKPD yang sudah verified tapi belum bayar)
-        $billingPending = Tax::whereIn('status', [TaxStatus::Pending, TaxStatus::Verified])->count();
+        $billingPending = Tax::whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::Expired])->count();
 
         // Total transaksi bulan ini
         $transaksiBulanIni = Tax::where('status', TaxStatus::Paid)
@@ -89,7 +91,7 @@ class Dashboard extends Page
 
         // --- TRANSAKSI TERBARU ---
         $transaksiTerbaru = Tax::with(['jenisPajak', 'user'])
-            ->whereIn('status', [TaxStatus::Paid, TaxStatus::Verified, TaxStatus::Pending])
+            ->whereIn('status', [TaxStatus::Paid, TaxStatus::Verified, TaxStatus::Pending, TaxStatus::Expired])
             ->latest('created_at')
             ->limit(8)
             ->get();

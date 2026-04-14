@@ -149,6 +149,9 @@ class TaxResource extends Resource
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('status')
+                    ->state(fn (Tax $record): string => $record->display_status->value)
+                    ->formatStateUsing(fn (string $state): string => TaxStatus::from($state)->getLabel() ?? $state)
+                    ->color(fn (string $state): string|array|null => TaxStatus::from($state)->getColor())
                     ->badge()
                     ->toggleable(),
                 TextColumn::make('statusBayar')
@@ -402,17 +405,13 @@ class TaxResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        Tax::syncExpiredStatuses();
+
         return parent::getEloquentQuery();
     }
 
     protected static function formatReportStatus(Tax $record): string
     {
-        $status = $record->status;
-
-        if ($status instanceof TaxStatus) {
-            return $status->getLabel() ?? $status->value;
-        }
-
-        return (string) $status;
+        return $record->display_status_label;
     }
 }

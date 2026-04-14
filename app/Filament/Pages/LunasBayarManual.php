@@ -71,6 +71,8 @@ class LunasBayarManual extends Page
 
     public function searchBilling(): void
     {
+        Tax::syncExpiredStatuses();
+
         $code = trim($this->searchBillingCode ?? '');
 
         if (empty($code)) {
@@ -96,7 +98,7 @@ class LunasBayarManual extends Page
                 Notification::make()
                     ->warning()
                     ->title('Billing tidak valid')
-                    ->body("Kode Pembayaran Aktif {$code} memiliki status: " . strtoupper($tax->status->value) . ". Hanya billing Pending, Terverifikasi (SKPD), Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dilunaskan manual.")
+                    ->body("Kode Pembayaran Aktif {$code} memiliki status: " . strtoupper($tax->display_status->value) . ". Hanya billing Pending, Terverifikasi (SKPD), Kedaluwarsa, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dilunaskan manual.")
                     ->send();
                 return;
             }
@@ -113,7 +115,7 @@ class LunasBayarManual extends Page
 
             $taxes = Tax::with(['taxObject', 'jenisPajak', 'subJenisPajak'])
                 ->where('user_id', $wp->user_id)
-                ->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::PartiallyPaid, TaxStatus::Paid])
+                ->whereIn('status', [TaxStatus::Pending, TaxStatus::Verified, TaxStatus::Expired, TaxStatus::PartiallyPaid, TaxStatus::Paid])
                 ->get()
                 ->filter(fn (Tax $tax) => $tax->canBePaidManually())
                 ->values();
@@ -138,7 +140,8 @@ class LunasBayarManual extends Page
                         'total_tagihan' => (float) $t->amount + (float) $t->sanksi,
                         'sisa_tagihan' => $t->getRemainingAmount(),
                         'jatuh_tempo' => $t->payment_expired_at ? Carbon::parse($t->payment_expired_at)->format('d/m/Y') : '-',
-                        'status' => $t->status->value,
+                        'status' => $t->display_status->value,
+                        'status_label' => $t->display_status_label,
                     ];
                 })->toArray();
             }
@@ -176,7 +179,8 @@ class LunasBayarManual extends Page
             'total_tagihan' => (float) $tax->amount + (float) $tax->sanksi,
             'total_dibayar' => $tax->getTotalPaid(),
             'sisa_tagihan' => $tax->getRemainingAmount(),
-            'status' => $tax->status->value,
+            'status' => $tax->display_status->value,
+            'status_label' => $tax->display_status_label,
         ];
 
         // Pre-fill form

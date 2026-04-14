@@ -209,13 +209,18 @@
 
                 @if($code)
                     @if($billing)
+                        @php($displayStatus = $billing->display_status)
                         <div class="result-card">
-                            <div class="result-header {{ $billing->status->value }}">
+                            <div class="result-header {{ $displayStatus->value }}">
                                 <span>Detail Billing</span>
-                                @if($billing->status === App\Enums\TaxStatus::Pending || $billing->status === App\Enums\TaxStatus::Verified)
+                                @if($displayStatus === App\Enums\TaxStatus::Pending || $displayStatus === App\Enums\TaxStatus::Verified)
                                     <span class="badge badge-pending">Belum Dibayar</span>
-                                @elseif($billing->status === App\Enums\TaxStatus::Paid)
+                                @elseif($displayStatus === App\Enums\TaxStatus::PartiallyPaid)
+                                    <span class="badge badge-verified">Dibayar Sebagian</span>
+                                @elseif($displayStatus === App\Enums\TaxStatus::Paid)
                                     <span class="badge badge-lunas">Lunas</span>
+                                @elseif($displayStatus === App\Enums\TaxStatus::Expired)
+                                    <span class="badge badge-expired">Kedaluwarsa</span>
                                 @endif
                             </div>
                             <div class="result-body">

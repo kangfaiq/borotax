@@ -9,9 +9,7 @@ trait InteractsWithDuplicateBillingInfo
 {
     protected function buildExistingBillingInfo(Tax $existingTax, string $periodLabel): array
     {
-        $status = $existingTax->status instanceof TaxStatus
-            ? $existingTax->status
-            : TaxStatus::from((string) $existingTax->status);
+        $status = $existingTax->display_status;
 
         return [
             'id' => $existingTax->id,
