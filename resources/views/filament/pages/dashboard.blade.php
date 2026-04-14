@@ -398,15 +398,6 @@
         }
     </style>
 
-    <div style="margin-bottom: 24px;">
-        <x-filament-widgets::widgets
-            :columns="1"
-            :widgets="[
-                \App\Filament\Widgets\LargestAutoExpireBatchWidget::class,
-            ]"
-        />
-    </div>
-
     {{-- HERO GREETING --}}
     <div class="dash-hero">
         <h2>{{ $greeting }}, {{ $userName }}!</h2>

@@ -1127,7 +1127,7 @@ Kode billing terdiri dari **18 karakter** dengan pola umum: `35221XX[PADDING]YY[
 
 **Filter status asal:** `Activity Log` menyediakan filter cepat `Status Asal` untuk melihat hanya batch auto-expire yang berasal dari `Menunggu Pembayaran`, `Terverifikasi`, atau `Dibayar Sebagian`.
 
-**Widget dashboard auto-expire:** Dashboard backoffice menampilkan widget `Batch Auto-Expire Terbesar (7 Hari)` yang mengambil data dari `ActivityLog`, menyorot jumlah billing terbesar, komposisi status asal, dan sampel billing batch terbesar dalam 7 hari terakhir.
+**Navigasi histori auto-expire:** Riwayat auto-expire diakses dari area `Activity Log` backoffice melalui shortcut `Histori Auto-Expire`, sehingga tidak ditampilkan lagi sebagai card terpisah di dashboard.
 
 ### 11.3 Kanal Pembayaran
 
