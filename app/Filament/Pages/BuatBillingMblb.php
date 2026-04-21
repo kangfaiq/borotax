@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use Exception;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
 use App\Filament\Pages\Concerns\InteractsWithDuplicateBillingInfo;
 use App\Domain\Tax\Models\Tax;
@@ -58,6 +59,8 @@ class BuatBillingMblb extends Page implements HasForms
     public ?int    $masaPajakBulan        = null;
     public ?int    $masaPajakTahun        = null;
     public ?string $keterangan            = null;
+    public ?string $instansiId            = null;
+    public array   $instansiOptions       = [];
 
     // ── State: Tax config ───────────────────────────────────────────────────
     public float   $tarifPersen  = 20;
@@ -80,6 +83,7 @@ class BuatBillingMblb extends Page implements HasForms
         $this->masaPajakTahun = (int) date('Y');
         $this->loadMineralItems();
         $this->loadTarifConfig();
+        $this->loadInstansiOptions();
     }
 
     private function loadMineralItems(): void
@@ -181,6 +185,7 @@ class BuatBillingMblb extends Page implements HasForms
         $this->billingResult         = null;
         $this->showDuplicateConfirm  = false;
         $this->keterangan            = null;
+        $this->instansiId            = null;
 
         // Reset volume on all minerals
         foreach ($this->mineralItems as $key => $item) {
@@ -228,6 +233,12 @@ class BuatBillingMblb extends Page implements HasForms
 
         if (!$this->wajibPajakData) {
             Notification::make()->warning()->title('Data wajib pajak tidak ditemukan untuk objek ini')->send();
+            return;
+        }
+
+        $instansi = $this->resolveSelectedInstansi();
+        if ($this->shouldShowInstansiField() && filled($this->instansiId) && !$instansi) {
+            Notification::make()->warning()->title('Instansi yang dipilih tidak valid atau tidak aktif')->send();
             return;
         }
 
@@ -306,6 +317,8 @@ class BuatBillingMblb extends Page implements HasForms
         }
 
         try {
+            $instansi = $this->resolveSelectedInstansi();
+
             // Prepare mineral items for calculation
             $items = collect($this->mineralItems)->map(fn ($item) => [
                 'harga_patokan_mblb_id' => $item['id'],
@@ -368,6 +381,7 @@ class BuatBillingMblb extends Page implements HasForms
                 'sub_jenis_pajak_id' => $this->selectedTaxObjectData['sub_jenis_pajak_id'],
                 'tax_object_id'      => $this->selectedTaxObjectId,
                 'user_id'            => $this->wajibPajakData['user_id'],
+                ...($instansi?->toTransactionAttributes() ?? []),
                 'total_dpp'          => $calculation['total_dpp'],
                 'pokok_pajak'        => $calculation['pokok_pajak'],
                 'opsen'              => $calculation['opsen'],
@@ -412,6 +426,7 @@ class BuatBillingMblb extends Page implements HasForms
                     ->translatedFormat('F Y'),
                 'nama_wp'       => $this->wajibPajakData['nama_lengkap'],
                 'nama_objek'    => $this->selectedTaxObjectData['nama'],
+                'instansi'      => $tax->instansi_nama,
                 'jenis_pajak'   => 'MBLB',
                 'pembetulan_ke' => $pembetulanKe,
                 'is_tambahan'   => $pembetulanKe > 0,
@@ -439,6 +454,7 @@ class BuatBillingMblb extends Page implements HasForms
         $this->billingResult         = null;
         $this->showDuplicateConfirm  = false;
         $this->keterangan            = null;
+        $this->instansiId            = null;
         $this->loadMineralItems();
     }
 
@@ -467,6 +483,35 @@ class BuatBillingMblb extends Page implements HasForms
             'is_opd'           => (bool) $obj->is_opd,
             'is_insidentil'    => (bool) $obj->is_insidentil,
             'is_multi_billing' => $obj->isMultiBilling(),
+            'sub_jenis_kode'   => $obj->subJenisPajak?->kode ?? null,
         ];
+    }
+
+    public function shouldShowInstansiField(): bool
+    {
+        return ($this->selectedTaxObjectData['sub_jenis_kode'] ?? null) === 'MBLB_WAPU';
+    }
+
+    private function loadInstansiOptions(): void
+    {
+        $this->instansiOptions = Instansi::query()
+            ->where('is_active', true)
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (Instansi $instansi) => [
+                $instansi->id => $instansi->nama . ' (' . ($instansi->kategori?->getLabel() ?? '-') . ')',
+            ])
+            ->toArray();
+    }
+
+    private function resolveSelectedInstansi(): ?Instansi
+    {
+        if (! $this->shouldShowInstansiField() || blank($this->instansiId)) {
+            return null;
+        }
+
+        return Instansi::query()
+            ->where('is_active', true)
+            ->find($this->instansiId);
     }
 }

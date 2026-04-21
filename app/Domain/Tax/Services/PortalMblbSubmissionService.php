@@ -3,6 +3,7 @@
 namespace App\Domain\Tax\Services;
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Shared\Services\PortalAttachmentService;
 use App\Domain\Tax\Models\PortalMblbSubmission;
 use App\Domain\Tax\Models\Tax;
@@ -28,6 +29,7 @@ class PortalMblbSubmissionService
         array $volumes,
         UploadedFile $attachment,
         ?string $notes = null,
+        ?Instansi $instansi = null,
     ): PortalMblbSubmission {
         $details = $this->resolveDetailItems($volumes);
         $tarifPersen = (float) ($taxObject->tarif_persen ?: ($taxObject->jenisPajak?->tarif_default ?? 20));
@@ -53,6 +55,7 @@ class PortalMblbSubmissionService
             'sub_jenis_pajak_id' => $taxObject->sub_jenis_pajak_id,
             'tax_object_id' => $taxObject->id,
             'user_id' => $user->id,
+            ...($instansi?->toTransactionAttributes() ?? []),
             'masa_pajak_bulan' => $bulan,
             'masa_pajak_tahun' => $tahun,
             'tarif_persen' => $tarifPersen,
@@ -113,6 +116,9 @@ class PortalMblbSubmissionService
                 'sub_jenis_pajak_id' => $submission->sub_jenis_pajak_id,
                 'tax_object_id' => $submission->tax_object_id,
                 'user_id' => $submission->user_id,
+                'instansi_id' => $submission->instansi_id,
+                'instansi_nama' => $submission->instansi_nama,
+                'instansi_kategori' => $submission->instansi_kategori?->value,
                 'total_dpp' => (float) $submission->total_dpp,
                 'pokok_pajak' => (float) $submission->pokok_pajak,
                 'opsen' => (float) $submission->opsen,

@@ -237,6 +237,12 @@
                         </div>
                     </div>
                     <div class="space-y-1.5">
+                        @if(!empty($billingResult['instansi']))
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500 dark:text-slate-400">Instansi</span>
+                            <span class="font-medium text-slate-800 dark:text-slate-200 text-right">{{ $billingResult['instansi'] }}</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between text-sm">
                             <span class="text-slate-500 dark:text-slate-400">{{ ($billingResult['is_ppj'] ?? false) ? 'DPP' : 'Omzet' }}</span>
                             <span class="font-medium text-slate-800 dark:text-slate-200 tabular-nums">Rp {{ number_format($billingResult['omzet'],0,',','.') }}</span>
@@ -488,6 +494,23 @@
                     <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                         <svg class="inline w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Wajib diisi karena dalam satu masa pajak dapat memiliki lebih dari satu billing.
+                    </p>
+                </div>
+                @endif
+
+                @if($this->shouldShowInstansiField())
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Instansi / OPD</label>
+                    <select wire:model="instansiId"
+                            class="sa-ring block w-full py-2.5 px-3 border border-slate-200 dark:border-slate-700
+                                   rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white">
+                        <option value="">-- Opsional, pilih instansi --</option>
+                        @foreach($instansiOptions as $instansiOptionId => $instansiLabel)
+                            <option value="{{ $instansiOptionId }}">{{ $instansiLabel }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                        Isi jika billing ini ditagihkan melalui OPD atau instansi tertentu.
                     </p>
                 </div>
                 @endif

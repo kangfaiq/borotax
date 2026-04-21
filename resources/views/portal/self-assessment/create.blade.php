@@ -1074,6 +1074,29 @@
                 </div>
             @endif
 
+            <div class="form-card" id="instansiCard" style="display:none;">
+                <div class="form-card-title">
+                    <i class="bi bi-buildings"></i> Instansi / Lembaga
+                </div>
+                <div class="form-group">
+                    <label>Instansi Terkait</label>
+                    <select class="form-control" name="instansi_id" id="inputInstansiId">
+                        <option value="">-- Opsional, pilih instansi --</option>
+                        @foreach($instansiOptions as $instansi)
+                            <option value="{{ $instansi->id }}" @selected(old('instansi_id') == $instansi->id)>
+                                {{ $instansi->nama }} ({{ $instansi->kategori?->getLabel() ?? '-' }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
+                        Isi bila pengajuan ini terkait OPD, instansi, atau lembaga tertentu.
+                    </p>
+                    @error('instansi_id')
+                        <div class="form-error">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
             {{-- 4. Dokumen Lampiran --}}
             <div class="form-card">
                 <div class="form-card-title">
@@ -1112,7 +1135,7 @@
                 </div>
             </div>
 
-            {{-- 5. Keterangan (hanya untuk OPD) --}}
+            {{-- 5. Keterangan (untuk multi-billing terkait) --}}
             <div class="form-card" id="keteranganCard" style="display:none;">
                 <div class="form-card-title">
                     <i class="bi bi-journal-text"></i> Keterangan
@@ -1838,10 +1861,17 @@
                     showMasaPajakMode('auto', this);
                 }
 
-                // Show/hide keterangan card for OPD or insidentil
+                var isWapu = this.dataset.subJenisKode === 'MBLB_WAPU';
+
+                // Show/hide keterangan card for multi-billing flows
                 var keteranganCard = document.getElementById('keteranganCard');
                 if (keteranganCard) {
-                    keteranganCard.style.display = (this.dataset.isOpd === '1' || this.dataset.isInsidentil === '1') ? 'block' : 'none';
+                    keteranganCard.style.display = (this.dataset.isOpd === '1' || this.dataset.isInsidentil === '1' || isWapu) ? 'block' : 'none';
+                }
+
+                var instansiCard = document.getElementById('instansiCard');
+                if (instansiCard) {
+                    instansiCard.style.display = isWapu ? 'block' : 'none';
                 }
             });
         });
@@ -1850,9 +1880,14 @@
             var preSelected = document.querySelector('input[name="tax_object_id"]:checked');
             if (preSelected) {
                 preSelected.dispatchEvent(new Event('change'));
+                var isWapu = preSelected.dataset.subJenisKode === 'MBLB_WAPU';
                 var keteranganCard = document.getElementById('keteranganCard');
                 if (keteranganCard) {
-                    keteranganCard.style.display = (preSelected.dataset.isOpd === '1' || preSelected.dataset.isInsidentil === '1') ? 'block' : 'none';
+                    keteranganCard.style.display = (preSelected.dataset.isOpd === '1' || preSelected.dataset.isInsidentil === '1' || isWapu) ? 'block' : 'none';
+                }
+                var instansiCard = document.getElementById('instansiCard');
+                if (instansiCard) {
+                    instansiCard.style.display = isWapu ? 'block' : 'none';
                 }
             }
 

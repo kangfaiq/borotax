@@ -14,7 +14,9 @@ use App\Domain\Tax\Models\TaxObject;
 use App\Domain\Tax\Models\TaxPayment;
 use App\Domain\Reklame\Models\SkpdReklame;
 use App\Domain\AirTanah\Models\SkpdAirTanah;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
+use App\Enums\InstansiKategori;
 use App\Enums\TaxStatus;
 use Filament\Notifications\Notification;
 use Filament\Forms; // Perlu form untuk filter? Filament filter pakai form builder
@@ -134,6 +136,13 @@ class TaxResource extends Resource
                     ->sortable()
                     ->visible(fn($livewire): bool => method_exists($livewire, 'isOfficialAssessment') ? !$livewire->isOfficialAssessment() : !static::isOfficialAssessment())
                     ->toggleable(),
+                TextColumn::make('instansi_nama')
+                    ->label('Instansi')
+                    ->searchable()
+                    ->placeholder('-')
+                    ->description(fn(Tax $record): ?string => $record->instansi_kategori?->getLabel())
+                    ->visible(fn($livewire): bool => method_exists($livewire, 'isOfficialAssessment') ? !$livewire->isOfficialAssessment() : !static::isOfficialAssessment())
+                    ->toggleable(),
                 TextColumn::make('masa_pajak_bulan')
                     ->label('Masa Pajak')
                     ->formatStateUsing(
@@ -217,6 +226,17 @@ class TaxResource extends Resource
                         }
                         return $indicators;
                     }),
+                Tables\Filters\SelectFilter::make('instansi_id')
+                    ->label('Instansi')
+                    ->options(fn () => Instansi::withTrashed()
+                        ->orderBy('nama')
+                        ->pluck('nama', 'id')
+                        ->toArray()),
+                Tables\Filters\SelectFilter::make('instansi_kategori')
+                    ->label('Kategori Instansi')
+                    ->options(collect(InstansiKategori::cases())
+                        ->mapWithKeys(fn (InstansiKategori $kategori) => [$kategori->value => $kategori->getLabel()])
+                        ->all()),
             
                 TrashedFilter::make(),
             ])
@@ -307,7 +327,7 @@ class TaxResource extends Resource
                         $records = $query->get();
 
                         $lines = [];
-                        $lines[] = "Tanggal Transaksi\tKode Pembayaran Aktif\tPembetulan\tObjek Pajak\tMasa Pajak\tJumlah Pajak\tStatus\tMetode Bayar\tTanggal Bayar\tJatuh Tempo";
+                        $lines[] = "Tanggal Transaksi\tKode Pembayaran Aktif\tPembetulan\tObjek Pajak\tInstansi\tMasa Pajak\tJumlah Pajak\tStatus\tMetode Bayar\tTanggal Bayar\tJatuh Tempo";
 
                         foreach ($records as $record) {
                             $masaPajak = $record->masa_pajak_bulan ? Carbon::create()->month((int) $record->masa_pajak_bulan)->translatedFormat('F') . ' ' . $record->masa_pajak_tahun : 'Tahun ' . $record->masa_pajak_tahun;
@@ -316,6 +336,7 @@ class TaxResource extends Resource
                                 $record->getPreferredPaymentCode(),
                                 $record->pembetulan_ke > 0 ? 'Pembetulan Ke-' . $record->pembetulan_ke : 'Original',
                                 $record->taxObject->nama_objek_pajak ?? '-',
+                                $record->instansi_nama ?? '-',
                                 $masaPajak,
                                 number_format((float) $record->amount, 0, ',', '.'),
                                 static::formatReportStatus($record),
@@ -361,7 +382,7 @@ class TaxResource extends Resource
                         $records = $query->get();
 
                         $csv = Writer::createFromFileObject(new SplTempFileObject());
-                        $csv->insertOne(['Tanggal Transaksi', 'Kode Pembayaran Aktif', 'Pembetulan', 'Objek Pajak', 'Masa Pajak', 'Jumlah Pajak', 'Status', 'Metode Bayar', 'Tanggal Bayar', 'Jatuh Tempo']);
+                        $csv->insertOne(['Tanggal Transaksi', 'Kode Pembayaran Aktif', 'Pembetulan', 'Objek Pajak', 'Instansi', 'Masa Pajak', 'Jumlah Pajak', 'Status', 'Metode Bayar', 'Tanggal Bayar', 'Jatuh Tempo']);
 
                         foreach ($records as $record) {
                             $masaPajak = $record->masa_pajak_bulan ? Carbon::create()->month((int) $record->masa_pajak_bulan)->translatedFormat('F') . ' ' . $record->masa_pajak_tahun : 'Tahun ' . $record->masa_pajak_tahun;
@@ -370,6 +391,7 @@ class TaxResource extends Resource
                                 $record->getPreferredPaymentCode(),
                                 $record->pembetulan_ke > 0 ? 'Pembetulan Ke-' . $record->pembetulan_ke : 'Original',
                                 $record->taxObject->nama_objek_pajak ?? '-',
+                                $record->instansi_nama ?? '',
                                 $masaPajak,
                                 (string) $record->amount,
                                 static::formatReportStatus($record),

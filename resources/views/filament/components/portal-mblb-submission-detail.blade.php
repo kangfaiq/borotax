@@ -28,6 +28,11 @@
                 <div style="font-weight:700; color:#0f172a;">Rp {{ number_format($record->total_tagihan, 0, ',', '.') }}</div>
                 <div style="font-size:13px; color:#475569;">DPP Rp {{ number_format((float) $record->total_dpp, 0, ',', '.') }}</div>
             </div>
+            <div style="padding:12px 14px; border:1px solid #e2e8f0; border-radius:10px;">
+                <div style="font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:.04em;">Instansi</div>
+                <div style="font-weight:600; color:#0f172a;">{{ $record->instansi_nama ?? '-' }}</div>
+                <div style="font-size:13px; color:#475569;">{{ $record->instansi_kategori?->getLabel() ?? 'Tidak dipilih' }}</div>
+            </div>
         </div>
     </div>
 

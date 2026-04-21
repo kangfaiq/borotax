@@ -214,6 +214,12 @@
                         </div>
                     </div>
                     <div class="space-y-1.5">
+                        @if(!empty($billingResult['instansi']))
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500 dark:text-slate-400">Instansi</span>
+                            <span class="font-medium text-slate-800 dark:text-slate-200 text-right">{{ $billingResult['instansi'] }}</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between text-sm">
                             <span class="text-slate-500 dark:text-slate-400">Total DPP ({{ $billingResult['detail_count'] }} jenis mineral)</span>
                             <span class="font-medium text-slate-800 dark:text-slate-200 tabular-nums">Rp {{ number_format($billingResult['total_dpp'],0,',','.') }}</span>
@@ -470,6 +476,23 @@
                         </tbody>
                     </table>
                 </div>
+
+                @if($this->shouldShowInstansiField())
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Instansi / Lembaga</label>
+                    <select wire:model="instansiId"
+                            class="mb-ring block w-full py-2 px-3 border border-slate-200 dark:border-slate-700
+                                   rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white">
+                        <option value="">-- Opsional, pilih instansi --</option>
+                        @foreach($instansiOptions as $instansiOptionId => $instansiLabel)
+                            <option value="{{ $instansiOptionId }}">{{ $instansiLabel }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                        Isi jika tagihan MBLB ini diterbitkan untuk skema WAPU tertentu.
+                    </p>
+                </div>
+                @endif
 
                 {{-- Keterangan (OPD / insidentil) --}}
                 @if($selectedTaxObjectData['is_multi_billing'] ?? false)

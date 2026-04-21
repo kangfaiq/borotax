@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use Carbon\Carbon;
 use App\Domain\Shared\Services\NotificationService;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Tax\Models\PortalMblbSubmission;
 use App\Domain\Tax\Models\HargaPatokanSarangWalet;
 use App\Http\Controllers\Controller;
@@ -21,6 +22,7 @@ use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Enums\TaxStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SelfAssessmentController extends Controller
 {
@@ -105,6 +107,11 @@ class SelfAssessmentController extends Controller
             $mineralItems = app(MblbService::class)->getAllMineralItems();
         }
 
+        $instansiOptions = Instansi::query()
+            ->where('is_active', true)
+            ->orderBy('nama')
+            ->get();
+
         return view('portal.self-assessment.create', compact(
             'jenisPajak',
             'taxObjects',
@@ -118,7 +125,8 @@ class SelfAssessmentController extends Controller
             'isMblb',
             'hargaSatuanListrikItems',
             'mineralItems',
-            'opsenPersen'
+            'opsenPersen',
+            'instansiOptions'
         ));
     }
 
@@ -392,6 +400,7 @@ class SelfAssessmentController extends Controller
             'tax_object_id' => 'required|exists:tax_objects,id',
             'attachment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:8192',
             'volumes' => 'required|array',
+            'instansi_id' => 'nullable|exists:instansi,id',
         ], [
             'tax_object_id.required' => 'Pilih objek pajak.',
             'attachment.required' => 'Dokumen lampiran wajib diupload.',
@@ -451,6 +460,8 @@ class SelfAssessmentController extends Controller
             }
         }
 
+        $instansi = $this->resolvePortalInstansi($request, $taxObject);
+
         $submission = app(PortalMblbSubmissionService::class)->createSubmission(
             $user,
             $taxObject,
@@ -459,6 +470,7 @@ class SelfAssessmentController extends Controller
             $request->input('volumes', []),
             $request->file('attachment'),
             $request->input('keterangan'),
+            $instansi,
         );
 
         NotificationService::notifyRole(
@@ -468,6 +480,25 @@ class SelfAssessmentController extends Controller
         );
 
         return redirect()->route('portal.self-assessment.submission-success', $submission->id);
+    }
+
+    private function resolvePortalInstansi(Request $request, TaxObject $taxObject): ?Instansi
+    {
+        if (($taxObject->subJenisPajak?->kode ?? null) !== 'MBLB_WAPU' || blank($request->instansi_id)) {
+            return null;
+        }
+
+        $instansi = Instansi::query()
+            ->where('is_active', true)
+            ->find($request->instansi_id);
+
+        if ($instansi) {
+            return $instansi;
+        }
+
+        throw ValidationException::withMessages([
+            'instansi_id' => 'Instansi yang dipilih tidak valid atau tidak aktif.',
+        ]);
     }
 
     /**

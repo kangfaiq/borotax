@@ -25,7 +25,9 @@ use App\Domain\Master\Models\JenisPajak;
 use App\Policies\JenisPajakPolicy;
 use App\Domain\Master\Models\SubJenisPajak;
 use App\Policies\SubJenisPajakPolicy;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\Pimpinan;
+use App\Policies\InstansiPolicy;
 use App\Policies\PimpinanPolicy;
 use App\Domain\Auth\Models\User;
 use App\Policies\UserPolicy;
@@ -84,6 +86,7 @@ class AuthServiceProvider extends ServiceProvider
         ActivityLog::class => ActivityLogPolicy::class,
         JenisPajak::class => JenisPajakPolicy::class,
         SubJenisPajak::class => SubJenisPajakPolicy::class,
+        Instansi::class => InstansiPolicy::class,
         Pimpinan::class => PimpinanPolicy::class,
         User::class => UserPolicy::class,
         Destination::class => DestinationPolicy::class,

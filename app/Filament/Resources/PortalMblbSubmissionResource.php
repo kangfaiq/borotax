@@ -67,6 +67,12 @@ class PortalMblbSubmissionResource extends Resource
                     ->label('Objek Pajak')
                     ->searchable()
                     ->description(fn(PortalMblbSubmission $record) => $record->taxObject?->npwpd ?? ''),
+                Tables\Columns\TextColumn::make('instansi_nama')
+                    ->label('Instansi')
+                    ->placeholder('-')
+                    ->searchable()
+                    ->description(fn(PortalMblbSubmission $record) => $record->instansi_kategori?->getLabel() ?? null)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('masa_pajak_label')
                     ->label('Masa Pajak'),
                 Tables\Columns\TextColumn::make('total_tagihan')

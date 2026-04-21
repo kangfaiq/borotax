@@ -3,8 +3,10 @@
 namespace App\Domain\Tax\Models;
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
+use App\Enums\InstansiKategori;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,6 +25,9 @@ class PortalMblbSubmission extends Model
         'sub_jenis_pajak_id',
         'tax_object_id',
         'user_id',
+        'instansi_id',
+        'instansi_nama',
+        'instansi_kategori',
         'masa_pajak_bulan',
         'masa_pajak_tahun',
         'tarif_persen',
@@ -51,6 +56,7 @@ class PortalMblbSubmission extends Model
         'opsen' => 'decimal:2',
         'detail_items' => 'array',
         'processed_at' => 'datetime',
+        'instansi_kategori' => InstansiKategori::class,
     ];
 
     public function jenisPajak(): BelongsTo
@@ -71,6 +77,11 @@ class PortalMblbSubmission extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function instansi(): BelongsTo
+    {
+        return $this->belongsTo(Instansi::class, 'instansi_id');
     }
 
     public function reviewer(): BelongsTo

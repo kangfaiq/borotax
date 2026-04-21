@@ -585,7 +585,13 @@
             <div style="width: 50px; font-weight: bold; text-align: center;">Ket.</div>
             <div style="border-left: 1px solid #000; padding-left: 10px; flex: 1;">
                 @if(($isMblbTax ?? false) && $tax->subJenisPajak && $tax->subJenisPajak->kode === 'MBLB_WAPU')
-                    {{-- MBLB WAPU: hanya keterangan input petugas --}}
+                    @if($tax->instansi_nama)
+                        INSTANSI: {{ strtoupper($tax->instansi_nama) }}
+                        @if($tax->instansi_kategori)
+                            ({{ strtoupper($tax->instansi_kategori->getLabel()) }})
+                        @endif
+                        <br>
+                    @endif
                     {{ $tax->notes }}
                 @else
                     @if($isSarangWaletTax ?? false)
@@ -602,6 +608,12 @@
                         TAHUN
                     @endif
                     {{ $tax->masa_pajak_tahun }}
+                    @if($tax->instansi_nama)
+                        <br>INSTANSI: {{ strtoupper($tax->instansi_nama) }}
+                        @if($tax->instansi_kategori)
+                            ({{ strtoupper($tax->instansi_kategori->getLabel()) }})
+                        @endif
+                    @endif
                     @if($tax->notes)
                         <br>{{ $tax->notes }}
                     @endif

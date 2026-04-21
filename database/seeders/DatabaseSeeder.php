@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             NpaAirTanahProgresifSeeder::class,
             HargaPatokanMblbSeeder::class,
             HargaPatokanSarangWaletSeeder::class,
+            InstansiSeeder::class,
 
             // Konten dan versi aplikasi
             DestinationSeeder::class,

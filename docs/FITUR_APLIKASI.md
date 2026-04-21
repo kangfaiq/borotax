@@ -121,7 +121,7 @@ Catatan: tabel berikut menggambarkan akses halaman utama. Untuk beberapa modul, 
 | Dashboard | ✅ | ✅ | ✅ |
 | Laporan Pendapatan | ✅ | ✅ | ✅ |
 | Kelola User Backoffice | ✅ | ❌ | ❌ |
-| Data Master (Jenis Pajak, Pimpinan, dll) | ✅ | ❌ | ❌ |
+| Data Master (Jenis Pajak, Pimpinan, Instansi, dll) | ✅ | ❌ | ❌ |
 | Harga Patokan (MBLB, Walet, Listrik, Reklame) | ✅ | ❌ | ❌ |
 | Nilai Strategis Reklame | ✅ | ❌ | ❌ |
 | NPA Air Tanah | ✅ | ❌ | ❌ |
@@ -215,8 +215,10 @@ Total Tagihan   = Pokok Pajak + Opsen
 - **Harga patokan** per mineral bersifat temporal (berlaku mulai/sampai)
 - Mendukung **multi-mineral** per billing (satu billing bisa berisi beberapa jenis mineral)
 - Sub-jenis `MBLB_WAPU`: dapat multi-billing per masa pajak
+- **Master instansi terkait:** admin dapat mengelola daftar OPD/instansi/lembaga beserta kategori dan alamat/lokasi dari menu Master Data
 - **Portal wajib pajak:** pengajuan MBLB tidak langsung menerbitkan billing code; data mineral dan lampiran masuk ke antrean verifikasi admin/verifikator terlebih dahulu
 - **Lampiran portal MBLB:** wajib gambar atau PDF; PDF maksimal 1 MB, gambar otomatis dikompres ke <= 1 MB saat disimpan
+- **Instansi opsional:** billing MBLB `MBLB_WAPU` di backoffice maupun portal dapat menyimpan instansi terkait sebagai snapshot histori (`instansi_id`, nama, kategori)
 - **Prefill masa pajak billing:**
   - `MBLB_WAPU` → selalu prefill **bulan berjalan**
   - `MBLB_WP` → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`
@@ -522,6 +524,7 @@ Dashboard menampilkan:
 #### Buat Billing Self-Assessment
 - **Jenis pajak:** Hotel (41101), Restoran (41102), Hiburan (41103), PPJ (41105), Parkir (41107)
 - **Fitur:** Pencarian NIK/NPWPD/nama, auto-deteksi masa pajak berikutnya, input omzet, deteksi duplikat, dan konfirmasi pembetulan atau penggantian billing sesuai status tagihan yang sudah ada
+- **Instansi opsional:** untuk objek `is_opd` petugas dapat memilih OPD/instansi/lembaga terkait; nilai disimpan sebagai snapshot pada billing
 - **Warning lompat periode:** Untuk objek reguler bulanan, petugas tetap boleh memilih masa pajak yang melompati prefill periode berikutnya, tetapi sistem menampilkan konfirmasi khusus bahwa masa pajak sebelumnya belum dibuat
 - **Aturan prefill masa pajak:**
   - Objek `is_opd` atau `is_insidentil` → selalu prefill **bulan berjalan**
@@ -535,6 +538,7 @@ Dashboard menampilkan:
 - **Jenis pajak:** MBLB (41106)
 - **Fitur:** Input volume per jenis mineral dari daftar harga patokan aktif, kalkulasi otomatis DPP + opsen
 - **Portal WP:** submit sebagai pengajuan verifikasi; billing code baru diterbitkan setelah admin/verifikator menyetujui pengajuan dan meninjau lampiran
+- **Instansi opsional:** untuk sub-jenis `MBLB_WAPU`, petugas maupun wajib pajak dapat memilih instansi terkait dan snapshot-nya ikut dibawa sampai billing disetujui/diterbitkan
 - **Aturan prefill masa pajak:**
   - `MBLB_WAPU` → selalu prefill **bulan berjalan**
   - `MBLB_WP` → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`
@@ -631,6 +635,7 @@ Catatan implementasi saat ini:
 ### 6.9 Laporan Pendapatan
 - **View tahun:** Ringkasan semua tahun (2019–sekarang) — total transaksi, total pendapatan, pending
 - **View per tahun:** Detail per jenis pajak — total transaksi, total pendapatan, pendapatan bulan ini, pending
+- **Filter tambahan:** tabel transaksi mendukung kolom/filter `Instansi` dan `Kategori Instansi` untuk billing yang memakai metadata instansi terkait
 
 ### 6.10 Buat STPD Manual (Petugas)
 - **Akses:** Admin, Petugas, Verifikator
@@ -933,7 +938,7 @@ Wajib pajak dapat melihat dan mengunduh:
 | Nama | Billing / Tagihan Pajak |
 | Template | `documents.billing-sa` |
 | Ukuran | F4 Folio (609.449 × 935.433 pt) |
-| Konten | Data WP, objek pajak, masa pajak, kode billing, DPP, pokok pajak, sanksi, total tagihan, jatuh tempo |
+| Konten | Data WP, objek pajak, masa pajak, kode billing, DPP, pokok pajak, sanksi, total tagihan, jatuh tempo, dan instansi terkait bila ada |
 | Konten Khusus | Detail MBLB (mineral per item), Sarang Walet (jenis + volume), PPJ (detail kapasitas) |
 | Akses | Portal WP, Backoffice (cetak/unduh) |
 | Route Status | `/portal/billing/{taxId}/status` mengarahkan ke SPTPD jika billing sudah lunas dan `sptpd_number` tersedia; selain itu tetap ke billing document |
@@ -1242,6 +1247,12 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 | A3 | A | Jalan Lokal Utama |
 | B | B | Jalan Lokal |
 | C | C | Jalan Lingkungan |
+
+### 12.12 Instansi / Satker
+- **CRUD** master instansi terkait billing: kode, nama, kategori, alamat/lokasi, keterangan, status aktif
+- **Akses backoffice:** Admin only
+- **Seed awal:** aplikasi menyediakan seed bawaan `InstansiSeeder` berisi 3344 data satker awal yang disalin dari referensi `docs/ref_satker.csv`
+- **Kategori seed awal:** seluruh data awal dimasukkan dengan kategori `Instansi`, dan informasi desa/kecamatan sumber disimpan pada kolom keterangan
 
 ---
 

@@ -4,11 +4,13 @@ namespace App\Domain\Tax\Models;
 
 use App\Domain\Shared\Traits\HasEncryptedAttributes;
 use App\Domain\Auth\Models\User;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
 use App\Domain\Tax\Models\StpdManual;
 use App\Domain\Tax\Models\TaxAssessmentLetter;
 use App\Domain\Tax\Observers\TaxObserver;
+use App\Enums\InstansiKategori;
 use App\Enums\TaxStatus;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,6 +50,9 @@ class Tax extends Model
         'sub_jenis_pajak_id',
         'tax_object_id',
         'user_id',
+        'instansi_id',
+        'instansi_nama',
+        'instansi_kategori',
         'amount',
         'omzet',
         'sanksi',
@@ -105,6 +110,7 @@ class Tax extends Model
         'billing_sequence' => 'integer',
         'cancelled_at' => 'datetime',
         'is_legacy' => 'boolean',
+        'instansi_kategori' => InstansiKategori::class,
     ];
 
     protected static function booted(): void
@@ -146,6 +152,11 @@ class Tax extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function instansi(): BelongsTo
+    {
+        return $this->belongsTo(Instansi::class, 'instansi_id');
     }
 
     /**

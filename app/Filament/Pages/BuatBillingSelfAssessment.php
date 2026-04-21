@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use Exception;
+use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
 use App\Filament\Pages\Concerns\InteractsWithDuplicateBillingInfo;
 use App\Domain\Tax\Models\Tax;
@@ -59,6 +60,8 @@ class BuatBillingSelfAssessment extends Page implements HasForms
     public ?int    $masaPajakBulan        = null;
     public ?int    $masaPajakTahun        = null;
     public ?string $keterangan            = null;
+    public ?string $instansiId            = null;
+    public array   $instansiOptions       = [];
 
     // ── State: PPJ-specific fields ──────────────────────────────────────────
     public ?float  $ppjPokokPajak              = null;
@@ -88,6 +91,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
     {
         $this->masaPajakBulan = (int) date('n');
         $this->masaPajakTahun = (int) date('Y');
+        $this->loadInstansiOptions();
     }
 
     // ── Live Search ─────────────────────────────────────────────────────────
@@ -182,6 +186,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         $this->showSkippedMonthConfirm = false;
         $this->skipMonthWarningAcknowledged = false;
         $this->keterangan            = null;
+        $this->instansiId            = null;
 
         // Reset PPJ fields
         $this->ppjPokokPajak              = null;
@@ -294,6 +299,12 @@ class BuatBillingSelfAssessment extends Page implements HasForms
 
         if (!$this->wajibPajakData) {
             Notification::make()->warning()->title('Data wajib pajak tidak ditemukan untuk objek ini')->send();
+            return;
+        }
+
+        $instansi = $this->resolveSelectedInstansi();
+        if ($this->shouldShowInstansiField() && filled($this->instansiId) && !$instansi) {
+            Notification::make()->warning()->title('Instansi yang dipilih tidak valid atau tidak aktif')->send();
             return;
         }
 
@@ -412,6 +423,8 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         }
 
         try {
+            $instansi = $this->resolveSelectedInstansi();
+
             $billingService = app(BillingService::class);
             $existingTax = $this->existingBillingInfo
                 ? Tax::find($this->existingBillingInfo['id'])
@@ -504,6 +517,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
                     'sub_jenis_pajak_id' => $this->selectedTaxObjectData['sub_jenis_pajak_id'],
                     'tax_object_id'      => $this->selectedTaxObjectId,
                     'user_id'            => $this->wajibPajakData['user_id'],
+                    ...($instansi?->toTransactionAttributes() ?? []),
                     'omzet'              => $this->omzet,
                     'tarif_persen'       => $this->selectedTaxObjectData['tarif_persen'],
                     'bulan'              => $this->masaPajakBulan,
@@ -544,6 +558,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
                 'nama_wp'         => $this->wajibPajakData['nama_lengkap'],
                 'nama_objek'      => $this->selectedTaxObjectData['nama'],
                 'jenis_pajak'     => $this->selectedTaxObjectData['jenis_pajak_nama'],
+                'instansi'        => $tax->instansi_nama,
                 'pembetulan_ke'   => $pembetulanKe,
                 'is_tambahan'     => $pembetulanKe > 0,
                 'sub_jenis_kode'  => $subJenisKode,
@@ -577,6 +592,7 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         $this->showSkippedMonthConfirm = false;
         $this->skipMonthWarningAcknowledged = false;
         $this->keterangan            = null;
+        $this->instansiId            = null;
 
         // Reset PPJ fields
         $this->ppjPokokPajak              = null;
@@ -624,6 +640,34 @@ class BuatBillingSelfAssessment extends Page implements HasForms
             ->orderBy('urutan')
             ->pluck('nama')
             ->toArray();
+    }
+
+    public function shouldShowInstansiField(): bool
+    {
+        return (bool) ($this->selectedTaxObjectData['is_opd'] ?? false);
+    }
+
+    private function loadInstansiOptions(): void
+    {
+        $this->instansiOptions = Instansi::query()
+            ->where('is_active', true)
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (Instansi $instansi) => [
+                $instansi->id => $instansi->nama . ' (' . ($instansi->kategori?->getLabel() ?? '-') . ')',
+            ])
+            ->toArray();
+    }
+
+    private function resolveSelectedInstansi(): ?Instansi
+    {
+        if (! $this->shouldShowInstansiField() || blank($this->instansiId)) {
+            return null;
+        }
+
+        return Instansi::query()
+            ->where('is_active', true)
+            ->find($this->instansiId);
     }
 
     public function updatedMasaPajakBulan(): void
