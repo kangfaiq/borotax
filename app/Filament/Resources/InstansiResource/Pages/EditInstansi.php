@@ -13,6 +13,11 @@ class EditInstansi extends EditRecord
 {
     protected static string $resource = InstansiResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return InstansiResource::mutateRegionFormData($data);
+    }
+
     protected function getHeaderActions(): array
     {
         return [

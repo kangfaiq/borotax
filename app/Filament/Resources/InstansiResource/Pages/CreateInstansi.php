@@ -10,6 +10,11 @@ class CreateInstansi extends CreateRecord
 {
     protected static string $resource = InstansiResource::class;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return InstansiResource::mutateRegionFormData($data);
+    }
+
     protected function afterCreate(): void
     {
         ActivityLog::log(

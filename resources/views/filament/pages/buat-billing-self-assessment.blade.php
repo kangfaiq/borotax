@@ -499,20 +499,15 @@
                 @endif
 
                 @if($this->shouldShowInstansiField())
-                <div class="mb-5">
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Instansi / OPD</label>
-                    <select wire:model="instansiId"
-                            class="sa-ring block w-full py-2.5 px-3 border border-slate-200 dark:border-slate-700
-                                   rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white">
-                        <option value="">-- Opsional, pilih instansi --</option>
-                        @foreach($instansiOptions as $instansiOptionId => $instansiLabel)
-                            <option value="{{ $instansiOptionId }}">{{ $instansiLabel }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                        Isi jika billing ini ditagihkan melalui OPD atau instansi tertentu.
-                    </p>
-                </div>
+                    <x-searchable-instansi-select
+                        model="instansiId"
+                        :options="$instansiOptions"
+                        :selected="$instansiId"
+                        label="Instansi / OPD"
+                        ring-class="sa-ring"
+                        placeholder="Cari instansi / OPD / lembaga..."
+                        empty-label="-- Opsional, tanpa instansi --"
+                        help-text="Isi jika billing ini ditagihkan melalui OPD atau instansi tertentu." />
                 @endif
 
                 @if($isPpjPln)

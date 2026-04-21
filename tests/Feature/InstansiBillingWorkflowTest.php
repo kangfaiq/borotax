@@ -114,6 +114,7 @@ it('stores instansi snapshots on self-assessment opd billing', function () {
         ->and($tax->instansi_kategori)->toBe(InstansiKategori::Opd);
 });
 
+
 it('stores instansi snapshots on backoffice mblb wapu billing', function () {
     $this->seed([
         JenisPajakSeeder::class,

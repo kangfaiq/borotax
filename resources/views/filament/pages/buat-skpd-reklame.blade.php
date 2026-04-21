@@ -754,11 +754,12 @@
         </div>
 
         {{-- RIGHT: Preview Perhitungan --}}
-        <div>
+        <div class="lg:self-start">
+            <div class="lg:sticky lg:top-4 space-y-10">
             @if($mode === 'aset_pemkab')
                 @php $previewAset = $this->getPreviewPajakAset(); @endphp
                 @if($previewAset)
-                <div class="rounded-xl rkl-bg-p5 border rkl-border-p20 p-3 sm:p-5 lg:sticky lg:top-4">
+                <div class="rounded-xl rkl-bg-p5 border rkl-border-p20 p-3 sm:p-5">
                     <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">Preview Perhitungan (Sewa Aset)</h4>
 
                     <table class="w-full text-xs sm:text-sm">
@@ -793,7 +794,7 @@
             @php $preview = $this->getPreviewPajak(); @endphp
 
             @if($preview)
-            <div class="rounded-xl rkl-bg-p5 border rkl-border-p20 p-3 sm:p-5 lg:sticky lg:top-4">
+            <div class="rounded-xl rkl-bg-p5 border rkl-border-p20 p-3 sm:p-5">
                 <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">Preview Perhitungan</h4>
 
                 <table class="w-full text-xs sm:text-sm">
@@ -865,7 +866,7 @@
             @endif
 
             {{-- Submit Button --}}
-            <div style="margin-top: 2.5rem;">
+            <div>
                 @php
                     $submitMethod = $mode === 'aset_pemkab' ? 'buatSkpdAsetPemkab' : 'buatSkpd';
                     $canSubmit = $mode === 'aset_pemkab' ? ($previewAset ?? null) : ($preview ?? null);
@@ -889,6 +890,7 @@
                 <p class="text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2 italic">
                     Draft SKPD akan dikirim ke Verifikator untuk persetujuan.
                 </p>
+            </div>
             </div>
         </div>
 

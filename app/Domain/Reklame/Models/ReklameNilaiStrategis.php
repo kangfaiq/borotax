@@ -55,7 +55,10 @@ class ReklameNilaiStrategis extends Model
         $tanggal = $tanggal ?? now()->toDateString();
 
         return $query
-            ->where('berlaku_mulai', '<=', $tanggal)
+            ->where(function ($builder) use ($tanggal) {
+                $builder->whereNull('berlaku_mulai')
+                    ->orWhere('berlaku_mulai', '<=', $tanggal);
+            })
             ->where(function ($builder) use ($tanggal) {
                 $builder->whereNull('berlaku_sampai')
                     ->orWhere('berlaku_sampai', '>=', $tanggal);

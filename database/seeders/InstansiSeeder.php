@@ -2,6 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Region\Models\District;
+use App\Domain\Region\Models\Province;
+use App\Domain\Region\Models\Regency;
+use App\Domain\Region\Models\Village;
 use App\Domain\Master\Models\Instansi;
 use App\Enums\InstansiKategori;
 use Illuminate\Database\Seeder;
@@ -9,6 +13,9 @@ use RuntimeException;
 
 class InstansiSeeder extends Seeder
 {
+    private const BOJONEGORO_PROVINCE_CODE = '35';
+    private const BOJONEGORO_REGENCY_CODE = '35.22';
+
     private const PAYLOAD = <<<'PAYLOAD'
 H4sIAAAAAAAEALy9W5PrOLIu9lcY82RH9KpVkkqqqvETVGRLLJKihpfW1PjFE947th37eBxxfObJ4f9uJECCyAtASLVmv3SvIlL8krgkEom8/K//75/+z3/7
 0583v/3pH3//v/7+pz//KS8vqs+uxSUv87JSlz/99qe//zfd9D9022f9lF3VUDZjp7JL+5Q9v+vmf/v3/wd+2I/NUV1O+sF//vv/Dj/4+z/006r4eMqO7Wd7
@@ -754,18 +761,61 @@ PAYLOAD;
 
     public function run(): void
     {
+        $locationMap = $this->buildLocationMap();
+
         foreach ($this->decodeRecords() as $record) {
+            $recordId = (int) ($record['id'] ?? 0);
+            $location = $this->resolveLocation($record, $locationMap);
+
             Instansi::updateOrCreate(
-                ['kode' => $this->buildKode((string) $record['id'])],
+                ['kode' => $this->buildKode((string) $recordId)],
                 [
                     'nama' => $this->normalizeValue($record['nama'] ?? null) ?? 'Tanpa Nama',
-                    'kategori' => InstansiKategori::Instansi,
+                    'kategori' => $this->resolveKategori($recordId),
                     'alamat' => $this->normalizeValue($record['alamat'] ?? null),
-                    'keterangan' => $this->buildKeterangan($record),
+                    'asal_wilayah' => 'bojonegoro',
+                    'province_code' => self::BOJONEGORO_PROVINCE_CODE,
+                    'regency_code' => self::BOJONEGORO_REGENCY_CODE,
+                    'district_code' => $location['district_code'],
+                    'village_code' => $location['village_code'],
+                    'keterangan' => null,
                     'is_active' => true,
                 ]
             );
         }
+    }
+
+    private function buildLocationMap(): array
+    {
+        if (! Province::query()->where('code', self::BOJONEGORO_PROVINCE_CODE)->exists()
+            || ! Regency::query()->where('code', self::BOJONEGORO_REGENCY_CODE)->exists()) {
+            throw new RuntimeException('InstansiSeeder memerlukan master wilayah. Jalankan ProvinceSeeder, RegencySeeder, DistrictSeeder, dan VillageSeeder terlebih dahulu.');
+        }
+
+        $districtMap = [];
+
+        foreach (District::query()
+            ->where('regency_code', self::BOJONEGORO_REGENCY_CODE)
+            ->get(['code', 'name']) as $district) {
+            $districtMap[$this->normalizeDistrictName($district->name)] = $district->code;
+        }
+
+        $villageMap = [];
+
+        foreach (Village::query()
+            ->whereIn('district_code', array_values($districtMap))
+            ->get(['code', 'district_code', 'name']) as $village) {
+            $villageMap[$village->district_code . '|' . $this->normalizeVillageName($village->name)] = $village->code;
+        }
+
+        if ($districtMap === [] || $villageMap === []) {
+            throw new RuntimeException('InstansiSeeder memerlukan referensi kecamatan dan desa Bojonegoro. Jalankan DistrictSeeder dan VillageSeeder terlebih dahulu.');
+        }
+
+        return [
+            'districts' => $districtMap,
+            'villages' => $villageMap,
+        ];
     }
 
     private function decodeRecords(): array
@@ -802,27 +852,40 @@ PAYLOAD;
         return 'SATKER-'.str_pad($sourceId, 5, '0', STR_PAD_LEFT);
     }
 
-    private function buildKeterangan(array $record): ?string
+    private function resolveKategori(int $recordId): InstansiKategori
     {
-        $parts = [];
+        return match (true) {
+            $recordId >= 1 && $recordId <= 70 => InstansiKategori::Opd,
+            $recordId >= 71 && $recordId <= 506 => InstansiKategori::Pemdes,
+            $recordId >= 507 && $recordId <= 3172 => InstansiKategori::Lembaga,
+            $recordId >= 3173 && $recordId <= 3212 => InstansiKategori::Opd,
+            $recordId >= 3213 && $recordId <= 3350 => InstansiKategori::Lembaga,
+            $recordId === 3351 => InstansiKategori::Opd,
+            default => InstansiKategori::Instansi,
+        };
+    }
 
-        $desa = $this->normalizeValue($record['desa'] ?? null);
+    private function resolveLocation(array $record, array $locationMap): array
+    {
+        $districtCode = null;
+        $villageCode = null;
 
-        if ($desa !== null) {
-            $parts[] = 'Desa/Kelurahan: '.$desa;
+        $normalizedDistrict = $this->normalizeDistrictName($record['kecamatan'] ?? null);
+
+        if ($normalizedDistrict !== null) {
+            $districtCode = $locationMap['districts'][$normalizedDistrict] ?? null;
         }
 
-        $kecamatan = $this->normalizeValue($record['kecamatan'] ?? null);
+        $normalizedVillage = $this->normalizeVillageName($record['desa'] ?? null);
 
-        if ($kecamatan !== null) {
-            $parts[] = 'Kecamatan: '.$kecamatan;
+        if ($districtCode !== null && $normalizedVillage !== null) {
+            $villageCode = $locationMap['villages'][$districtCode . '|' . $normalizedVillage] ?? null;
         }
 
-        if ($parts === []) {
-            return null;
-        }
-
-        return implode('; ', $parts);
+        return [
+            'district_code' => $districtCode,
+            'village_code' => $villageCode,
+        ];
     }
 
     private function normalizeValue(mixed $value): ?string
@@ -836,6 +899,34 @@ PAYLOAD;
         if ($normalized === '') {
             return null;
         }
+
+        return preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
+    }
+
+    private function normalizeDistrictName(mixed $value): ?string
+    {
+        $normalized = $this->normalizeValue($value);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        $normalized = strtoupper($normalized);
+        $normalized = preg_replace('/^(KEC(?:AMATAN)?\.?\s+)/', '', $normalized) ?? $normalized;
+
+        return preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
+    }
+
+    private function normalizeVillageName(mixed $value): ?string
+    {
+        $normalized = $this->normalizeValue($value);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        $normalized = strtoupper($normalized);
+        $normalized = preg_replace('/^(DESA|KELURAHAN|KEL\.?|DS\.?)(\s+)/', '', $normalized) ?? $normalized;
 
         return preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
     }

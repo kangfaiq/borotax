@@ -558,9 +558,10 @@
         </div>
 
         {{-- RIGHT: Rincian Perhitungan --}}
-        <div>
+        <div class="lg:self-start">
+            <div class="lg:sticky lg:top-4 space-y-10">
             @if($preview && $preview['usage'] > 0)
-            <div class="rounded-xl overflow-hidden lg:sticky lg:top-4
+            <div class="rounded-xl overflow-hidden
                         bg-white border border-slate-200 shadow-sm
                         dark:bg-transparent dark:border-slate-600 dark:shadow-none"
                  style="--rp-bg: linear-gradient(135deg, #1E293B 0%, #334155 100%);">
@@ -692,7 +693,7 @@
             @endif
 
             {{-- Submit Button --}}
-            <div style="margin-top: 2.5rem;">
+            <div>
                 <button wire:click="buatSkpd"
                         wire:loading.attr="disabled"
                         @if(!$preview || $preview['usage'] <= 0) disabled @endif
@@ -712,6 +713,7 @@
                 <p class="text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2 italic">
                     Draft SKPD akan dikirim ke Verifikator untuk persetujuan.
                 </p>
+            </div>
             </div>
         </div>
 

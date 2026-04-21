@@ -10,6 +10,7 @@ use App\Domain\Reklame\Models\ReklameObject;
 use App\Domain\Reklame\Models\SkpdReklame;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Filament\Pages\BuatSkpdReklame;
+use Database\Seeders\ReklameNilaiStrategisSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -56,7 +57,7 @@ class BuatSkpdReklamePageTest extends TestCase
 
         $this->actingAs($petugas);
 
-        Livewire::test(BuatSkpdReklame::class)
+        $component = Livewire::test(BuatSkpdReklame::class)
             ->set('searchResults', [[
                 'id' => $reklameObject->id,
                 'nama' => $reklameObject->nama_objek_pajak,
@@ -164,7 +165,7 @@ class BuatSkpdReklamePageTest extends TestCase
 
         $this->actingAs($petugas);
 
-        Livewire::test(BuatSkpdReklame::class)
+        $component = Livewire::test(BuatSkpdReklame::class)
             ->set('searchResults', [[
                 'id' => $reklameObject->id,
                 'nama' => $reklameObject->nama_objek_pajak,
@@ -201,6 +202,90 @@ class BuatSkpdReklamePageTest extends TestCase
             ->set('masaBerlakuMulai', '2027-06-01')
             ->assertSet('lokasiJalanId', $lokasiBaru->id)
             ->assertSet('kelompokLokasi', 'B');
+    }
+
+    public function test_preview_pajak_includes_nilai_strategis_for_reklame_tetap_minimum_ten_square_meters(): void
+    {
+        $this->seedReklameTaxReferences([
+            ReklameNilaiStrategisSeeder::class,
+        ]);
+
+        $petugas = $this->createAdminPanelUser('petugas');
+        $subJenisPajak = SubJenisPajak::where('kode', 'REKLAME_TETAP')->firstOrFail();
+        $hargaPatokanReklame = HargaPatokanReklame::where('kode', 'RKL_BILLBOARD_GTE_10')->firstOrFail();
+        $lokasiJalan = KelompokLokasiJalan::where('kelompok', 'A1')->firstOrFail();
+
+        $this->createApprovedWajibPajakForNik('3522011234567891', 'P100000000654');
+
+        $reklameObject = ReklameObject::create([
+            'nik' => '3522011234567891',
+            'nama_objek_pajak' => 'Billboard Simpang Provinsi',
+            'jenis_pajak_id' => $subJenisPajak->jenis_pajak_id,
+            'sub_jenis_pajak_id' => $subJenisPajak->id,
+            'npwpd' => 'P100000000654',
+            'nopd' => 1002,
+            'alamat_objek' => 'Jl. Provinsi No. 1',
+            'kelurahan' => 'Kadipaten',
+            'kecamatan' => 'Bojonegoro',
+            'tarif_persen' => 25,
+            'tanggal_daftar' => now()->toDateString(),
+            'is_active' => true,
+            'bentuk' => 'persegi',
+            'panjang' => 7.2,
+            'lebar' => 3.4,
+            'jumlah_muka' => 1,
+            'status' => 'aktif',
+            'kelompok_lokasi' => 'A1',
+            'harga_patokan_reklame_id' => $hargaPatokanReklame->id,
+            'lokasi_jalan_id' => $lokasiJalan->id,
+        ]);
+
+        $this->actingAs($petugas);
+
+        $component = Livewire::test(BuatSkpdReklame::class)
+            ->set('searchResults', [[
+                'id' => $reklameObject->id,
+                'nama' => $reklameObject->nama_objek_pajak,
+                'alamat' => $reklameObject->alamat_objek,
+                'npwpd' => $reklameObject->npwpd,
+                'nopd' => $reklameObject->nopd,
+                'nik_hash' => $reklameObject->nik_hash,
+                'sub_jenis' => $subJenisPajak->nama,
+                'sub_jenis_pajak_id' => $subJenisPajak->id,
+                'jenis_pajak_id' => $reklameObject->jenis_pajak_id,
+                'harga_patokan_reklame_id' => $hargaPatokanReklame->id,
+                'lokasi_jalan_id' => $lokasiJalan->id,
+                'lokasi_jalan_label' => $lokasiJalan->nama_jalan,
+                'kelompok_lokasi' => 'A1',
+                'bentuk' => 'persegi',
+                'panjang' => 7.2,
+                'lebar' => 3.4,
+                'tinggi' => null,
+                'sisi_atas' => null,
+                'sisi_bawah' => null,
+                'diameter' => null,
+                'diameter2' => null,
+                'alas' => null,
+                'luas_m2' => 24.48,
+                'jumlah_muka' => 1,
+                'masa_berlaku_sampai' => null,
+                'status' => 'aktif',
+                'is_insidentil' => false,
+                'ukuran_formatted' => '7.20 m × 3.40 m',
+            ]])
+            ->call('selectObject', $reklameObject->id)
+            ->set('satuanWaktu', 'perTahun')
+            ->set('durasi', 1)
+            ->set('jumlahReklame', 1)
+            ->set('lokasiPenempatan', 'luar_ruangan')
+            ->set('jenisProduk', 'non_rokok')
+            ->set('masaBerlakuMulai', '2026-01-01');
+
+        $preview = $component->instance()->getPreviewPajak();
+
+        $this->assertNotNull($preview);
+        $this->assertSame(5000000.0, $preview['nilai_strategis']);
+        $this->assertSame(10446800.0, $preview['jumlah_pajak']);
     }
 
     private function createAdminPanelUser(string $role): User

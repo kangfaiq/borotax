@@ -524,7 +524,7 @@ Dashboard menampilkan:
 #### Buat Billing Self-Assessment
 - **Jenis pajak:** Hotel (41101), Restoran (41102), Hiburan (41103), PPJ (41105), Parkir (41107)
 - **Fitur:** Pencarian NIK/NPWPD/nama, auto-deteksi masa pajak berikutnya, input omzet, deteksi duplikat, dan konfirmasi pembetulan atau penggantian billing sesuai status tagihan yang sudah ada
-- **Instansi opsional:** untuk objek `is_opd` petugas dapat memilih OPD/instansi/lembaga terkait; nilai disimpan sebagai snapshot pada billing
+- **Instansi opsional:** untuk objek `is_opd` petugas dapat memilih OPD/instansi/lembaga terkait; field pilihan mendukung pencarian agar lebih mudah dipakai saat data instansi banyak, dan nilainya disimpan sebagai snapshot pada billing
 - **Warning lompat periode:** Untuk objek reguler bulanan, petugas tetap boleh memilih masa pajak yang melompati prefill periode berikutnya, tetapi sistem menampilkan konfirmasi khusus bahwa masa pajak sebelumnya belum dibuat
 - **Aturan prefill masa pajak:**
   - Objek `is_opd` atau `is_insidentil` → selalu prefill **bulan berjalan**
@@ -538,7 +538,7 @@ Dashboard menampilkan:
 - **Jenis pajak:** MBLB (41106)
 - **Fitur:** Input volume per jenis mineral dari daftar harga patokan aktif, kalkulasi otomatis DPP + opsen
 - **Portal WP:** submit sebagai pengajuan verifikasi; billing code baru diterbitkan setelah admin/verifikator menyetujui pengajuan dan meninjau lampiran
-- **Instansi opsional:** untuk sub-jenis `MBLB_WAPU`, petugas maupun wajib pajak dapat memilih instansi terkait dan snapshot-nya ikut dibawa sampai billing disetujui/diterbitkan
+- **Instansi opsional:** untuk sub-jenis `MBLB_WAPU`, petugas maupun wajib pajak dapat memilih instansi terkait; field di backoffice mendukung pencarian agar pemilihan instansi besar lebih cepat, dan snapshot-nya ikut dibawa sampai billing disetujui/diterbitkan
 - **Aturan prefill masa pajak:**
   - `MBLB_WAPU` → selalu prefill **bulan berjalan**
   - `MBLB_WP` → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`
@@ -552,6 +552,7 @@ Dashboard menampilkan:
 
 #### Buat SKPD Air Tanah
 - **Fitur:** Pilih objek air tanah, 4 skenario meter (baru/tanpa meter/ganti meter/normal), lookup NPA bertingkat (tiered), perhitungan pajak otomatis, notifikasi ke verifikator
+- **Layout preview:** panel rincian perhitungan dan tombol aksi di sisi kanan tetap bergerak sebagai satu blok pada layar besar agar tidak overlap saat discroll ke bagian bawah
 
 #### Buat SKPD Reklame
 - **Dua mode:** berbasis objek WP atau aset Pemkab
@@ -1249,10 +1250,11 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 | C | C | Jalan Lingkungan |
 
 ### 12.12 Instansi / Satker
-- **CRUD** master instansi terkait billing: kode, nama, kategori, alamat/lokasi, keterangan, status aktif
+- **CRUD** master instansi terkait billing: kode, nama, kategori, alamat/lokasi, asal wilayah, provinsi, kabupaten/kota, kecamatan, kelurahan/desa, keterangan, status aktif
+- **Pemilihan searchable:** saat membuat billing self-assessment OPD dan billing MBLB `WAPU` di backoffice, field instansi mendukung pencarian nama/kategori langsung dari form billing
 - **Akses backoffice:** Admin only
 - **Seed awal:** aplikasi menyediakan seed bawaan `InstansiSeeder` berisi 3344 data satker awal yang disalin dari referensi `docs/ref_satker.csv`
-- **Kategori seed awal:** seluruh data awal dimasukkan dengan kategori `Instansi`, dan informasi desa/kecamatan sumber disimpan pada kolom keterangan
+- **Kategori seed awal:** data awal dibagi otomatis dari `docs/ref_satker.csv` menjadi `OPD` (1-70, 3173-3212, 3351), `Pemerintah Desa/Pemdes` (71-506), dan `Lembaga` (507-3172, 3213-3350); informasi desa/kelurahan serta kecamatan sumber dipetakan ke kolom wilayah terstruktur yang memakai referensi wilayah yang sama dengan asal wilayah wajib pajak
 
 ---
 
@@ -1276,6 +1278,8 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - Surcharge tambahan berdasarkan kelas kelompok (A/B/C) dan range luas
 - Hanya untuk reklame tetap, luas ≥ 10m², satuan perTahun/perBulan
 - Tarif per tahun dan per bulan terpisah
+- Jika master nilai strategis tidak memiliki `berlaku_mulai`, baris tersebut tetap dianggap aktif untuk preview dan draft SKPD
+- Panel preview perhitungan dan tombol aksi di sisi kanan bergerak sebagai satu blok pada layar besar agar tidak saling menimpa saat halaman di-scroll ke bawah
 
 ### 13.4 Perpanjangan Reklame
 - WP dapat mengajukan perpanjangan via portal web atau mobile app
