@@ -112,9 +112,9 @@
     .dark .abt-toggle-wrap.active { background:linear-gradient(135deg, rgba(249,115,22,.12), rgba(245,158,11,.06));
         border-color:rgba(249,115,22,.35); }
     .abt-toggle-btn { position:relative; width:2.75rem; height:1.5rem; border-radius:999px;
-        cursor:pointer; transition:background .25s cubic-bezier(.4,0,.2,1); flex-shrink:0; }
-    .abt-toggle-btn .abt-toggle-dot { position:absolute; top:2px; width:1.125rem; height:1.125rem;
-        border-radius:999px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2);
+        cursor:pointer; transition:background .25s cubic-bezier(.4,0,.2,1); flex-shrink:0; overflow:hidden; }
+    .abt-toggle-btn .abt-toggle-dot { position:absolute; top:50%; left:2px; width:1.125rem; height:1.125rem;
+        margin-top:-0.5625rem; border-radius:999px; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2);
         transition:transform .25s cubic-bezier(.4,0,.2,1); }
 
     /* ── Meter change panel ──────────────────────────────────── */
@@ -415,7 +415,7 @@
                     </div>
                     <button wire:click="toggleMeterChange" type="button"
                             class="abt-toggle-btn {{ $isMeterChange ? 'bg-orange-500' : 'bg-slate-300 dark:bg-slate-600' }}">
-                        <span class="abt-toggle-dot {{ $isMeterChange ? 'translate-x-[1.375rem]' : 'translate-x-[2px]' }}" style="transition:transform .25s cubic-bezier(.4,0,.2,1)"></span>
+                        <span class="abt-toggle-dot {{ $isMeterChange ? 'translate-x-[1.375rem]' : 'translate-x-0' }}" style="transition:transform .25s cubic-bezier(.4,0,.2,1)"></span>
                     </button>
                 </div>
                 @endif
@@ -693,7 +693,7 @@
             @endif
 
             {{-- Submit Button --}}
-            <div>
+            <div style="margin-top: 1.75rem;">
                 <button wire:click="buatSkpd"
                         wire:loading.attr="disabled"
                         @if(!$preview || $preview['usage'] <= 0) disabled @endif

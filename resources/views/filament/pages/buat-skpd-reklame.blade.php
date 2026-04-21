@@ -866,7 +866,7 @@
             @endif
 
             {{-- Submit Button --}}
-            <div>
+            <div style="margin-top: 1.75rem;">
                 @php
                     $submitMethod = $mode === 'aset_pemkab' ? 'buatSkpdAsetPemkab' : 'buatSkpd';
                     $canSubmit = $mode === 'aset_pemkab' ? ($previewAset ?? null) : ($preview ?? null);
