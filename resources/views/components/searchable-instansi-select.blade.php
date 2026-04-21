@@ -124,7 +124,7 @@
                     <button type="button"
                             @mousedown.prevent="selectOption(option)"
                             class="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
-                            :class="option.id === selectedId ? 'bg-slate-100 text-slate-900 font-semibold dark:bg-cyan-500/20 dark:text-cyan-100' : ''">
+                            :class="option.id === selectedId ? 'bg-slate-100 text-slate-900 font-semibold dark:bg-slate-100 dark:text-slate-900' : ''">
                         <span x-text="option.label"></span>
                     </button>
                 </template>
