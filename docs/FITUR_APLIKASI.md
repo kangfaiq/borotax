@@ -1517,28 +1517,46 @@ Catatan implementasi:
 
 ### 16.2 Event yang Memicu Notifikasi
 
-| Event | Penerima | Tipe Notifikasi |
-|-------|----------|-----------------|
-| Billing dibuat | WP | App Notification |
-| SKPD disetujui | WP | App Notification |
-| SKPD ditolak | WP | App Notification |
-| WP diverifikasi (setujui/tolak) | WP | App Notification |
-| Pembetulan diproses | WP | App Notification |
-| Pembetulan selesai / billing pengganti dibuat | WP | App Notification |
-| Pembetulan ditolak | WP | App Notification |
-| Perubahan data disetujui | WP | App Notification |
-| Perubahan data ditolak | WP | App Notification |
-| Laporan meter diproses | WP | App Notification |
-| Draft SKPD Air Tanah baru menunggu verifikasi | Verifikator | Filament Notification |
-| Gebyar diverifikasi | WP | App Notification |
-| Permohonan sewa diproses | WP | App Notification |
-| Data change request diproses | WP | App Notification |
-| SKPD draft dibuat | Verifikator | Filament Notification |
-| Meter report submitted | Petugas | Filament Notification |
-| Pembayaran manual | WP | App Notification |
+#### 16.2.1 Notifikasi ke Wajib Pajak (App Notification)
+Disimpan di tabel `app_notifications`, tampil di portal & mobile app WP.
+
+| Modul | Event | Trigger |
+|-------|-------|---------|
+| Akun WP | Verifikasi akun disetujui / ditolak | Verifikator memproses pendaftaran wajib pajak |
+| SKPD PBJT | SKPD/billing dibuat | Verifikator menerbitkan SKPD PBJT |
+| SKPD Air Tanah | SKPD Air Tanah disetujui / ditolak | Verifikator memproses draft SKPD Air Tanah |
+| SKPD Reklame | SKPD Reklame disetujui / ditolak | Verifikator memproses draft SKPD Reklame |
+| STPD | STPD terbit | Sistem/verifikator menerbitkan STPD untuk pajak terutang |
+| Perubahan Data | Perubahan data disetujui / ditolak | Verifikator memproses request perubahan data WP / objek pajak |
+| Pembetulan | Pembetulan diproses | Verifikator menerima permohonan pembetulan |
+| Pembetulan | Pembetulan selesai (billing pengganti dibuat) | Verifikator menyelesaikan pembetulan |
+| Pembetulan | Pembetulan ditolak | Verifikator menolak permohonan pembetulan |
+| Permohonan Sewa Reklame | Permohonan sewa diproses (disetujui / ditolak / billing dibuat) | Verifikator memproses permohonan sewa reklame |
+| Gebyar Pajak | Gebyar submission diverifikasi (disetujui / ditolak) | Admin/verifikator memproses submission gebyar |
+| Self Assessment MBLB | Submission MBLB diproses | Verifikator memproses self assessment MBLB |
+| Laporan Meter Air Tanah | Laporan meter diproses | Verifikator/petugas memvalidasi laporan meter |
+| Pembayaran | Pembayaran manual dikonfirmasi | Verifikator mengonfirmasi pembayaran manual |
+| Status Pajak | Status pajak otomatis berubah | Cron `SyncExpiredTaxStatuses` mendeteksi masa berlaku habis |
+
+#### 16.2.2 Notifikasi ke Backoffice (Filament Notification)
+Disimpan di tabel `notifications` (database notification Laravel), tampil di bell icon panel admin.
+
+| Modul | Event | Penerima |
+|-------|-------|----------|
+| STPD | Draft STPD baru menunggu verifikasi | Verifikator |
+| SKPD Air Tanah | Draft SKPD Air Tanah baru menunggu verifikasi | Verifikator |
+| SKPD Reklame | Draft SKPD Reklame baru menunggu verifikasi | Verifikator |
+| Pembetulan | Permohonan pembetulan baru dari WP | Verifikator |
+| Self Assessment | Self assessment MBLB baru dari WP | Verifikator |
+| Reklame Request | Permohonan reklame baru dari WP | Verifikator |
+| Permohonan Sewa Reklame | Permohonan sewa baru dari WP | Petugas / Verifikator |
+| Gebyar Pajak | Gebyar submission baru dari WP | Verifikator |
+| Portal MBLB | Submission MBLB baru dari portal | Verifikator |
+| Laporan Meter | Meter report dikirim WP | Petugas |
+| Status Pajak | Pajak kedaluwarsa terdeteksi cron | Role terkait (verifikator/petugas) |
 
 ### 16.3 Broadcast
-- `Notification::broadcast()` — kirim notifikasi ke semua user dengan role `wajibPajak`
+- `NotificationService::broadcast()` — kirim notifikasi massal ke seluruh user dengan role `wajibPajak` (mis. pengumuman dari admin).
 
 ---
 
