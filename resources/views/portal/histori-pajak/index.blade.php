@@ -84,7 +84,7 @@
     .badge-pink    { background:#fce7f3; color:#9d174d; }
     .badge-gray    { background:#e5e7eb; color:#374151; }
     .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
-    @media (max-width: 1100px) { .histori-table .col-tanggal-bayar, .histori-table .col-terbayar { display: none; } }
+    @media (max-width: 1100px) { .histori-table .col-terbayar { display: none; } }
     @media (max-width: 800px)  { .histori-table .col-tanggal-terbit, .histori-table .col-status   { display: none; } }
     .histori-table tr.row-overdue { background: #fff5f5; }
     .histori-table tr.row-overdue td { color: #b91c1c; }

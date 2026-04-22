@@ -58,13 +58,21 @@ class HistoriPajakRingkasanSheet implements FromCollection, WithHeadings, WithTi
     public function collection(): Collection
     {
         return collect([
-            ['NPWPD', $this->npwpd],
-            ['Tahun Pajak', (string) $this->tahun],
-            ['Total Dokumen', (string) ($this->ringkasan['total_dokumen'] ?? 0)],
-            ['Total Tagihan (Rp)', number_format((float) ($this->ringkasan['total_tagihan'] ?? 0), 0, ',', '.')],
-            ['Total Terbayar (Rp)', number_format((float) ($this->ringkasan['total_terbayar'] ?? 0), 0, ',', '.')],
-            ['Total Tunggakan (Rp)', number_format((float) ($this->ringkasan['total_tunggakan'] ?? 0), 0, ',', '.')],
+            [$this->sanitizeCellValue('NPWPD'), $this->sanitizeCellValue($this->npwpd)],
+            [$this->sanitizeCellValue('Tahun Pajak'), $this->sanitizeCellValue((string) $this->tahun)],
+            [$this->sanitizeCellValue('Total Dokumen'), $this->sanitizeCellValue((string) ($this->ringkasan['total_dokumen'] ?? 0))],
+            [$this->sanitizeCellValue('Total Tagihan (Rp)'), $this->sanitizeCellValue(number_format((float) ($this->ringkasan['total_tagihan'] ?? 0), 0, ',', '.'))],
+            [$this->sanitizeCellValue('Total Terbayar (Rp)'), $this->sanitizeCellValue(number_format((float) ($this->ringkasan['total_terbayar'] ?? 0), 0, ',', '.'))],
+            [$this->sanitizeCellValue('Total Tunggakan (Rp)'), $this->sanitizeCellValue(number_format((float) ($this->ringkasan['total_tunggakan'] ?? 0), 0, ',', '.'))],
         ]);
+    }
+
+    private function sanitizeCellValue(?string $value): string
+    {
+        $value ??= '';
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value) ?? '';
+
+        return mb_substr($value, 0, 32767);
     }
 }
 
@@ -94,19 +102,27 @@ class HistoriPajakDetailSheet implements FromCollection, WithHeadings, WithTitle
     public function collection(): Collection
     {
         return $this->rows->map(fn (DokumenPajakRow $r) => [
-            $r->jenisDokumen->label(),
-            $r->jenisPajak,
-            $r->nopd ?? '-',
-            $r->namaObjekPajak ?? '-',
-            $r->nomor,
-            $r->masa,
-            $r->tanggalTerbit?->format('d-m-Y') ?? '-',
-            $r->jatuhTempo?->format('d-m-Y') ?? '-',
-            $r->tanggalBayar?->format('d-m-Y H:i') ?? '-',
-            number_format($r->jumlahTagihan, 0, ',', '.'),
-            number_format($r->jumlahTerbayar, 0, ',', '.'),
-            number_format($r->jumlahSisa(), 0, ',', '.'),
-            $r->effectiveStatusLabel(),
+            $this->sanitizeCellValue($r->jenisDokumen->label()),
+            $this->sanitizeCellValue($r->jenisPajak),
+            $this->sanitizeCellValue($r->nopd ?? '-'),
+            $this->sanitizeCellValue($r->namaObjekPajak ?? '-'),
+            $this->sanitizeCellValue($r->nomor),
+            $this->sanitizeCellValue($r->masa),
+            $this->sanitizeCellValue($r->tanggalTerbit?->format('d-m-Y') ?? '-'),
+            $this->sanitizeCellValue($r->jatuhTempo?->format('d-m-Y') ?? '-'),
+            $this->sanitizeCellValue($r->tanggalBayar?->format('d-m-Y H:i') ?? '-'),
+            $this->sanitizeCellValue(number_format($r->jumlahTagihan, 0, ',', '.')),
+            $this->sanitizeCellValue(number_format($r->jumlahTerbayar, 0, ',', '.')),
+            $this->sanitizeCellValue(number_format($r->jumlahSisa(), 0, ',', '.')),
+            $this->sanitizeCellValue($r->effectiveStatusLabel()),
         ])->values();
+    }
+
+    private function sanitizeCellValue(?string $value): string
+    {
+        $value ??= '';
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value) ?? '';
+
+        return mb_substr($value, 0, 32767);
     }
 }
