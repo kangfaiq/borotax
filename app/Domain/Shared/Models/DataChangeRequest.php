@@ -7,6 +7,7 @@ use App\Domain\Tax\Models\TaxObject;
 use InvalidArgumentException;
 use Throwable;
 use App\Domain\Auth\Models\User;
+use App\Domain\Shared\Services\NotificationService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -236,6 +237,22 @@ class DataChangeRequest extends Model
             targetTable: $entity->getTable(),
             targetId: $entity->getKey(),
             description: "Mengajukan perubahan data. Alasan: {$alasanPerubahan}. Field: " . implode(', ', array_keys($changes)),
+        );
+
+        $entityLabel = $request->getEntityTypeLabel();
+        $requesterName = optional($request->requester)->nama_lengkap
+            ?? optional($request->requester)->name
+            ?? 'Petugas';
+
+        NotificationService::notifyRole(
+            roles: ['admin', 'verifikator'],
+            title: "Permintaan Perubahan Data {$entityLabel}",
+            body: "{$requesterName} mengajukan perubahan {$entityLabel}. Alasan: {$alasanPerubahan}. Field: " . implode(', ', array_keys($changes)),
+            data: [
+                'data_change_request_id' => $request->id,
+                'entity_type' => $entity->getTable(),
+                'entity_id' => $entity->getKey(),
+            ],
         );
 
         return $request;

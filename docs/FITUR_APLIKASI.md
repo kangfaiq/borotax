@@ -1553,6 +1553,7 @@ Disimpan di tabel `notifications` (database notification Laravel), tampil di bel
 | Gebyar Pajak | Gebyar submission baru dari WP | Verifikator |
 | Portal MBLB | Submission MBLB baru dari portal | Verifikator |
 | Laporan Meter | Meter report dikirim WP | Petugas |
+| Perubahan Data | Permintaan perubahan data WP / objek pajak baru diajukan | Admin & Verifikator |
 | Status Pajak | Pajak kedaluwarsa terdeteksi cron | Role terkait (verifikator/petugas) |
 
 ### 16.3 Broadcast
