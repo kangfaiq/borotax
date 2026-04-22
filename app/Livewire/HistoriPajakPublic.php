@@ -205,8 +205,8 @@ class HistoriPajakPublic extends Component
             'jumlah_tagihan' => $row->jumlahTagihan,
             'jumlah_terbayar' => $row->jumlahTerbayar,
             'jumlah_sisa' => $row->jumlahSisa(),
-            'status_label' => $row->statusLabel,
-            'status' => $row->status,
+            'status_label' => $row->effectiveStatusLabel(),
+            'status' => $row->effectiveStatus(),
         ])->all();
     }
 

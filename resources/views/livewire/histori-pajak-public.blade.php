@@ -103,7 +103,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($rows as $row)
-                                        <tr>
+                                        <tr @class(['row-overdue' => ($row['status'] ?? '') === 'lewat_jatuh_tempo'])>
                                             <td><span class="badge badge-{{ $row['jenis_dokumen_color'] }}">{{ $row['jenis_dokumen_label'] }}</span></td>
                                             <td>{{ $row['jenis_pajak'] }}</td>
                                             <td>{{ $row['nopd'] ?? '-' }}</td>
@@ -115,7 +115,13 @@
                                             <td class="text-right">Rp {{ number_format($row['jumlah_tagihan'], 0, ',', '.') }}</td>
                                             <td class="text-right col-terbayar">Rp {{ number_format($row['jumlah_terbayar'], 0, ',', '.') }}</td>
                                             <td class="text-right">Rp {{ number_format($row['jumlah_sisa'], 0, ',', '.') }}</td>
-                                            <td class="col-status">{{ $row['status_label'] }}</td>
+                                            <td class="col-status">
+                                                @if(($row['status'] ?? '') === 'lewat_jatuh_tempo')
+                                                    <span class="badge-overdue">{{ $row['status_label'] }}</span>
+                                                @else
+                                                    {{ $row['status_label'] }}
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

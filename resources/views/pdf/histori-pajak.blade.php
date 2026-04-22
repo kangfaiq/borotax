@@ -57,7 +57,7 @@
         </thead>
         <tbody>
             @foreach($rows as $r)
-                <tr>
+                <tr @if($r->isLewatJatuhTempo()) style="background:#fff5f5; color:#b91c1c;" @endif>
                     <td><span class="badge">{{ $r->jenisDokumen->label() }}</span></td>
                     <td>{{ $r->jenisPajak }}</td>
                     <td>{{ $r->nopd ?? '-' }}</td>
@@ -69,7 +69,7 @@
                     <td class="right">{{ number_format($r->jumlahTagihan, 0, ',', '.') }}</td>
                     <td class="right">{{ number_format($r->jumlahTerbayar, 0, ',', '.') }}</td>
                     <td class="right">{{ number_format($r->jumlahSisa(), 0, ',', '.') }}</td>
-                    <td>{{ $r->statusLabel }}</td>
+                    <td>{{ $r->effectiveStatusLabel() }}</td>
                 </tr>
             @endforeach
             @if($rows->isEmpty())

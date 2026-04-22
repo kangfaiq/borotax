@@ -105,7 +105,7 @@ class HistoriPajakDetailSheet implements FromCollection, WithHeadings, WithTitle
             number_format($r->jumlahTagihan, 0, ',', '.'),
             number_format($r->jumlahTerbayar, 0, ',', '.'),
             number_format($r->jumlahSisa(), 0, ',', '.'),
-            $r->statusLabel,
+            $r->effectiveStatusLabel(),
         ])->values();
     }
 }
