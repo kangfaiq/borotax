@@ -209,7 +209,7 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         {{-- Google Places API --}}
-        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDwF645NEA8DqmeSw2NBXP2UcQZ5tpmRwg&libraries=places"></script>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDwF645NEA8DqmeSw2NBXP2UcQZ5tpmRwg&libraries=places&loading=async"></script>
 
         {{-- Search bar with autocomplete --}}
         <div style="display: flex; gap: 8px; margin-bottom: 10px; position: relative;">

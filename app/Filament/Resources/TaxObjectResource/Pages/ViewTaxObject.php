@@ -12,6 +12,15 @@ class ViewTaxObject extends ViewRecord
 {
     protected static string $resource = TaxObjectResource::class;
 
+    public int $daftarObjekPage = 1;
+
+    public string $daftarObjekSearch = '';
+
+    public function updatedDaftarObjekSearch(): void
+    {
+        $this->daftarObjekPage = 1;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
