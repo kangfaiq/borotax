@@ -16,6 +16,7 @@ it('mengubah status menjadi menunggu pembayaran jika belum melewati jatuh tempo'
         jatuhTempo: now()->addDays(2),
         jumlahTagihan: 200000,
         jumlahTerbayar: 0,
+        tanggalBayar: null,
         status: 'expired',
         statusLabel: 'Kedaluwarsa',
     );
@@ -36,6 +37,7 @@ it('mengubah status menjadi lewat jatuh tempo jika sudah melewati jatuh tempo', 
         jatuhTempo: now()->subDay(),
         jumlahTagihan: 200000,
         jumlahTerbayar: 0,
+        tanggalBayar: null,
         status: 'expired',
         statusLabel: 'Kedaluwarsa',
     );

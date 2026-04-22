@@ -49,6 +49,7 @@
                 <th>Masa</th>
                 <th>Terbit</th>
                 <th>Jatuh Tempo</th>
+                <th>Tanggal Bayar</th>
                 <th class="right">Tagihan</th>
                 <th class="right">Terbayar</th>
                 <th class="right">Sisa</th>
@@ -66,6 +67,7 @@
                     <td>{{ $r->masa }}</td>
                     <td>{{ $r->tanggalTerbit?->format('d-m-Y') ?? '-' }}</td>
                     <td>{{ $r->jatuhTempo?->format('d-m-Y') ?? '-' }}</td>
+                    <td>{{ $r->tanggalBayar?->format('d-m-Y H:i') ?? '-' }}</td>
                     <td class="right">{{ number_format($r->jumlahTagihan, 0, ',', '.') }}</td>
                     <td class="right">{{ number_format($r->jumlahTerbayar, 0, ',', '.') }}</td>
                     <td class="right">{{ number_format($r->jumlahSisa(), 0, ',', '.') }}</td>
@@ -73,7 +75,7 @@
                 </tr>
             @endforeach
             @if($rows->isEmpty())
-                <tr><td colspan="12" style="text-align:center; padding:14px;">Tidak ada data.</td></tr>
+                <tr><td colspan="13" style="text-align:center; padding:14px;">Tidak ada data.</td></tr>
             @endif
         </tbody>
     </table>

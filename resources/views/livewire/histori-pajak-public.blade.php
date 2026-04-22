@@ -95,6 +95,7 @@
                                         <th>Masa</th>
                                         <th class="col-tanggal-terbit">Terbit</th>
                                         <th class="col-jatuh-tempo">Jatuh Tempo</th>
+                                        <th class="col-tanggal-bayar">Tanggal Bayar</th>
                                         <th class="text-right">Tagihan</th>
                                         <th class="text-right col-terbayar">Terbayar</th>
                                         <th class="text-right">Sisa</th>
@@ -112,6 +113,7 @@
                                             <td>{{ $row['masa'] }}</td>
                                             <td class="col-tanggal-terbit">{{ $row['tanggal_terbit'] ?? '-' }}</td>
                                             <td class="col-jatuh-tempo">{{ $row['jatuh_tempo'] ?? '-' }}</td>
+                                            <td class="col-tanggal-bayar">{{ $row['tanggal_bayar'] ?? '-' }}</td>
                                             <td class="text-right">Rp {{ number_format($row['jumlah_tagihan'], 0, ',', '.') }}</td>
                                             <td class="text-right col-terbayar">Rp {{ number_format($row['jumlah_terbayar'], 0, ',', '.') }}</td>
                                             <td class="text-right">Rp {{ number_format($row['jumlah_sisa'], 0, ',', '.') }}</td>

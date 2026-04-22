@@ -18,6 +18,7 @@ final readonly class DokumenPajakRow
         public ?CarbonInterface $jatuhTempo,
         public float $jumlahTagihan,
         public float $jumlahTerbayar,
+        public ?CarbonInterface $tanggalBayar,
         public string $status,
         public string $statusLabel,
     ) {

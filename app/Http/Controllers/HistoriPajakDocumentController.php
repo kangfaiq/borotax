@@ -7,6 +7,8 @@ use App\Domain\HistoriPajak\Services\HistoriPajakService;
 use App\Exports\HistoriPajakExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Excel as ExcelWriter;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
@@ -18,10 +20,26 @@ class HistoriPajakDocumentController extends Controller
         $rows = $this->resolveRows($service, $npwpd, $tahun);
         $ringkasan = $service->ringkasan($rows);
 
-        return Excel::download(
-            new HistoriPajakExport($rows, $ringkasan, $npwpd, $tahun),
-            'Histori-Pajak-' . $npwpd . '-' . $tahun . '.xlsx'
-        );
+        try {
+            $content = Excel::raw(
+                new HistoriPajakExport($rows, $ringkasan, $npwpd, $tahun),
+                ExcelWriter::XLSX
+            );
+
+            return response($content, 200, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename=Histori-Pajak-' . $npwpd . '-' . $tahun . '.xlsx',
+                'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengekspor histori pajak ke Excel.', [
+                'npwpd' => $npwpd,
+                'tahun' => $tahun,
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(500, 'Gagal membuat file Excel. Silakan coba lagi.');
+        }
     }
 
     public function showPdf(Request $request, HistoriPajakService $service): SymfonyResponse

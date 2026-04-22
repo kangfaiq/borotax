@@ -153,6 +153,7 @@ class HistoriPajakPublic extends Component
             'masa' => $row->masa,
             'tanggal_terbit' => $row->tanggalTerbit?->translatedFormat('d M Y'),
             'jatuh_tempo' => $row->jatuhTempo?->translatedFormat('d M Y'),
+            'tanggal_bayar' => $row->tanggalBayar?->translatedFormat('d M Y H:i'),
             'jumlah_tagihan' => $row->jumlahTagihan,
             'jumlah_terbayar' => $row->jumlahTerbayar,
             'jumlah_sisa' => $row->jumlahSisa(),

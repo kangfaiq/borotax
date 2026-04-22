@@ -107,6 +107,9 @@ class HistoriPajakService
                     jatuhTempo: $tax->payment_expired_at,
                     jumlahTagihan: (float) $tax->amount + (float) $tax->sanksi,
                     jumlahTerbayar: $tax->getTotalPaid(),
+                    tanggalBayar: $tax->payments
+                        ->sortByDesc(fn ($payment) => $payment->paid_at?->getTimestamp() ?? 0)
+                        ->first()?->paid_at ?? $tax->paid_at,
                     status: (string) ($tax->status?->value ?? $tax->status ?? '-'),
                     statusLabel: $this->statusLabel((string) ($tax->status?->value ?? $tax->status ?? '-')),
                 );
@@ -140,6 +143,7 @@ class HistoriPajakService
                     jatuhTempo: $stpd->proyeksi_tanggal_bayar,
                     jumlahTagihan: $tagihan,
                     jumlahTerbayar: 0.0,
+                    tanggalBayar: null,
                     status: (string) $stpd->status,
                     statusLabel: $this->statusLabel((string) $stpd->status),
                 );
@@ -172,6 +176,7 @@ class HistoriPajakService
                     jatuhTempo: $letter->due_date,
                     jumlahTagihan: (float) ($letter->total_assessment ?? 0),
                     jumlahTerbayar: 0.0,
+                    tanggalBayar: null,
                     status: (string) ($letter->status?->value ?? $letter->status ?? '-'),
                     statusLabel: $this->statusLabel((string) ($letter->status?->value ?? $letter->status ?? '-')),
                 );
@@ -202,6 +207,7 @@ class HistoriPajakService
                     jatuhTempo: $skpd->jatuh_tempo,
                     jumlahTagihan: (float) ($skpd->jumlah_pajak ?? 0),
                     jumlahTerbayar: 0.0,
+                    tanggalBayar: null,
                     status: (string) $skpd->status,
                     statusLabel: $this->statusLabel((string) $skpd->status),
                 );
@@ -233,6 +239,7 @@ class HistoriPajakService
                     jatuhTempo: $skpd->jatuh_tempo,
                     jumlahTagihan: (float) ($skpd->jumlah_pajak ?? 0),
                     jumlahTerbayar: 0.0,
+                    tanggalBayar: null,
                     status: (string) $skpd->status,
                     statusLabel: $this->statusLabel((string) $skpd->status),
                 );
@@ -263,6 +270,7 @@ class HistoriPajakService
                     jatuhTempo: $skrd->jatuh_tempo,
                     jumlahTagihan: (float) ($skrd->jumlah_retribusi ?? 0),
                     jumlahTerbayar: 0.0,
+                    tanggalBayar: null,
                     status: (string) $skrd->status,
                     statusLabel: $this->statusLabel((string) $skrd->status),
                 );

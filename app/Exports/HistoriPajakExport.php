@@ -86,7 +86,7 @@ class HistoriPajakDetailSheet implements FromCollection, WithHeadings, WithTitle
     {
         return [
             'Jenis Dokumen', 'Jenis Pajak', 'NOPD', 'Objek Pajak', 'Nomor', 'Masa',
-            'Tanggal Terbit', 'Jatuh Tempo',
+            'Tanggal Terbit', 'Jatuh Tempo', 'Tanggal Bayar',
             'Tagihan (Rp)', 'Terbayar (Rp)', 'Sisa (Rp)', 'Status',
         ];
     }
@@ -102,6 +102,7 @@ class HistoriPajakDetailSheet implements FromCollection, WithHeadings, WithTitle
             $r->masa,
             $r->tanggalTerbit?->format('d-m-Y') ?? '-',
             $r->jatuhTempo?->format('d-m-Y') ?? '-',
+            $r->tanggalBayar?->format('d-m-Y H:i') ?? '-',
             number_format($r->jumlahTagihan, 0, ',', '.'),
             number_format($r->jumlahTerbayar, 0, ',', '.'),
             number_format($r->jumlahSisa(), 0, ',', '.'),
