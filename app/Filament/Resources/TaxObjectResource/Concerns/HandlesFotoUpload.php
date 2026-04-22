@@ -28,7 +28,7 @@ trait HandlesFotoUpload
         $this->data['foto_objek_path'] = $path;
 
         $size = Storage::disk('public')->size($path);
-        $url = asset('storage/' . ltrim($path, '/'));
+        $url = '/storage/' . ltrim($path, '/');
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         $this->fotoUploadTemp = null;

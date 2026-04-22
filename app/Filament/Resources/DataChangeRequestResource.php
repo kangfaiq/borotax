@@ -168,7 +168,7 @@ class DataChangeRequestResource extends Resource
                         Infolists\Components\TextEntry::make('dokumen_pendukung')
                             ->label('Dokumen Pendukung')
                             ->placeholder('Tidak ada')
-                            ->url(fn($state) => $state ? asset('storage/' . $state) : null)
+                            ->url(fn($state) => $state ? '/storage/' . ltrim($state, '/') : null)
                             ->openUrlInNewTab(),
                     ])->columns(2),
 
