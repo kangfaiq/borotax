@@ -797,7 +797,7 @@
 
             @if($skpdResult['lampiran_path'] ?? false)
             <div class="grid grid-cols-1 gap-3 text-sm">
-                <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($skpdResult['lampiran_path']) }}"
+                <a href="{{ asset('storage/' . ltrim($skpdResult['lampiran_path'], '/')) }}"
                    target="_blank"
                    rel="noopener noreferrer"
                    class="p-3 rounded-lg border border-cyan-200 dark:border-cyan-800/40 bg-cyan-50 dark:bg-cyan-900/10 flex items-center justify-between gap-3 hover:bg-cyan-100 dark:hover:bg-cyan-900/20 transition-colors">

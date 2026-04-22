@@ -678,6 +678,7 @@ Catatan implementasi saat ini:
 - **Badge tabel/detail WP:** Tabel pendaftaran WP dan tabel/detail data WP menampilkan badge warna `Username Otomatis` atau `Email WP` agar operator bisa membedakan sumber username login tanpa membuka form edit
 - **Objek Pajak:** Pendaftaran objek pajak baru hanya untuk admin dan petugas, dengan form kondisional per jenis pajak (reklame: bentuk+dimensi, air tanah: kelompok+kriteria, dll)
 - **Detail objek pajak:** Halaman view objek pajak backoffice menampilkan lampiran foto/file objek dalam mode read-only dengan preview file tersimpan atau tautan buka file, sehingga halaman detail tidak lagi memuat kontrol upload yang hanya relevan untuk create/edit
+- **URL preview foto/lampiran:** Tautan preview foto objek pajak dan lampiran SKPD Air Tanah dibangkitkan dari host request aktif (`asset('storage/...')`) sehingga preview tetap memakai domain backoffice yang sedang dipakai dan tidak terpengaruh `APP_URL` produksi yang masih `http://localhost`
 
 ---
 

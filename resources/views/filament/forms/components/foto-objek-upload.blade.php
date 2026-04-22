@@ -7,7 +7,7 @@
     $isReadonly = ! method_exists($livewire, 'saveFotoObjek');
 
     if ($existingPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($existingPath)) {
-        $existingUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($existingPath);
+        $existingUrl = asset('storage/' . ltrim($existingPath, '/'));
         $existingSize = \Illuminate\Support\Facades\Storage::disk('public')->size($existingPath);
         $existingExt = strtolower(pathinfo($existingPath, PATHINFO_EXTENSION));
     }
