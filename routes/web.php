@@ -36,6 +36,11 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Cek Billing (public)
 Route::get('/cek-billing', [BillingController::class, 'check'])->name('billing.check');
 
+// Histori Pajak per WP (public)
+Route::get('/histori-pajak', function () {
+    return view('portal.histori-pajak.index');
+})->middleware('throttle:histori-pajak')->name('histori-pajak.index');
+
 // Menu Publik
 Route::get('/produk-hukum', [PublicMenuController::class, 'legalProducts'])->name('publik.produk-hukum');
 Route::get('/kalkulator-sanksi', [PublicMenuController::class, 'penaltyCalculator'])->name('publik.kalkulator-sanksi');

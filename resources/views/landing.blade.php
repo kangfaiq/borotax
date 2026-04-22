@@ -18,6 +18,7 @@
     <a href="{{ url('/destinasi') }}">Wisata</a>
     <a href="{{ url('/berita') }}">Berita</a>
     <a href="{{ url('/cek-billing') }}">Cek Billing</a>
+    <a href="{{ url('/histori-pajak') }}">Histori Pajak</a>
     <a href="{{ url('/login') }}" class="navbar-cta">Login Wajib Pajak</a>
 @endsection
 
@@ -35,6 +36,7 @@
     <a href="{{ url('/destinasi') }}">Wisata</a>
     <a href="{{ url('/berita') }}">Berita</a>
     <a href="{{ url('/cek-billing') }}">Cek Billing</a>
+    <a href="{{ url('/histori-pajak') }}">Histori Pajak</a>
     <a href="{{ url('/login') }}">Login Wajib Pajak</a>
 @endsection
 
