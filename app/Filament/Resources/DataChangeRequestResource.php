@@ -285,7 +285,8 @@ class DataChangeRequestResource extends Resource
                                     $record->requester,
                                     'Perubahan Data Disetujui',
                                     'Permintaan perubahan data ' . $record->getEntityTypeLabel() . ' Anda telah disetujui dan data berhasil diperbarui.',
-                                    'verification'
+                                    'verification',
+                                    actionUrl: route('portal.dashboard'),
                                 );
                             }
 
@@ -327,7 +328,8 @@ class DataChangeRequestResource extends Resource
                                 $record->requester,
                                 'Perubahan Data Ditolak',
                                 'Permintaan perubahan data ' . $record->getEntityTypeLabel() . ' Anda ditolak. Alasan: ' . $data['catatan_review'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.dashboard'),
                             );
                         }
 

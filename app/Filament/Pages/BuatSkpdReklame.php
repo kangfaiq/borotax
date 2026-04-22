@@ -893,7 +893,8 @@ class BuatSkpdReklame extends Page implements HasForms
             NotificationService::notifyRole(
                 'verifikator',
                 'Draft SKPD Reklame Menunggu Verifikasi',
-                "Draft SKPD Reklame {$skpd->nomor_skpd} telah dibuat dan menunggu verifikasi."
+                "Draft SKPD Reklame {$skpd->nomor_skpd} telah dibuat dan menunggu verifikasi.",
+                actionUrl: SkpdReklameResource::getUrl('index', ['tableSearch' => $skpd->nomor_skpd]),
             );
         } catch (Exception $e) {
             Notification::make()
@@ -1042,7 +1043,8 @@ class BuatSkpdReklame extends Page implements HasForms
             NotificationService::notifyRole(
                 'verifikator',
                 'Draft SKPD Reklame Menunggu Verifikasi',
-                "Draft SKPD Reklame {$skpd->nomor_skpd} telah dibuat dan menunggu verifikasi."
+                "Draft SKPD Reklame {$skpd->nomor_skpd} telah dibuat dan menunggu verifikasi.",
+                actionUrl: SkpdReklameResource::getUrl('index', ['tableSearch' => $skpd->nomor_skpd]),
             );
         } catch (Exception $e) {
             Notification::make()

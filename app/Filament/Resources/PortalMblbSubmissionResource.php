@@ -147,7 +147,8 @@ class PortalMblbSubmissionResource extends Resource
                                     $record->user,
                                     'Billing MBLB Telah Diterbitkan',
                                     'Pengajuan billing MBLB Anda disetujui. Kode Pembayaran Aktif: ' . $tax->billing_code,
-                                    'payment'
+                                    'payment',
+                                    actionUrl: route('portal.history'),
                                 );
                             }
 
@@ -189,7 +190,8 @@ class PortalMblbSubmissionResource extends Resource
                                 $record->user,
                                 'Pengajuan Billing MBLB Ditolak',
                                 'Pengajuan billing MBLB Anda ditolak. Alasan: ' . $data['rejection_reason'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.history'),
                             );
                         }
 

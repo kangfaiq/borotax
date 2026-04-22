@@ -1514,6 +1514,9 @@ Program undian berhadiah untuk mendorong kesadaran pajak. Wajib pajak yang telah
 
 Catatan implementasi:
 - `notifyUserBoth()` mengirim notifikasi ke `app_notifications` sekaligus ke database notification Filament untuk user yang relevan.
+- Notifikasi portal yang memiliki target halaman menyimpan URL relatif/absolut pada `app_notifications.data_payload.url`; dropdown notifikasi portal akan menandai notif sebagai terbaca lalu mengarahkan user ke URL tersebut saat item diklik.
+- Notifikasi backoffice yang memiliki target halaman memakai action tombol `Lihat` pada payload database notification Filament.
+- Command best-effort `php artisan notifications:backfill-urls` tersedia untuk mengisi `data_payload.url` pada notifikasi portal lama berdasarkan pola judul yang dikenali.
 
 ### 16.2 Event yang Memicu Notifikasi
 
@@ -1536,7 +1539,7 @@ Disimpan di tabel `app_notifications`, tampil di portal & mobile app WP.
 | Self Assessment MBLB | Submission MBLB diproses | Verifikator memproses self assessment MBLB |
 | Laporan Meter Air Tanah | Laporan meter diproses | Verifikator/petugas memvalidasi laporan meter |
 | Pembayaran | Pembayaran manual dikonfirmasi | Verifikator mengonfirmasi pembayaran manual |
-| Status Pajak | Status pajak otomatis berubah | Cron `SyncExpiredTaxStatuses` mendeteksi masa berlaku habis |
+| Status Pajak | Status pajak otomatis berubah | Cron `SyncExpiredTaxStatuses` mendeteksi masa berlaku habis; backoffice menerima 1 notifikasi terpisah per jenis pajak yang kedaluwarsa |
 
 #### 16.2.2 Notifikasi ke Backoffice (Filament Notification)
 Disimpan di tabel `notifications` (database notification Laravel), tampil di bell icon panel admin.
@@ -1554,7 +1557,7 @@ Disimpan di tabel `notifications` (database notification Laravel), tampil di bel
 | Portal MBLB | Submission MBLB baru dari portal | Verifikator |
 | Laporan Meter | Meter report dikirim WP | Petugas |
 | Perubahan Data | Permintaan perubahan data WP / objek pajak baru diajukan | Admin & Verifikator |
-| Status Pajak | Pajak kedaluwarsa terdeteksi cron | Role terkait (verifikator/petugas) |
+| Status Pajak | Pajak kedaluwarsa terdeteksi cron | Role terkait (admin/verifikator/petugas), 1 notifikasi terpisah per jenis pajak, action menuju histori auto-expire |
 
 ### 16.3 Broadcast
 - `NotificationService::broadcast()` — kirim notifikasi massal ke seluruh user dengan role `wajibPajak` (mis. pengumuman dari admin).

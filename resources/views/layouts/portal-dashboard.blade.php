@@ -1049,13 +1049,20 @@
                         list.innerHTML = '<div class="notif-empty">Tidak ada notifikasi</div>';
                         return;
                     }
-                    list.innerHTML = items.map(n => `
-                        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}', this)">
+                    list.innerHTML = items.map(n => {
+                        const hasUrl = n.url && typeof n.url === 'string' && n.url.length > 0;
+                        const cursor = hasUrl ? 'cursor:pointer;' : '';
+                        const handler = hasUrl
+                            ? `onclick=\"openNotif('${n.id}', this, ${JSON.stringify(n.url)})\"`
+                            : `onclick=\"markRead('${n.id}', this)\"`;
+                        return `
+                        <div class="notif-item ${n.is_read ? '' : 'unread'}" style="${cursor}" ${handler}>
                             <div class="notif-title">${escapeHtml(n.title)}</div>
                             <div class="notif-body">${escapeHtml(n.body)}</div>
                             <div class="notif-time">${timeAgo(n.created_at)}</div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 })
                 .catch(() => {
                     document.getElementById('notifList').innerHTML = '<div class="notif-empty">Gagal memuat notifikasi</div>';
@@ -1086,6 +1093,17 @@
                 .then(() => {
                     if (el) el.classList.remove('unread');
                     loadUnreadCount();
+                });
+        }
+
+        function openNotif(id, el, url) {
+            fetch(notifApiBase + '/' + id + '/read', { method: 'POST', headers: notifHeaders(), credentials: 'same-origin' })
+                .then(() => {
+                    if (el) el.classList.remove('unread');
+                    loadUnreadCount();
+                })
+                .finally(() => {
+                    window.location.href = url;
                 });
         }
 

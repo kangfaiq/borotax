@@ -528,7 +528,8 @@ class BuatSkpdAirTanah extends Page implements HasForms
             NotificationService::notifyRole(
                 'verifikator',
                 'Draft SKPD Air Tanah Menunggu Verifikasi',
-                "Draft SKPD Air Tanah {$skpd->nomor_skpd} telah dibuat dan menunggu verifikasi."
+                "Draft SKPD Air Tanah {$skpd->nomor_skpd} telah dibuat dan menunggu verifikasi.",
+                actionUrl: SkpdAirTanahResource::getUrl('view', ['record' => $skpd->id]),
             );
         } catch (Exception $e) {
             if (isset($lampiranPath) && $lampiranPath && Storage::disk('public')->exists($lampiranPath)) {

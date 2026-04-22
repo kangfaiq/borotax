@@ -370,7 +370,8 @@ class BuatStpd extends Page implements HasForms
             NotificationService::notifyRole(
                 'verifikator',
                 'Draft STPD Menunggu Verifikasi',
-                "Draft STPD ({$tipeLabel}) untuk Billing Sumber {$this->taxData['billing_code']} telah dibuat oleh petugas dan menunggu verifikasi."
+                "Draft STPD ({$tipeLabel}) untuk Billing Sumber {$this->taxData['billing_code']} telah dibuat oleh petugas dan menunggu verifikasi.",
+                actionUrl: StpdManualResource::getUrl('index', ['tableSearch' => $this->taxData['billing_code']]),
             );
         } catch (Exception $e) {
             Notification::make()

@@ -75,7 +75,8 @@ class ReklameController extends BaseController
         NotificationService::notifyRole(
             'petugas',
             'Pengajuan Perpanjangan Reklame Baru',
-            "Pengajuan perpanjangan reklame baru dari {$user->nama_lengkap} menunggu diproses."
+            "Pengajuan perpanjangan reklame baru dari {$user->nama_lengkap} menunggu diproses.",
+            actionUrl: \App\Filament\Resources\ReklameRequestResource::getUrl('index', ['tableSearch' => $requestReklame->id]),
         );
 
         return $this->sendResponse($requestReklame, 'Pengajuan perpanjangan berhasil dikirim.');
@@ -200,7 +201,8 @@ class ReklameController extends BaseController
         NotificationService::notifyRole(
             'petugas',
             'Permohonan Sewa Reklame Baru',
-            "Permohonan sewa reklame baru dari {$user->nama_lengkap} menunggu diproses."
+            "Permohonan sewa reklame baru dari {$user->nama_lengkap} menunggu diproses.",
+            actionUrl: \App\Filament\Resources\PermohonanSewaReklameResource::getUrl('view', ['record' => $permohonan->id]),
         );
 
         return $this->sendResponse($permohonan, 'Permohonan sewa reklame berhasil diajukan.');

@@ -158,7 +158,8 @@ class GebyarSubmissionResource extends Resource
                                 $record->user,
                                 'Pengajuan Gebyar Disetujui',
                                 'Pengajuan gebyar sadar pajak Anda telah diverifikasi dan disetujui. Kupon undian berhasil ditambahkan.',
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.dashboard'),
                             );
                         }
 
@@ -191,7 +192,8 @@ class GebyarSubmissionResource extends Resource
                                 $record->user,
                                 'Pengajuan Gebyar Ditolak',
                                 'Pengajuan gebyar sadar pajak Anda ditolak. Alasan: ' . $data['rejection_reason'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.dashboard'),
                             );
                         }
 

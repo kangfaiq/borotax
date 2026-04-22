@@ -476,7 +476,8 @@ class SelfAssessmentController extends Controller
         NotificationService::notifyRole(
             ['admin', 'verifikator'],
             'Pengajuan Billing MBLB Baru',
-            'Pengajuan billing MBLB dari ' . ($user->nama_lengkap ?? $user->name) . ' menunggu verifikasi.'
+            'Pengajuan billing MBLB dari ' . ($user->nama_lengkap ?? $user->name) . ' menunggu verifikasi.',
+            actionUrl: \App\Filament\Resources\PortalMblbSubmissionResource::getUrl('index', ['tableSearch' => $submission->id]),
         );
 
         return redirect()->route('portal.self-assessment.submission-success', $submission->id);

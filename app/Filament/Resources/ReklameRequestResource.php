@@ -142,7 +142,8 @@ class ReklameRequestResource extends Resource
                                 $record->user,
                                 'Pengajuan Reklame Sedang Diproses',
                                 'Pengajuan reklame Anda sedang diproses oleh petugas.',
-                                'info'
+                                'info',
+                                actionUrl: route('portal.reklame.index'),
                             );
                         }
 
@@ -184,7 +185,8 @@ class ReklameRequestResource extends Resource
                                 $record->user,
                                 'Pengajuan Reklame Ditolak',
                                 'Pengajuan reklame Anda ditolak. Alasan: ' . $data['catatan_petugas'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.reklame.index'),
                             );
                         }
 

@@ -253,6 +253,7 @@ class DataChangeRequest extends Model
                 'entity_type' => $entity->getTable(),
                 'entity_id' => $entity->getKey(),
             ],
+            actionUrl: \App\Filament\Resources\DataChangeRequestResource::getUrl('view', ['record' => $request->id]),
         );
 
         return $request;

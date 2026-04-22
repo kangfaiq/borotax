@@ -174,7 +174,8 @@ class PembetulanRequestResource extends Resource
                                 $record->user,
                                 'Pembetulan Billing Sedang Diproses',
                                 'Permohonan pembetulan billing Anda sedang diproses oleh petugas.',
-                                'info'
+                                'info',
+                                actionUrl: route('portal.pembetulan.index'),
                             );
                         }
 
@@ -288,7 +289,8 @@ class PembetulanRequestResource extends Resource
                                     $wpUser,
                                     'Pembetulan Billing Selesai',
                                     'Permohonan pembetulan billing Anda telah disetujui. Billing baru telah dibuat, silakan cek di riwayat transaksi.',
-                                    'payment'
+                                    'payment',
+                                    actionUrl: route('portal.history'),
                                 );
                             }
                         } catch (\Exception $e) {
@@ -330,7 +332,8 @@ class PembetulanRequestResource extends Resource
                                 $record->user,
                                 'Pembetulan Billing Ditolak',
                                 'Permohonan pembetulan billing Anda ditolak. Alasan: ' . $data['catatan_petugas'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.pembetulan.index'),
                             );
                         }
 

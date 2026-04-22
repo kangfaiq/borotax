@@ -153,7 +153,8 @@ class WaterTaxController extends BaseController
         NotificationService::notifyRole(
             'petugas',
             'Laporan Meter Air Tanah Baru',
-            "Laporan meter air tanah baru dari {$user->nama_lengkap} menunggu diproses."
+            "Laporan meter air tanah baru dari {$user->nama_lengkap} menunggu diproses.",
+            actionUrl: \App\Filament\Resources\MeterReportResource::getUrl('index', ['tableSearch' => $report->id]),
         );
 
         return $this->sendResponse($report, 'Laporan Meter berhasil dikirim.');

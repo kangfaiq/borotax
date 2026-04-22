@@ -48,14 +48,19 @@ class SyncExpiredTaxStatuses extends Command
                 sourceStatuses: $this->formatSourceStatusesForStorage(collect($result['source_status_breakdown'])),
             );
 
-            NotificationService::notifyRole(
-                ['admin', 'verifikator', 'petugas'],
-                'Sinkronisasi Billing Kedaluwarsa',
-                $body,
-                null,
-                'Lihat Histori Auto-Expire',
-                ActivityLogResource::getAutoExpireHistoryUrl(),
-            );
+            $historyUrl = ActivityLogResource::getAutoExpireHistoryUrl();
+
+            foreach ($result['jenis_pajak_breakdown'] as $item) {
+                $count = (int) $item['count'];
+                $label = $item['label'];
+
+                NotificationService::notifyRole(
+                    ['admin', 'verifikator', 'petugas'],
+                    "Sinkronisasi Billing Kedaluwarsa - {$label}",
+                    "{$count} billing {$label} otomatis berubah ke status expired hari ini.",
+                    actionUrl: $historyUrl,
+                );
+            }
         }
 
         $this->info("Selesai. {$updated} billing overdue disinkronkan menjadi expired.");

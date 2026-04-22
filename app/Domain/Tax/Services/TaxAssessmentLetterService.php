@@ -128,7 +128,8 @@ class TaxAssessmentLetterService
                     $letter->user,
                     'Surat Ketetapan Pajak Diterbitkan',
                     'Dokumen ' . $letter->letter_type->getLabel() . ' nomor ' . $letter->document_number . ' telah diterbitkan.',
-                    'verification'
+                    'verification',
+                    actionUrl: route('portal.history'),
                 );
             }
 
@@ -159,7 +160,8 @@ class TaxAssessmentLetterService
                 $letter->user,
                 'Surat Ketetapan Pajak Ditolak',
                 'Draft ' . $letter->letter_type->getLabel() . ' ditolak. Alasan: ' . $verificationNotes,
-                'verification'
+                'verification',
+                actionUrl: route('portal.history'),
             );
         }
 
@@ -249,7 +251,8 @@ class TaxAssessmentLetterService
                     $letter->user,
                     'Kompensasi SKPDLB Diproses',
                     'Saldo kredit ' . ($letter->document_number ?? $letter->id) . ' telah dialokasikan ke billing ' . $targetTax->billing_code . '.',
-                    'payment'
+                    'payment',
+                    actionUrl: route('portal.history'),
                 );
             }
 

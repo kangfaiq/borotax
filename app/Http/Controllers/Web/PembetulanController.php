@@ -134,7 +134,8 @@ class PembetulanController extends Controller
         NotificationService::notifyRole(
             'petugas',
             'Permohonan Pembetulan Billing Baru',
-            "Permohonan pembetulan billing baru dari {$user->nama_lengkap} menunggu diproses."
+            "Permohonan pembetulan billing baru dari {$user->nama_lengkap} menunggu diproses.",
+            actionUrl: \App\Filament\Resources\PembetulanRequestResource::getUrl('index'),
         );
 
         return redirect()

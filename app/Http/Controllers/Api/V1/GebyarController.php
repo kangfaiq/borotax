@@ -55,7 +55,8 @@ class GebyarController extends BaseController
         NotificationService::notifyRole(
             'admin',
             'Pengajuan Gebyar Baru',
-            "Pengajuan gebyar baru dari {$user->nama_lengkap} menunggu verifikasi."
+            "Pengajuan gebyar baru dari {$user->nama_lengkap} menunggu verifikasi.",
+            actionUrl: \App\Filament\Resources\GebyarSubmissionResource::getUrl('index', ['tableSearch' => $submission->id]),
         );
 
         return $this->sendResponse($submission, 'Submission berhasil dikirim.');

@@ -248,7 +248,8 @@ class PermohonanSewaReklameResource extends Resource
                                 $record->user,
                                 'Permohonan Sewa Reklame Sedang Diproses',
                                 'Permohonan sewa reklame Anda (No. ' . $record->nomor_tiket . ') sedang diproses oleh petugas.',
-                                'info'
+                                'info',
+                                actionUrl: route('portal.dashboard'),
                             );
                         }
                     }),
@@ -626,7 +627,8 @@ class PermohonanSewaReklameResource extends Resource
                             NotificationService::notifyRole(
                                 'verifikator',
                                 'Draft SKPD Reklame Menunggu Verifikasi',
-                                'Draft SKPD Reklame (sewa) untuk ' . ($record->nama ?? 'pemohon') . ' perlu diverifikasi.'
+                                'Draft SKPD Reklame (sewa) untuk ' . ($record->nama ?? 'pemohon') . ' perlu diverifikasi.',
+                                actionUrl: \App\Filament\Resources\SkpdReklameResource::getUrl('index'),
                             );
                         } catch (Exception $e) {
                             Notification::make()
@@ -661,7 +663,8 @@ class PermohonanSewaReklameResource extends Resource
                                 $record->user,
                                 'Permohonan Sewa Reklame Perlu Revisi',
                                 'Permohonan sewa reklame Anda (No. ' . $record->nomor_tiket . ') perlu diperbaiki. Catatan: ' . $data['catatan_petugas'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.dashboard'),
                             );
                         }
 
@@ -692,7 +695,8 @@ class PermohonanSewaReklameResource extends Resource
                                 $record->user,
                                 'Permohonan Sewa Reklame Ditolak',
                                 'Permohonan sewa reklame Anda (No. ' . $record->nomor_tiket . ') ditolak. Alasan: ' . $data['catatan_petugas'],
-                                'verification'
+                                'verification',
+                                actionUrl: route('portal.dashboard'),
                             );
                         }
 

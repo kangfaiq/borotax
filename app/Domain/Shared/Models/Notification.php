@@ -28,6 +28,13 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
+    protected $appends = ['url'];
+
+    public function getUrlAttribute(): ?string
+    {
+        return $this->data_payload['url'] ?? null;
+    }
+
     /**
      * Get user
      */

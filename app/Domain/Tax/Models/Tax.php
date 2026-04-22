@@ -419,6 +419,7 @@ class Tax extends Model
                     }
 
                     $jenisPajakBreakdown[$jenisPajakKey] ??= [
+                        'kode' => $jenisPajakKey,
                         'label' => $jenisPajakLabel ?: 'Jenis Pajak Tidak Dikenal',
                         'count' => 0,
                     ];

@@ -248,7 +248,8 @@ class MeterReportResource extends Resource
                                 $record->user,
                                 'Laporan Meter Sedang Diproses',
                                 'Laporan meter air tanah Anda sedang diproses oleh petugas. Draft SKPD telah dibuat dan menunggu verifikasi.',
-                                'info'
+                                'info',
+                                actionUrl: route('portal.air-tanah.skpd-list'),
                             );
                         }
 
@@ -256,7 +257,8 @@ class MeterReportResource extends Resource
                         NotificationService::notifyRole(
                             'verifikator',
                             'Draft SKPD Air Tanah Menunggu Verifikasi',
-                            'Draft SKPD ABT untuk ' . ($record->user_name ?? 'WP') . ' perlu diverifikasi.'
+                            'Draft SKPD ABT untuk ' . ($record->user_name ?? 'WP') . ' perlu diverifikasi.',
+                            actionUrl: \App\Filament\Resources\SkpdAirTanahResource::getUrl('view', ['record' => $skpd->id]),
                         );
 
                         Notification::make()

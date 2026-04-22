@@ -16,8 +16,8 @@ beforeEach(function () {
     ]);
 });
 
-it('truncates scheduler notification body safely for large expired billing batches', function () {
-    createLargeBatchBackofficeUser('admin');
+it('sends one expired billing notification per tax type', function () {
+    $admin = createLargeBatchBackofficeUser('admin');
     createLargeBatchBackofficeUser('verifikator');
     createLargeBatchBackofficeUser('petugas');
 
@@ -52,18 +52,34 @@ it('truncates scheduler notification body safely for large expired billing batch
 
     $this->artisan('tax:sync-expired-statuses')->assertSuccessful();
 
-    $notificationBody = DB::table('notifications')
-        ->value('data');
+    $notifications = DB::table('notifications')
+        ->where('notifiable_id', $admin->id)
+        ->pluck('data')
+        ->map(fn (string $payload): array => json_decode($payload, true));
 
-    $body = (string) data_get(json_decode((string) $notificationBody, true), 'body');
+    expect($notifications)->toHaveCount(4);
 
-    expect($body)
-        ->toContain('Billing batch: 352210100000269901, 352210100000269902, 352210100000269903, 352210100000269904, 352210100000269905 (+2 lainnya).')
-        ->toContain('(+1 jenis lain)')
-        ->toContain('(41102): 3 billing')
-        ->toContain('(41101): 2 billing')
-        ->toContain('Status asal: Menunggu Pembayaran: 7 billing.')
-        ->not->toContain('352210100000269906, 352210100000269907');
+    $titles = $notifications->pluck('title')->values()->all();
+    $bodies = $notifications->pluck('body')->values()->all();
+    $actionUrls = $notifications
+        ->map(fn (array $payload): ?string => data_get($payload, 'actions.0.url'))
+        ->filter()
+        ->values()
+        ->all();
+
+    expect(collect($titles)->contains(fn (string $title): bool => str_contains($title, '41102')))->toBeTrue();
+    expect(collect($titles)->contains(fn (string $title): bool => str_contains($title, '41101')))->toBeTrue();
+    expect(collect($titles)->contains(fn (string $title): bool => str_contains($title, '41103')))->toBeTrue();
+    expect(collect($titles)->contains(fn (string $title): bool => str_contains($title, '41107')))->toBeTrue();
+
+    expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '3 billing') && str_contains($body, '41102')))->toBeTrue();
+    expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '2 billing') && str_contains($body, '41101')))->toBeTrue();
+    expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '1 billing') && str_contains($body, '41103')))->toBeTrue();
+    expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '1 billing') && str_contains($body, '41107')))->toBeTrue();
+
+    expect($actionUrls)->each->toBe(
+        \App\Filament\Resources\ActivityLogResource::getAutoExpireHistoryUrl(),
+    );
 });
 
 function createLargeBatchBackofficeUser(string $role): User
