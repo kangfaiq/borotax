@@ -156,15 +156,15 @@ class DaftarWajibPajakResource extends Resource
                                 $email = $record?->user?->email;
                                 $isGenerated = GeneratedLoginEmail::isGenerated($email);
                                 $badgeClasses = $isGenerated
-                                    ? 'bg-amber-100 text-amber-800 ring-amber-600/20'
-                                    : 'bg-emerald-100 text-emerald-800 ring-emerald-600/20';
+                                    ? 'bg-amber-100 text-amber-800 ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30'
+                                    : 'bg-emerald-100 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/30';
                                 $description = $isGenerated
                                     ? 'Gunakan username login ini saat menyampaikan akun ke wajib pajak.'
                                     : 'Akun memakai email asli wajib pajak.';
 
                                 return new HtmlString(
                                     '<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . $badgeClasses . '">' . GeneratedLoginEmail::sourceLabel($email) . '</span>'
-                                    . '<div class="mt-2 text-sm text-gray-600">' . $description . '</div>'
+                                    . '<div class="mt-2 text-sm text-gray-600 dark:text-gray-400">' . $description . '</div>'
                                 );
                             })
                             ->visible(fn($record, string $operation): bool => $operation !== 'create' && filled($record?->user?->email))
