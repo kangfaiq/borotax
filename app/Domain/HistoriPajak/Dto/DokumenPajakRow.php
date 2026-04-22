@@ -28,13 +28,18 @@ final readonly class DokumenPajakRow
         return max(0, $this->jumlahTagihan - $this->jumlahTerbayar);
     }
 
+    public function hasOpenPayment(): bool
+    {
+        return $this->jumlahSisa() > 0;
+    }
+
     public function isLewatJatuhTempo(): bool
     {
         if ($this->jatuhTempo === null) {
             return false;
         }
 
-        if ($this->jumlahSisa() <= 0) {
+        if (! $this->hasOpenPayment()) {
             return false;
         }
 
@@ -43,11 +48,36 @@ final readonly class DokumenPajakRow
 
     public function effectiveStatus(): string
     {
-        return $this->isLewatJatuhTempo() ? 'lewat_jatuh_tempo' : $this->status;
+        if ($this->isLewatJatuhTempo()) {
+            return 'lewat_jatuh_tempo';
+        }
+
+        if ($this->jatuhTempo !== null && $this->hasOpenPayment() && ! $this->isStatusTetap()) {
+            return 'menunggu_pembayaran';
+        }
+
+        return $this->status;
     }
 
     public function effectiveStatusLabel(): string
     {
-        return $this->isLewatJatuhTempo() ? 'Lewat Jatuh Tempo' : $this->statusLabel;
+        return match ($this->effectiveStatus()) {
+            'lewat_jatuh_tempo' => 'Lewat Jatuh Tempo',
+            'menunggu_pembayaran' => 'Menunggu Pembayaran',
+            default => $this->statusLabel,
+        };
+    }
+
+    private function isStatusTetap(): bool
+    {
+        return in_array($this->status, [
+            'draft',
+            'paid',
+            'verified',
+            'rejected',
+            'cancelled',
+            'ditolak',
+            'menungguVerifikasi',
+        ], true);
     }
 }

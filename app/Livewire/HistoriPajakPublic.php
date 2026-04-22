@@ -7,7 +7,6 @@ use App\Domain\HistoriPajak\Exceptions\WajibPajakTidakDitemukanException;
 use App\Domain\HistoriPajak\Services\HistoriPajakService;
 use App\Enums\HistoriPajakAccessStatus;
 use App\Models\HistoriPajakAccessLog;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
@@ -16,7 +15,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Symfony\Component\HttpFoundation\Response;
 
 class HistoriPajakPublic extends Component
 {
@@ -129,53 +127,6 @@ class HistoriPajakPublic extends Component
         $this->dispatch('turnstile-reset');
 
         $this->logAccess($ip, $userAgent, HistoriPajakAccessStatus::SUKSES, $rows->count());
-    }
-
-    public function eksporExcel(HistoriPajakService $service): ?Response
-    {
-        if (! $this->sudahCari || empty($this->rows)) {
-            $this->errorMessage = 'Tidak ada data untuk diekspor.';
-
-            return null;
-        }
-
-        $rows = $service->cari($this->npwpd, (int) $this->tahun);
-        $ringkasan = $service->ringkasan($rows);
-
-        $filename = 'Histori-Pajak-' . $this->npwpd . '-' . $this->tahun . '.xlsx';
-
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\HistoriPajakExport($rows, $ringkasan, $this->npwpd, (int) $this->tahun),
-            $filename
-        );
-    }
-
-    public function cetakPdf(HistoriPajakService $service)
-    {
-        if (! $this->sudahCari || empty($this->rows)) {
-            $this->errorMessage = 'Tidak ada data untuk dicetak.';
-
-            return null;
-        }
-
-        $rows = $service->cari($this->npwpd, (int) $this->tahun);
-        $ringkasan = $service->ringkasan($rows);
-
-        $filename = 'Histori-Pajak-' . $this->npwpd . '-' . $this->tahun . '.pdf';
-
-        // Folio / F4 landscape: 215 x 330 mm = 609.45 x 935.43 pt
-        $pdf = Pdf::loadView('pdf.histori-pajak', [
-            'rows' => $rows,
-            'ringkasan' => $ringkasan,
-            'npwpd' => $this->npwpd,
-            'tahun' => (int) $this->tahun,
-            'tanggalCetak' => now(),
-        ])->setPaper([0, 0, 935.43, 609.45], 'portrait'); // landscape Folio
-
-        return response($pdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
     }
 
     public function render()

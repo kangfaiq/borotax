@@ -17,6 +17,7 @@ use App\Http\Controllers\SkpdAirTanahDocumentController;
 use App\Http\Controllers\StpdManualDocumentController;
 use App\Http\Controllers\TaxAssessmentLetterDocumentController;
 use App\Http\Controllers\ActivityLogFilePreviewController;
+use App\Http\Controllers\HistoriPajakDocumentController;
 
 use App\Http\Controllers\Web\PembetulanController;
 
@@ -40,6 +41,12 @@ Route::get('/cek-billing', [BillingController::class, 'check'])->name('billing.c
 Route::get('/histori-pajak', function () {
     return view('portal.histori-pajak.index');
 })->middleware('throttle:histori-pajak')->name('histori-pajak.index');
+Route::get('/histori-pajak/excel', [HistoriPajakDocumentController::class, 'exportExcel'])
+    ->middleware('throttle:histori-pajak')
+    ->name('histori-pajak.export-excel');
+Route::get('/histori-pajak/pdf', [HistoriPajakDocumentController::class, 'showPdf'])
+    ->middleware('throttle:histori-pajak')
+    ->name('histori-pajak.pdf');
 
 // Menu Publik
 Route::get('/produk-hukum', [PublicMenuController::class, 'legalProducts'])->name('publik.produk-hukum');

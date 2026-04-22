@@ -904,7 +904,7 @@ Wajib pajak dapat melihat dan mengunduh:
 | Landing Page | `/` | Halaman utama |
 | Login Portal | `/login` | Form login portal wajib pajak |
 | Cek Billing | `/cek-billing` | Cek status billing berdasarkan kode |
-| Histori Pajak | `/histori-pajak` | Cek seluruh dokumen pajak (Billing, STPD Manual, Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, SKRD Sewa Tanah) per NPWPD + tahun (dilindungi captcha Cloudflare Turnstile, rate limit 5x/15 menit per IP, audit log) — mendukung ekspor Excel & cetak PDF (Folio/F4 landscape) |
+| Histori Pajak | `/histori-pajak` | Cek seluruh dokumen pajak (Billing, STPD Manual, Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, SKRD Sewa Tanah) per NPWPD + tahun (dilindungi captcha Cloudflare Turnstile, rate limit 5x/15 menit per IP, audit log), menampilkan jatuh tempo dan status efektif `Menunggu Pembayaran` / `Lewat Jatuh Tempo`, serta mendukung ekspor Excel dan cetak PDF inline via DomPDF (Folio/F4 landscape) |
 | Produk Hukum | `/produk-hukum` | Daftar regulasi (Perda, Perbup, UU) |
 | Berita | `/berita` | Daftar berita (filter kategori, paginated) |
 | Detail Berita | `/berita/{slug}` | Detail berita + view counter |

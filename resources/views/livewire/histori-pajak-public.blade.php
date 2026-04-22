@@ -75,12 +75,12 @@
 
                     @if(count($rows) > 0)
                         <div class="actions-bar">
-                            <button type="button" class="btn-action" wire:click="eksporExcel" wire:loading.attr="disabled" wire:target="eksporExcel">
+                            <a class="btn-action" href="{{ route('histori-pajak.export-excel', ['npwpd' => $npwpd, 'tahun' => $tahun]) }}">
                                 <i class="bi bi-file-earmark-excel"></i> Ekspor Excel
-                            </button>
-                            <button type="button" class="btn-action" wire:click="cetakPdf" wire:loading.attr="disabled" wire:target="cetakPdf">
+                            </a>
+                            <a class="btn-action" href="{{ route('histori-pajak.pdf', ['npwpd' => $npwpd, 'tahun' => $tahun]) }}" target="_blank" rel="noopener noreferrer">
                                 <i class="bi bi-printer"></i> Cetak PDF (F4 Landscape)
-                            </button>
+                            </a>
                         </div>
 
                         <div class="table-wrapper">

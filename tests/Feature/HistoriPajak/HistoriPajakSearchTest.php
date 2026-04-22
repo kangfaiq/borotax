@@ -16,6 +16,27 @@ beforeEach(function () {
     Cache::flush();
 });
 
+function createPublicHistoriWajibPajak(string $npwpd): void
+{
+    $user = \App\Domain\Auth\Models\User::create([
+        'name' => 'Tester',
+        'email' => 'tester-' . uniqid() . '@example.com',
+        'password' => bcrypt('Password123!'),
+    ]);
+
+    WajibPajak::create([
+        'user_id' => $user->id,
+        'nik' => '3522010101010001',
+        'nama_lengkap' => 'Tester WP',
+        'alamat' => 'Jl. Tes No. 1',
+        'tipe_wajib_pajak' => 'perorangan',
+        'status' => 'disetujui',
+        'tanggal_daftar' => now(),
+        'npwpd' => $npwpd,
+        'nopd' => 1,
+    ]);
+}
+
 it('renders the public histori pajak page', function () {
     $this->get(route('histori-pajak.index'))
         ->assertOk()
@@ -46,23 +67,7 @@ it('logs gagal_npwpd_tidak_ditemukan dan menampilkan pesan', function () {
 it('berhasil mencari WP yang ada walaupun belum ada dokumen', function () {
     $npwpd = 'P100000000123';
 
-    $user = \App\Domain\Auth\Models\User::create([
-        'name' => 'Tester',
-        'email' => 'tester-' . uniqid() . '@example.com',
-        'password' => bcrypt('Password123!'),
-    ]);
-
-    WajibPajak::create([
-        'user_id' => $user->id,
-        'nik' => '3522010101010001',
-        'nama_lengkap' => 'Tester WP',
-        'alamat' => 'Jl. Tes No. 1',
-        'tipe_wajib_pajak' => 'perorangan',
-        'status' => 'disetujui',
-        'tanggal_daftar' => now(),
-        'npwpd' => $npwpd,
-        'nopd' => 1,
-    ]);
+    createPublicHistoriWajibPajak($npwpd);
 
     Livewire::test(HistoriPajakPublic::class)
         ->set('npwpd', $npwpd)
@@ -108,4 +113,29 @@ it('memuat daftar tahun dari tahun sekarang sampai 2019 desc', function () {
         ->and(end($tahun))->toBe(2019)
         ->and($tahun)->toContain(2020)
         ->and($tahun)->toContain($tahunSekarang);
+});
+
+it('mengembalikan file excel histori pajak', function () {
+    $npwpd = 'P100000000321';
+    createPublicHistoriWajibPajak($npwpd);
+
+    $this->get(route('histori-pajak.export-excel', [
+        'npwpd' => $npwpd,
+        'tahun' => (int) now()->year,
+    ]))
+        ->assertOk()
+        ->assertHeader('content-disposition', 'attachment; filename=Histori-Pajak-' . $npwpd . '-' . now()->year . '.xlsx');
+});
+
+it('menampilkan pdf histori pajak secara inline', function () {
+    $npwpd = 'P200000000321';
+    createPublicHistoriWajibPajak($npwpd);
+
+    $this->get(route('histori-pajak.pdf', [
+        'npwpd' => $npwpd,
+        'tahun' => (int) now()->year,
+    ]))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf')
+        ->assertHeader('content-disposition', 'inline; filename=Histori-Pajak-' . $npwpd . '-' . now()->year . '.pdf');
 });
