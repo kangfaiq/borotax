@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class SingleSessionEnforcementTest extends TestCase
@@ -190,6 +191,36 @@ class SingleSessionEnforcementTest extends TestCase
         $this->assertGuest('web');
         $this->assertAuthenticatedAs($wajibPajak->user, 'portal');
         $this->get(route('portal.dashboard'))->assertOk();
+    }
+
+    public function test_backoffice_can_log_in_again_immediately_after_logout(): void
+    {
+        $admin = $this->createBackofficeUser('admin', 'single-session-relogin-admin@example.test');
+
+        $this->actingAs($admin, 'web');
+
+        $this->post(route('filament.admin.auth.logout'))
+            ->assertRedirect(route('filament.admin.auth.login'));
+
+        $this->assertGuest('web');
+
+        $this->get(route('filament.admin.auth.login'))->assertOk();
+
+        Livewire::test(\App\Filament\Pages\Auth\Login::class)
+            ->set('data.email', $admin->email)
+            ->set('data.password', 'PasswordAdmin123!')
+            ->call('authenticate')
+            ->assertRedirect('/admin');
+
+        $this->followingRedirects()
+            ->get('/admin')
+            ->assertOk();
+
+        $this->assertAuthenticatedAs($admin->fresh(), 'web');
+        $this->assertSame(
+            $admin->fresh()->active_session_id,
+            session(SingleSessionManager::BACKOFFICE_SESSION_KEY),
+        );
     }
 
     public function test_backoffice_roles_still_share_a_single_browser_session(): void

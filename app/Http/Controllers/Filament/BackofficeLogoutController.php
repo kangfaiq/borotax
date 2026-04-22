@@ -17,7 +17,7 @@ class BackofficeLogoutController
         }
 
         Filament::auth()->logout();
-        session()->migrate(true);
+        session()->invalidate();
         session()->regenerateToken();
 
         return app(LogoutResponse::class);
