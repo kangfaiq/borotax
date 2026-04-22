@@ -1,9 +1,10 @@
 @php
     $livewire = $getLivewire();
-    $existingPath = $livewire->data['foto_objek_path'] ?? null;
+    $existingPath = $livewire->data['foto_objek_path'] ?? $livewire->record?->foto_objek_path ?? null;
     $existingUrl = null;
     $existingSize = null;
     $existingExt = null;
+    $isReadonly = ! method_exists($livewire, 'saveFotoObjek');
 
     if ($existingPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($existingPath)) {
         $existingUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($existingPath);
@@ -12,6 +13,51 @@
     }
 @endphp
 
+@if ($isReadonly)
+<div class="space-y-2">
+    @if ($existingUrl)
+        <div class="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="flex items-start gap-3 p-3">
+                <div class="flex-shrink-0">
+                    @if (in_array($existingExt, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true))
+                        <a href="{{ $existingUrl }}" target="_blank" rel="noopener noreferrer" title="Lihat foto objek pajak">
+                            <img src="{{ $existingUrl }}" alt="Foto objek pajak" class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-600" />
+                        </a>
+                    @else
+                        <a href="{{ $existingUrl }}" target="_blank" rel="noopener noreferrer" class="w-16 h-16 flex items-center justify-center bg-red-50 dark:bg-red-900/30 rounded-lg border border-gray-200 dark:border-gray-600" title="Buka file objek pajak">
+                            <div class="text-center">
+                                <svg class="w-6 h-6 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="text-[10px] font-bold text-red-500 leading-none block mt-0.5">{{ strtoupper($existingExt) }}</span>
+                            </div>
+                        </a>
+                    @endif
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">File tersimpan</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Ukuran file: <span class="font-semibold">{{ $existingSize ? ($existingSize < 1024 ? $existingSize . ' B' : number_format($existingSize / 1024, 1) . ' KB') : '-' }}</span>
+                    </p>
+                </div>
+
+                <a href="{{ $existingUrl }}" target="_blank" rel="noopener noreferrer"
+                   class="flex-shrink-0 p-1.5 rounded-lg text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                   title="Buka file">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7m0 0v7m0-7L10 14m-3-7H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    @else
+        <div class="border rounded-xl border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            Belum ada foto objek pajak tersimpan.
+        </div>
+    @endif
+</div>
+@else
 <div
     wire:ignore
     x-data="{
@@ -307,3 +353,4 @@
     {{-- Error --}}
     <p x-show="errorMessage" x-cloak class="text-xs text-danger-500" x-text="errorMessage"></p>
 </div>
+@endif
