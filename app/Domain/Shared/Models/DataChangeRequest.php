@@ -5,6 +5,7 @@ namespace App\Domain\Shared\Models;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Domain\Tax\Models\TaxObject;
 use InvalidArgumentException;
+use Throwable;
 use App\Domain\Auth\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,7 +50,7 @@ class DataChangeRequest extends Model
         if ($value === null) return null;
         try {
             return json_decode(Crypt::decryptString($value), true);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return json_decode($value, true);
         }
     }

@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Filament\Infolists;
+use Filament\Schemas\Components\Section;
 use Illuminate\Support\HtmlString;
 use App\Domain\Shared\Services\NotificationService;
 use Filament\Tables\Filters\TrashedFilter;
@@ -116,7 +117,7 @@ class DataChangeRequestResource extends Resource
     {
         return $schema
             ->schema([
-                Infolists\Components\Section::make('Informasi Permintaan')
+                Section::make('Informasi Permintaan')
                     ->columnSpanFull()
                     ->schema([
                         Infolists\Components\TextEntry::make('entity_type')
@@ -151,7 +152,7 @@ class DataChangeRequestResource extends Resource
                             ->dateTime('d/m/Y H:i'),
                     ])->columns(4),
 
-                Infolists\Components\Section::make('Detail Perubahan')
+                Section::make('Detail Perubahan')
                     ->columnSpanFull()
                     ->schema([
                         Infolists\Components\ViewEntry::make('field_changes_table')
@@ -159,7 +160,7 @@ class DataChangeRequestResource extends Resource
                             ->view('filament.components.field-changes-table'),
                     ]),
 
-                Infolists\Components\Section::make('Alasan & Dokumen')
+                Section::make('Alasan & Dokumen')
                     ->schema([
                         Infolists\Components\TextEntry::make('alasan_perubahan')
                             ->label('Alasan Perubahan')
@@ -171,7 +172,7 @@ class DataChangeRequestResource extends Resource
                             ->openUrlInNewTab(),
                     ])->columns(2),
 
-                Infolists\Components\Section::make('Pengaju & Reviewer')
+                Section::make('Pengaju & Reviewer')
                     ->schema([
                         Infolists\Components\TextEntry::make('requester.nama_lengkap')
                             ->label('Diajukan Oleh')
