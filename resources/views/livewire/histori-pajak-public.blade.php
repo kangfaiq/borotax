@@ -11,9 +11,9 @@
                 <form wire:submit.prevent="cari" novalidate>
                     <div class="form-grid">
                         <div>
-                            <label class="form-label" for="hp-npwpd">NPWPD (13 digit)</label>
-                            <input id="hp-npwpd" type="text" class="form-input" inputmode="numeric"
-                                   maxlength="13" wire:model.defer="npwpd" placeholder="Contoh: 3522101000000">
+                            <label class="form-label" for="hp-npwpd">NPWPD (P1/P2 + 11 digit)</label>
+                            <input id="hp-npwpd" type="text" class="form-input"
+                                   maxlength="13" wire:model.defer="npwpd" placeholder="Contoh: P100000000001" style="text-transform:uppercase;">
                             @error('npwpd') <div class="alert-error">{{ $message }}</div> @enderror
                         </div>
                         <div>

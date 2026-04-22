@@ -32,7 +32,7 @@ it('logs gagal_format ketika NPWPD bukan 13 digit', function () {
 
 it('logs gagal_npwpd_tidak_ditemukan dan menampilkan pesan', function () {
     Livewire::test(HistoriPajakPublic::class)
-        ->set('npwpd', '3522101000099')
+        ->set('npwpd', 'P100000000099')
         ->set('tahun', (int) now()->year)
         ->call('cari')
         ->assertSet('sudahCari', false)
@@ -44,7 +44,7 @@ it('logs gagal_npwpd_tidak_ditemukan dan menampilkan pesan', function () {
 });
 
 it('berhasil mencari WP yang ada walaupun belum ada dokumen', function () {
-    $npwpd = '3522101000123';
+    $npwpd = 'P100000000123';
 
     $user = \App\Domain\Auth\Models\User::create([
         'name' => 'Tester',
@@ -79,7 +79,7 @@ it('berhasil mencari WP yang ada walaupun belum ada dokumen', function () {
 });
 
 it('memblokir percobaan ke-6 dengan status rate_limited', function () {
-    $npwpd = '3522101000099';
+    $npwpd = 'P200000000099';
 
     for ($i = 0; $i < 5; $i++) {
         Livewire::test(HistoriPajakPublic::class)

@@ -91,12 +91,14 @@ class HistoriPajakPublic extends Component
 
         $limiter->hit($rateKey, 60 * 15);
 
+        $this->npwpd = strtoupper(trim($this->npwpd));
+
         $this->validate([
-            'npwpd' => ['required', 'string', 'regex:/^\d{13}$/'],
+            'npwpd' => ['required', 'string', 'regex:/^P[12]\d{11}$/'],
             'tahun' => ['required', 'integer', 'min:2019', 'max:' . now()->year],
         ], [
             'npwpd.required' => 'NPWPD wajib diisi.',
-            'npwpd.regex' => 'Format NPWPD harus 13 digit angka.',
+            'npwpd.regex' => 'Format NPWPD harus diawali P1 atau P2 diikuti 11 digit angka (total 13 karakter).',
             'tahun.required' => 'Tahun pajak wajib dipilih.',
         ]);
 
