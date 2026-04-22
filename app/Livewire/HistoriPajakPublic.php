@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class HistoriPajakPublic extends Component
 {
@@ -131,16 +131,10 @@ class HistoriPajakPublic extends Component
         $this->logAccess($ip, $userAgent, HistoriPajakAccessStatus::SUKSES, $rows->count());
     }
 
-    public function eksporExcel(HistoriPajakService $service): ?StreamedResponse
+    public function eksporExcel(HistoriPajakService $service): ?Response
     {
         if (! $this->sudahCari || empty($this->rows)) {
             $this->errorMessage = 'Tidak ada data untuk diekspor.';
-
-            return null;
-        }
-
-        if (! class_exists(\Maatwebsite\Excel\Facades\Excel::class)) {
-            $this->errorMessage = 'Modul ekspor Excel belum tersedia.';
 
             return null;
         }
@@ -178,11 +172,10 @@ class HistoriPajakPublic extends Component
             'tanggalCetak' => now(),
         ])->setPaper([0, 0, 935.43, 609.45], 'portrait'); // landscape Folio
 
-        return response()->streamDownload(
-            fn () => print($pdf->stream()),
-            $filename,
-            ['Content-Type' => 'application/pdf']
-        );
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
     public function render()
