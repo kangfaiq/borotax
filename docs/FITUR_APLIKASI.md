@@ -693,8 +693,11 @@ Catatan implementasi saat ini:
 ## 7. Fitur Portal Wajib Pajak (Web)
 
 - **Wajib ganti password saat login pertama:** user wajib pajak yang dibuat atau di-reset dari backoffice dengan flag `must_change_password = true` akan diarahkan paksa ke halaman ubah password pertama kali sebelum bisa mengakses halaman portal lain.
+- **Lupa password via OTP email:** halaman login portal menyediakan tautan `Lupa password?` yang membuka alur guest untuk meminta OTP 6 digit ke email akun portal aktif, memverifikasi OTP, lalu menetapkan password baru tanpa harus login.
 - **Route first-login password change:** `/portal/password/change-first`
 - **Route ubah password reguler:** `/portal/password/change`
+- **Route lupa password portal:** `/lupa-password`, `/lupa-password/verifikasi`, dan `/lupa-password/reset`
+- **Resend OTP portal:** halaman `/lupa-password/verifikasi` menyediakan tombol `Kirim ulang OTP` yang memanggil route guest `POST /lupa-password/verifikasi/kirim-ulang` memakai email akun yang sedang diverifikasi, tetap tunduk pada cooldown 2 menit dan batas 3 request per 15 menit.
 - **Indikator status password di portal:** header dan sidebar menampilkan waktu terakhir password diubah; bila password belum pernah diubah, portal menampilkan badge warning yang lebih tegas, tooltip ajakan untuk segera memperbarui password, serta animasi pulse halus dan ikon penanda khusus di mobile agar lebih cepat tertangkap.
 - **Konsistensi CTA di halaman ubah password:** halaman `/portal/password/change` juga menampilkan ringkasan status password dan warning card yang selaras dengan indikator portal ketika password belum pernah diubah.
 - **Style tombol ubah password reguler konsisten:** CTA `Simpan Perubahan Password` pada halaman `/portal/password/change` memakai style tombol portal utama yang sama dengan halaman auth publik agar tampil seragam di seluruh alur password.
@@ -808,6 +811,10 @@ Wajib pajak dapat melihat dan mengunduh:
 **Kontrak penting:**
 - `POST /api/v1/auth/request-otp` mewajibkan `email` dan `no_whatsapp`; OTP berlaku 30 detik, cooldown 2 menit, maksimal 3 request per 15 menit
 - `POST /api/v1/auth/verify-otp` memakai `otp_id` + `code` 6 digit; maksimal 3 percobaan gagal sebelum user harus meminta OTP baru
+- `POST /api/v1/auth/forgot-password/request` mengirim OTP reset password 6 digit ke email akun portal aktif; OTP berlaku 3 menit, cooldown 2 menit, maksimal 3 request per 15 menit
+- `POST /api/v1/auth/forgot-password/resend-otp` mengirim ulang OTP reset password untuk email yang sama dengan aturan cooldown dan rate limit yang identik dengan request awal, sekaligus menonaktifkan OTP reset sebelumnya yang masih aktif
+- `POST /api/v1/auth/forgot-password/verify-otp` memakai `email` + `code` 6 digit dan mengembalikan `verification_token` untuk langkah reset password akhir
+- `POST /api/v1/auth/forgot-password/reset` membutuhkan `verification_token`, `password`, dan `password_confirmation`; jika valid sistem mengganti password user, membersihkan flag `must_change_password`, dan mengosongkan token verifikasi sekali pakai
 - `POST /api/v1/register` membutuhkan `verification_token` hasil verifikasi OTP serta data identitas lengkap, termasuk kode wilayah dan `password_confirmation`; user baru dibuat dengan role default `user`
 - `POST /api/v1/login` memakai field `email`, tetapi nilainya boleh berupa email atau NIK
 - Respons login dan profile juga mengembalikan flag `must_change_password` dan `password_changed_at`

@@ -77,6 +77,13 @@ Route::prefix('sewa-reklame')->name('sewa-reklame.')->group(function () {
 Route::middleware('guest:portal')->group(function () {
     Route::get('/login', [WebAuthController::class, 'showLogin'])->name('portal.login');
     Route::post('/login', [WebAuthController::class, 'login'])->name('portal.login.submit');
+    Route::get('/lupa-password', [WebAuthController::class, 'showForgotPasswordRequest'])->name('portal.password.forgot.form');
+    Route::post('/lupa-password', [WebAuthController::class, 'requestPasswordResetOtp'])->name('portal.password.forgot.send');
+    Route::get('/lupa-password/verifikasi', [WebAuthController::class, 'showForgotPasswordVerify'])->name('portal.password.forgot.verify');
+    Route::post('/lupa-password/verifikasi', [WebAuthController::class, 'verifyPasswordResetOtp'])->name('portal.password.forgot.verify.submit');
+    Route::post('/lupa-password/verifikasi/kirim-ulang', [WebAuthController::class, 'resendPasswordResetOtp'])->name('portal.password.forgot.resend');
+    Route::get('/lupa-password/reset', [WebAuthController::class, 'showForgotPasswordReset'])->name('portal.password.forgot.reset');
+    Route::post('/lupa-password/reset', [WebAuthController::class, 'resetForgotPassword'])->name('portal.password.forgot.reset.update');
 });
 
 // Logout (needs auth)

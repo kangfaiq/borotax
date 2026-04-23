@@ -6,11 +6,17 @@ use App\Domain\Auth\Support\SingleSessionManager;
 use App\Domain\Auth\Support\PasswordStandards;
 use App\Http\Controllers\Controller;
 use App\Domain\Auth\Models\User;
+use App\Domain\Auth\Models\VerificationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class WebAuthController extends Controller
 {
+    private const PASSWORD_RESET_EMAIL_KEY = 'portal_password_reset_email';
+    private const PASSWORD_RESET_TOKEN_KEY = 'portal_password_reset_token';
+
     /**
      * Show the login form.
      */
@@ -136,6 +142,197 @@ class WebAuthController extends Controller
         return $redirect;
     }
 
+    public function showForgotPasswordRequest()
+    {
+        return view('portal.auth.forgot-password');
+    }
+
+    public function requestPasswordResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Email harus berupa alamat email yang valid.',
+        ]);
+
+        $email = strtolower(trim((string) $request->input('email')));
+
+        return $this->sendPasswordResetOtpForPortal($request, $email, false);
+    }
+
+    public function resendPasswordResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Email harus berupa alamat email yang valid.',
+        ]);
+
+        $email = strtolower(trim((string) $request->input('email')));
+
+        return $this->sendPasswordResetOtpForPortal($request, $email, true);
+    }
+
+    private function sendPasswordResetOtpForPortal(Request $request, string $email, bool $isResend)
+    {
+        $request->session()->forget(self::PASSWORD_RESET_TOKEN_KEY);
+        $request->session()->put(self::PASSWORD_RESET_EMAIL_KEY, $email);
+        $errorRedirect = $isResend
+            ? redirect()->route('portal.password.forgot.verify')
+            : back();
+
+        $user = $this->findPortalPasswordResetUser($email);
+
+        if (! $user) {
+            return redirect()->route('portal.password.forgot.verify')
+                ->with('status', 'Jika email terdaftar sebagai akun portal aktif, kode OTP reset password telah dikirim.');
+        }
+
+        $identifierHash = VerificationCode::generateHash($email);
+
+        if (VerificationCode::hasCooldown($identifierHash, VerificationCode::TYPE_PASSWORD_RESET)) {
+                        return $errorRedirect
+                ->withInput()
+                ->withErrors(['email' => 'Tunggu 2 menit sebelum meminta kode OTP baru.']);
+        }
+
+        if (VerificationCode::countRecentRequests($identifierHash, VerificationCode::TYPE_PASSWORD_RESET) >= 3) {
+                        return $errorRedirect
+                ->withInput()
+                ->withErrors(['email' => 'Terlalu banyak permintaan kode reset. Coba lagi dalam 15 menit.']);
+        }
+
+        $otp = VerificationCode::createForPasswordReset($email, $request->ip());
+
+        if (! $this->sendPasswordResetOtpViaEmail($email, $otp->code)) {
+                        return $errorRedirect
+                ->withInput()
+                ->withErrors(['email' => 'Gagal mengirim kode OTP reset password. Silakan coba lagi.']);
+        }
+
+        return redirect()->route('portal.password.forgot.verify')
+            ->with('status', $isResend
+                ? 'Kode OTP reset password baru telah dikirim ke email Anda.'
+                : 'Kode OTP reset password telah dikirim ke email Anda.');
+    }
+
+    public function showForgotPasswordVerify(Request $request)
+    {
+        return view('portal.auth.verify-password-reset-otp', [
+            'email' => old('email', $request->session()->get(self::PASSWORD_RESET_EMAIL_KEY)),
+        ]);
+    }
+
+    public function verifyPasswordResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|digits:6',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Email harus berupa alamat email yang valid.',
+            'code.required' => 'Kode OTP wajib diisi.',
+            'code.digits' => 'Kode OTP harus terdiri dari 6 digit.',
+        ]);
+
+        $email = strtolower(trim((string) $request->input('email')));
+        $code = (string) $request->input('code');
+
+        $request->session()->put(self::PASSWORD_RESET_EMAIL_KEY, $email);
+
+        $otp = VerificationCode::findLatestActiveForIdentifier($email, VerificationCode::TYPE_PASSWORD_RESET);
+
+        if (! $otp) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['code' => 'Kode OTP tidak valid atau sudah tidak aktif.']);
+        }
+
+        if ($otp->hasExceededMaxAttempts()) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['code' => 'Terlalu banyak percobaan salah. Silakan minta kode OTP baru.']);
+        }
+
+        if ($otp->isExpired()) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['code' => 'Kode OTP sudah kedaluwarsa. Silakan minta kode baru.']);
+        }
+
+        if (! $otp->verifyCode($code)) {
+            $otp->incrementAttempts();
+            $remainingAttempts = max($otp->fresh()->max_attempts - $otp->fresh()->attempts, 0);
+
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['code' => "Kode OTP tidak valid. Sisa percobaan: {$remainingAttempts}."]);
+        }
+
+        $token = $otp->markAsVerified();
+
+        $request->session()->put(self::PASSWORD_RESET_TOKEN_KEY, $token);
+
+        return redirect()->route('portal.password.forgot.reset')
+            ->with('status', 'OTP terverifikasi. Silakan buat password baru.');
+    }
+
+    public function showForgotPasswordReset(Request $request)
+    {
+        $otp = $this->getVerifiedPasswordResetOtp($request);
+
+        if (! $otp) {
+            return redirect()->route('portal.password.forgot.form')
+                ->withErrors(['email' => 'Sesi reset password tidak valid atau sudah kedaluwarsa.']);
+        }
+
+        return view('portal.auth.reset-password', [
+            'maskedEmail' => VerificationCode::maskEmail($otp->identifier),
+        ]);
+    }
+
+    public function resetForgotPassword(Request $request)
+    {
+        $request->validate([
+            'password' => PasswordStandards::rules(),
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
+        ]);
+
+        $otp = $this->getVerifiedPasswordResetOtp($request);
+
+        if (! $otp) {
+            return redirect()->route('portal.password.forgot.form')
+                ->withErrors(['email' => 'Sesi reset password tidak valid atau sudah kedaluwarsa.']);
+        }
+
+        $user = $this->findPortalPasswordResetUser($otp->identifier);
+
+        if (! $user) {
+            $this->clearPasswordResetSession($request);
+
+            return redirect()->route('portal.password.forgot.form')
+                ->withErrors(['email' => 'Akun portal untuk email ini tidak tersedia.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+            'password_changed_at' => now(),
+            'must_change_password' => false,
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+        ]);
+
+        $otp->consumeVerificationToken();
+        $this->clearPasswordResetSession($request);
+
+        return redirect()->route('portal.login')
+            ->with('status', 'Password berhasil direset. Silakan login menggunakan password baru.');
+    }
+
     /**
      * Show the forced password change form.
      */
@@ -243,5 +440,77 @@ class WebAuthController extends Controller
 
         return redirect()->route('portal.login')
             ->with('status', 'Anda telah berhasil keluar.');
+    }
+
+    private function findPortalPasswordResetUser(string $email): ?User
+    {
+        $user = User::where('email_hash', User::generateHash($email))->first();
+
+        if (! $user) {
+            return null;
+        }
+
+        if (! in_array($user->status, ['verified', 'active'], true)) {
+            return null;
+        }
+
+        if (in_array($user->role, ['admin', 'verifikator', 'petugas'], true)) {
+            return null;
+        }
+
+        if (! $user->wajibPajak || blank($user->email)) {
+            return null;
+        }
+
+        return $user;
+    }
+
+    private function getVerifiedPasswordResetOtp(Request $request): ?VerificationCode
+    {
+        $token = $request->session()->get(self::PASSWORD_RESET_TOKEN_KEY);
+
+        if (! $token) {
+            return null;
+        }
+
+        $otp = VerificationCode::findByVerificationToken($token);
+
+        if (! $otp || $otp->type !== VerificationCode::TYPE_PASSWORD_RESET) {
+            $this->clearPasswordResetSession($request);
+
+            return null;
+        }
+
+        return $otp;
+    }
+
+    private function clearPasswordResetSession(Request $request): void
+    {
+        $request->session()->forget([
+            self::PASSWORD_RESET_EMAIL_KEY,
+            self::PASSWORD_RESET_TOKEN_KEY,
+        ]);
+    }
+
+    private function sendPasswordResetOtpViaEmail(string $email, string $code): bool
+    {
+        try {
+            Mail::raw(
+                "Kode OTP reset password Borotax Anda: {$code}\n\nKode ini berlaku selama 3 menit.\nJangan bagikan kode ini kepada siapapun.",
+                function ($message) use ($email) {
+                    $message->to($email)
+                        ->subject('OTP Reset Password Borotax');
+                }
+            );
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::error('Failed to send password reset OTP email', [
+                'email' => $email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }

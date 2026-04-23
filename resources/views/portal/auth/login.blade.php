@@ -142,6 +142,16 @@
             cursor: pointer;
         }
 
+        .forgot-link {
+            color: var(--primary-light);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
         .form-checkbox-row input[type="checkbox"] {
             width: 16px;
             height: 16px;
@@ -276,6 +286,7 @@
                             <input type="checkbox" name="remember">
                             Ingat saya
                         </label>
+                        <a href="{{ route('portal.password.forgot.form') }}" class="forgot-link">Lupa password?</a>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-login">

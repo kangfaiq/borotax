@@ -37,6 +37,10 @@ Route::prefix('v1')->group(function () {
     // Auth Public
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('auth/forgot-password/request', [AuthController::class, 'requestPasswordResetOtp']);
+    Route::post('auth/forgot-password/resend-otp', [AuthController::class, 'resendPasswordResetOtp']);
+    Route::post('auth/forgot-password/verify-otp', [AuthController::class, 'verifyPasswordResetOtp']);
+    Route::post('auth/forgot-password/reset', [AuthController::class, 'resetForgotPassword']);
 
     // Master Data (Public)
     Route::get('master/provinces', [\App\Http\Controllers\Api\V1\MasterDataController::class, 'getProvinces']);

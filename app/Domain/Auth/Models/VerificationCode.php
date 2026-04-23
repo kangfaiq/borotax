@@ -9,6 +9,11 @@ class VerificationCode extends Model
 {
     use HasUuids;
 
+    public const TYPE_REGISTRATION = 'registration';
+    public const TYPE_PASSWORD_RESET = 'password_reset';
+    public const TYPE_LOGIN_OTP = 'login_otp';
+    public const TYPE_EMAIL_CHANGE = 'email_change';
+
     protected $fillable = [
         'identifier',
         'identifier_hash',
@@ -67,21 +72,65 @@ class VerificationCode extends Model
         string $email,
         ?string $ipAddress = null
     ): self {
+        return self::createForType($email, self::TYPE_REGISTRATION, $ipAddress);
+    }
+
+    /**
+     * Buat OTP baru untuk reset password via email.
+     */
+    public static function createForPasswordReset(
+        string $email,
+        ?string $ipAddress = null
+    ): self {
+        return self::createForType($email, self::TYPE_PASSWORD_RESET, $ipAddress);
+    }
+
+    /**
+     * Cari OTP aktif terbaru untuk identifier + type tertentu.
+     */
+    public static function findLatestActiveForIdentifier(string $identifier, string $type): ?self
+    {
+        return self::where('identifier_hash', self::generateHash($identifier))
+            ->where('type', $type)
+            ->where('is_used', false)
+            ->latest('created_at')
+            ->first();
+    }
+
+    protected static function createForType(
+        string $identifier,
+        string $type,
+        ?string $ipAddress = null
+    ): self {
+        $identifierHash = self::generateHash($identifier);
         $code = self::generateOtpCode();
 
+        self::where('identifier_hash', $identifierHash)
+            ->where('type', $type)
+            ->where('is_used', false)
+            ->update(['is_used' => true]);
+
         return self::create([
-            'identifier' => $email,
-            'identifier_hash' => self::generateHash($email),
+            'identifier' => $identifier,
+            'identifier_hash' => $identifierHash,
             'code' => $code,
             'code_hash' => self::generateHash($code),
-            'type' => 'registration',
+            'type' => $type,
             'attempts' => 0,
             'max_attempts' => 3,
-            'expires_at' => now()->addSeconds(30),
+            'expires_at' => now()->addSeconds(self::otpLifetimeInSeconds($type)),
             'is_used' => false,
             'sent_at' => now(),
             'ip_address' => $ipAddress,
         ]);
+    }
+
+    protected static function otpLifetimeInSeconds(string $type): int
+    {
+        return match ($type) {
+            self::TYPE_PASSWORD_RESET => 180,
+            default => 30,
+        };
     }
 
     /**
@@ -123,6 +172,14 @@ class VerificationCode extends Model
         ]);
 
         return $token;
+    }
+
+    public function consumeVerificationToken(): void
+    {
+        $this->update([
+            'verification_token' => null,
+            'token_expires_at' => now(),
+        ]);
     }
 
     /**

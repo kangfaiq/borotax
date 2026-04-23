@@ -9,6 +9,8 @@ use App\Domain\Auth\Support\SingleSessionManager;
 use App\Domain\Auth\Models\VerificationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends BaseController
@@ -83,7 +85,7 @@ class AuthController extends BaseController
         ]);
 
         // Invalidate verification token (one-time use)
-        $otpRecord->update(['verification_token' => null, 'token_expires_at' => null]);
+    $otpRecord->consumeVerificationToken();
 
         $singleSessionResult = SingleSessionManager::startApiSession($user, $request);
 
@@ -99,6 +101,155 @@ class AuthController extends BaseController
             'session_notice' => $singleSessionResult['replaced_session_notice'],
             'session_context' => $singleSessionResult['active_session'],
         ], 'Registrasi berhasil.');
+    }
+
+    public function requestPasswordResetOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 400);
+        }
+
+        $email = strtolower(trim((string) $request->input('email')));
+
+        return $this->sendPasswordResetOtpForApi($request, $email, false);
+    }
+
+    public function resendPasswordResetOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 400);
+        }
+
+        $email = strtolower(trim((string) $request->input('email')));
+
+        return $this->sendPasswordResetOtpForApi($request, $email, true);
+    }
+
+    private function sendPasswordResetOtpForApi(Request $request, string $email, bool $isResend)
+    {
+        $user = $this->findPortalPasswordResetUser($email);
+
+        if (! $user) {
+            return $this->sendResponse([
+                'target' => VerificationCode::maskEmail($email),
+                'expires_in' => 180,
+            ], 'Jika email terdaftar sebagai akun portal aktif, kode OTP reset password telah dikirim.');
+        }
+
+        $identifierHash = VerificationCode::generateHash($email);
+
+        if (VerificationCode::hasCooldown($identifierHash, VerificationCode::TYPE_PASSWORD_RESET)) {
+            return $this->sendError('Tunggu 2 menit sebelum meminta kode OTP baru.', [], 429);
+        }
+
+        if (VerificationCode::countRecentRequests($identifierHash, VerificationCode::TYPE_PASSWORD_RESET) >= 3) {
+            return $this->sendError('Terlalu banyak permintaan kode reset. Coba lagi dalam 15 menit.', [], 429);
+        }
+
+        $otp = VerificationCode::createForPasswordReset($email, $request->ip());
+
+        if (! $this->sendPasswordResetOtpViaEmail($email, $otp->code)) {
+            return $this->sendError('Gagal mengirim kode OTP reset password. Silakan coba lagi.', [], 500);
+        }
+
+        return $this->sendResponse([
+            'target' => VerificationCode::maskEmail($email),
+            'expires_in' => 180,
+        ], $isResend
+            ? 'Kode OTP reset password baru telah dikirim ke email Anda.'
+            : 'Kode OTP reset password telah dikirim ke email Anda.');
+    }
+
+    public function verifyPasswordResetOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'code' => 'required|digits:6',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 400);
+        }
+
+        $email = strtolower(trim((string) $request->input('email')));
+        $otp = VerificationCode::findLatestActiveForIdentifier($email, VerificationCode::TYPE_PASSWORD_RESET);
+
+        if (! $otp) {
+            return $this->sendError('Kode OTP tidak valid atau sudah tidak aktif.', [], 400);
+        }
+
+        if ($otp->hasExceededMaxAttempts()) {
+            return $this->sendError('Terlalu banyak percobaan salah. Silakan minta kode OTP baru.', [], 429);
+        }
+
+        if ($otp->isExpired()) {
+            return $this->sendError('Kode OTP sudah kedaluwarsa. Silakan minta kode baru.', [], 410);
+        }
+
+        if (! $otp->verifyCode((string) $request->input('code'))) {
+            $otp->incrementAttempts();
+            $remainingAttempts = max($otp->fresh()->max_attempts - $otp->fresh()->attempts, 0);
+
+            return $this->sendError(
+                "Kode OTP tidak valid. Sisa percobaan: {$remainingAttempts}.",
+                ['remaining_attempts' => $remainingAttempts],
+                400
+            );
+        }
+
+        $token = $otp->markAsVerified();
+
+        return $this->sendResponse([
+            'verification_token' => $token,
+            'valid_until' => $otp->fresh()->token_expires_at->toIso8601String(),
+        ], 'OTP terverifikasi. Silakan lanjutkan reset password.');
+    }
+
+    public function resetForgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'verification_token' => 'required|string',
+            'password' => PasswordStandards::rules(),
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 400);
+        }
+
+        $otp = VerificationCode::findByVerificationToken($request->verification_token);
+
+        if (! $otp || $otp->type !== VerificationCode::TYPE_PASSWORD_RESET) {
+            return $this->sendError('Token verifikasi tidak valid atau sudah kedaluwarsa.', [], 401);
+        }
+
+        $user = $this->findPortalPasswordResetUser($otp->identifier);
+
+        if (! $user) {
+            return $this->sendError('Akun portal untuk email ini tidak tersedia.', [], 404);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+            'password_changed_at' => now(),
+            'must_change_password' => false,
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+        ]);
+
+        $otp->consumeVerificationToken();
+
+        return $this->sendResponse([], 'Password berhasil direset. Silakan login menggunakan password baru.');
     }
 
     /**
@@ -333,5 +484,50 @@ class AuthController extends BaseController
         }
 
         return $this->sendResponse([], 'PIN terverifikasi.');
+    }
+
+    private function findPortalPasswordResetUser(string $email): ?User
+    {
+        $user = User::where('email_hash', User::generateHash($email))->first();
+
+        if (! $user) {
+            return null;
+        }
+
+        if (! in_array($user->status, ['verified', 'active'], true)) {
+            return null;
+        }
+
+        if (in_array($user->role, ['admin', 'verifikator', 'petugas'], true)) {
+            return null;
+        }
+
+        if (! $user->wajibPajak || blank($user->email)) {
+            return null;
+        }
+
+        return $user;
+    }
+
+    private function sendPasswordResetOtpViaEmail(string $email, string $code): bool
+    {
+        try {
+            Mail::raw(
+                "Kode OTP reset password Borotax Anda: {$code}\n\nKode ini berlaku selama 3 menit.\nJangan bagikan kode ini kepada siapapun.",
+                function ($message) use ($email) {
+                    $message->to($email)
+                        ->subject('OTP Reset Password Borotax');
+                }
+            );
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::error('Failed to send password reset OTP email', [
+                'email' => $email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }
