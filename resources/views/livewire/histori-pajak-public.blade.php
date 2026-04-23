@@ -75,16 +75,18 @@
 
                     @if(count($rows) > 0)
                         <div class="actions-bar">
-                            <a class="btn-action" href="{{ route('histori-pajak.export-excel', ['npwpd' => $npwpd, 'tahun' => $tahun]) }}">
-                                <i class="bi bi-file-earmark-excel"></i> Ekspor Excel
-                            </a>
+                            <button type="button" class="btn-action" id="copy-histori-pajak-button">
+                                <i class="bi bi-clipboard"></i> Salin untuk Excel
+                            </button>
                             <a class="btn-action" href="{{ route('histori-pajak.pdf', ['npwpd' => $npwpd, 'tahun' => $tahun]) }}" target="_blank" rel="noopener noreferrer">
                                 <i class="bi bi-printer"></i> Cetak PDF (F4 Landscape)
                             </a>
                         </div>
 
+                        <div id="histori-pajak-copy-feedback" class="alert-success" style="display:none;"></div>
+
                         <div class="table-wrapper">
-                            <table class="histori-table">
+                            <table class="histori-table" id="histori-pajak-table">
                                 <thead>
                                     <tr>
                                         <th>Jenis Dokumen</th>
@@ -114,9 +116,9 @@
                                             <td class="col-tanggal-terbit">{{ $row['tanggal_terbit'] ?? '-' }}</td>
                                             <td class="col-jatuh-tempo">{{ $row['jatuh_tempo'] ?? '-' }}</td>
                                             <td class="col-tanggal-bayar">{{ $row['tanggal_bayar'] ?? '-' }}</td>
-                                            <td class="text-right">Rp {{ number_format($row['jumlah_tagihan'], 0, ',', '.') }}</td>
-                                            <td class="text-right col-terbayar">Rp {{ number_format($row['jumlah_terbayar'], 0, ',', '.') }}</td>
-                                            <td class="text-right">Rp {{ number_format($row['jumlah_sisa'], 0, ',', '.') }}</td>
+                                            <td class="text-right" data-copy-value="{{ $row['jumlah_tagihan'] }}">Rp {{ number_format($row['jumlah_tagihan'], 0, ',', '.') }}</td>
+                                            <td class="text-right col-terbayar" data-copy-value="{{ $row['jumlah_terbayar'] }}">Rp {{ number_format($row['jumlah_terbayar'], 0, ',', '.') }}</td>
+                                            <td class="text-right" data-copy-value="{{ $row['jumlah_sisa'] }}">Rp {{ number_format($row['jumlah_sisa'], 0, ',', '.') }}</td>
                                             <td class="col-status">
                                                 @if(($row['status'] ?? '') === 'lewat_jatuh_tempo')
                                                     <span class="badge-overdue">{{ $row['status_label'] }}</span>

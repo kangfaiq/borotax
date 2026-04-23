@@ -46,6 +46,11 @@
         border-radius: var(--radius-md); border: 1px solid #fca5a5;
         font-size: 0.88rem; margin-top: 14px;
     }
+    .alert-success {
+        background: #dcfce7; color: #166534; padding: 12px 16px;
+        border-radius: var(--radius-md); border: 1px solid #86efac;
+        font-size: 0.88rem; margin-top: 14px;
+    }
     .summary-cards {
         display: grid; gap: 14px; margin: 28px 0 18px;
         grid-template-columns: repeat(4, 1fr);
@@ -67,6 +72,8 @@
         font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border);
         background: var(--bg-card); cursor: pointer; transition: all var(--transition);
         display: inline-flex; align-items: center; gap: 6px;
+        color: var(--text-primary); text-decoration: none; font-family: inherit;
+        line-height: 1.2; -webkit-appearance: none; appearance: none;
     }
     .btn-action:hover { background: var(--bg-surface-variant); }
     .table-wrapper { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border); }
@@ -104,6 +111,67 @@
     window.addEventListener('turnstile-reset', () => {
         if (window.turnstile) { try { window.turnstile.reset(); } catch (e) {} }
     });
+
+    function setHistoriPajakCopyFeedback(message, type) {
+        const feedback = document.getElementById('histori-pajak-copy-feedback');
+        if (!feedback) {
+            return;
+        }
+
+        feedback.textContent = message;
+        feedback.className = type === 'error' ? 'alert-error' : 'alert-success';
+        feedback.style.display = 'block';
+    }
+
+    async function copyHistoriPajakTable() {
+        const table = document.getElementById('histori-pajak-table');
+        if (!table) {
+            setHistoriPajakCopyFeedback('Tidak ada data untuk disalin.', 'error');
+            return;
+        }
+
+        const rows = Array.from(table.querySelectorAll('tr'));
+        const lines = rows.map((row) => Array.from(row.children)
+            .map((cell) => {
+                const copyValue = cell.getAttribute('data-copy-value');
+                const text = copyValue ?? cell.textContent ?? '';
+                return text.replace(/[\t\r\n]+/g, ' ').trim();
+            })
+            .join('\t'));
+
+        const content = lines.join('\n').trim();
+        if (!content) {
+            setHistoriPajakCopyFeedback('Tidak ada data untuk disalin.', 'error');
+            return;
+        }
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(content);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = content;
+                textarea.setAttribute('readonly', 'readonly');
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+
+            setHistoriPajakCopyFeedback('Data berhasil disalin. Silakan paste ke Excel.', 'success');
+        } catch (error) {
+            setHistoriPajakCopyFeedback('Clipboard browser menolak proses salin. Coba lagi atau izinkan akses clipboard.', 'error');
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        if (event.target.closest('#copy-histori-pajak-button')) {
+            copyHistoriPajakTable();
+        }
+    });
+
     function onTurnstileSuccess(token) {
         if (window.Livewire) { window.Livewire.dispatch('turnstile-success', { token }); }
     }

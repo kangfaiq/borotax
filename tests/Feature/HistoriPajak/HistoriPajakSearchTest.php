@@ -115,16 +115,28 @@ it('memuat daftar tahun dari tahun sekarang sampai 2019 desc', function () {
         ->and($tahun)->toContain($tahunSekarang);
 });
 
-it('mengembalikan file excel histori pajak', function () {
-    $npwpd = 'P100000000321';
-    createPublicHistoriWajibPajak($npwpd);
-
-    $this->get(route('histori-pajak.export-excel', [
-        'npwpd' => $npwpd,
-        'tahun' => (int) now()->year,
-    ]))
-        ->assertOk()
-        ->assertHeader('content-disposition', 'attachment; filename=Histori-Pajak-' . $npwpd . '-' . now()->year . '.xlsx');
+it('menampilkan aksi salin untuk excel saat ada hasil pencarian', function () {
+    Livewire::test(HistoriPajakPublic::class)
+        ->set('sudahCari', true)
+        ->set('rows', [[
+            'jenis_dokumen_label' => 'Billing',
+            'jenis_dokumen_color' => 'info',
+            'jenis_pajak' => 'PBJT',
+            'nopd' => '1',
+            'nama_objek_pajak' => 'Objek Tes',
+            'nomor' => '352210200000000001',
+            'masa' => 'Apr 2026',
+            'tanggal_terbit' => '01 Apr 2026',
+            'jatuh_tempo' => '10 Apr 2026',
+            'tanggal_bayar' => '09 Apr 2026 10:00',
+            'jumlah_tagihan' => 200000,
+            'jumlah_terbayar' => 200000,
+            'jumlah_sisa' => 0,
+            'status_label' => 'Lunas',
+            'status' => 'paid',
+        ]])
+        ->assertSee('Salin untuk Excel')
+        ->assertDontSee('Ekspor Excel');
 });
 
 it('menampilkan pdf histori pajak secara inline', function () {
