@@ -1473,6 +1473,18 @@
             </div>
             <div class="grid-3" style="max-width: 960px; margin: 0 auto;">
                 <div class="feature-card reveal">
+                    <div class="feature-icon-wrap teal"><i class="bi bi-receipt-cutoff"></i></div>
+                    <h3>Cek Billing</h3>
+                    <p>Periksa status tagihan dan pembayaran pajak daerah cukup dengan kode billing.</p>
+                    <a href="{{ url('/cek-billing') }}" class="feature-link">Cek Billing <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon-wrap blue"><i class="bi bi-clock-history"></i></div>
+                    <h3>Histori Pajak</h3>
+                    <p>Lihat riwayat dokumen pajak per wajib pajak untuk satu tahun pajak tanpa login.</p>
+                    <a href="{{ url('/histori-pajak') }}" class="feature-link">Lihat Histori <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="feature-card reveal">
                     <div class="feature-icon-wrap orange"><i class="bi bi-megaphone-fill"></i></div>
                     <h3>Sewa Reklame</h3>
                     <p>Lihat daftar titik reklame milik pemerintah yang tersedia untuk disewa.</p>
@@ -1490,7 +1502,7 @@
                     <p>Akses peraturan dan dasar hukum pajak daerah yang berlaku.</p>
                     <a href="{{ url('/produk-hukum') }}" class="feature-link">Lihat Dokumen <i class="bi bi-arrow-right"></i></a>
                 </div>
-                <div class="feature-card reveal" style="grid-column: 1 / 2;">
+                <div class="feature-card reveal">
                     <div class="feature-icon-wrap green"><i class="bi bi-droplet-fill"></i></div>
                     <h3>Kalkulator Air Tanah</h3>
                     <p>Simulasi perhitungan pajak air tanah berdasarkan volume pemakaian.</p>

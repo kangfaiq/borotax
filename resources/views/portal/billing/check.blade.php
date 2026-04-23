@@ -23,6 +23,59 @@
             min-height: 100vh;
         }
 
+        .billing-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .billing-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .billing-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .publik-nav {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .publik-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: var(--radius-full);
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .publik-nav a:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .publik-nav a.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
         .billing-box {
             background: var(--bg-card);
             border-radius: var(--radius-xl);
@@ -33,9 +86,9 @@
             box-shadow: var(--shadow-md);
         }
 
-        .billing-box h2 {
-            font-size: 1.4rem;
-            font-weight: 800;
+        .billing-box-title {
+            font-size: 1.1rem;
+            font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 6px;
         }
@@ -178,6 +231,10 @@
                 padding: 28px 20px;
             }
 
+            .billing-header h1 {
+                font-size: 1.7rem;
+            }
+
             .billing-input-group {
                 flex-direction: column;
             }
@@ -188,8 +245,16 @@
 @section('content')
     <div class="billing-page">
         <div class="container">
+            <div class="billing-header">
+                <span class="section-badge"><i class="bi bi-bank"></i> LAYANAN PUBLIK</span>
+                <h1>Cek Billing</h1>
+                <p>Periksa status tagihan dan pembayaran pajak daerah tanpa login melalui halaman layanan publik.</p>
+            </div>
+
+            @include('portal.publik._nav', ['active' => 'cek-billing'])
+
             <div class="billing-box">
-                <h2>🔍 Cek Status Billing</h2>
+                <div class="billing-box-title">Masukkan kode billing</div>
                 <p class="subtitle">Masukkan kode billing untuk melihat detail dan status pembayaran pajak. Halaman ini juga mendukung alias pembayaran STPD manual `sanksi_saja`.</p>
 
                 <form method="GET" action="{{ url('/cek-billing') }}">

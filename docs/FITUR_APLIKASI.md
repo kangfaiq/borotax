@@ -901,10 +901,10 @@ Wajib pajak dapat melihat dan mengunduh:
 
 | Halaman | URL | Deskripsi |
 |---------|-----|-----------|
-| Landing Page | `/` | Halaman utama |
+| Landing Page | `/` | Halaman utama dengan akses cepat ke layanan publik, termasuk Cek Billing dan Histori Pajak |
 | Login Portal | `/login` | Form login portal wajib pajak |
-| Cek Billing | `/cek-billing` | Cek status billing berdasarkan kode, tersedia dari menu `Layanan Publik` di landing page |
-| Histori Pajak | `/histori-pajak` | Cek seluruh dokumen pajak (Billing, STPD Manual, Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, SKRD Sewa Tanah) per NPWPD + tahun (dilindungi captcha Cloudflare Turnstile, rate limit 5x/15 menit per IP, audit log), menampilkan jatuh tempo, tanggal bayar, dan status efektif `Menunggu Pembayaran` / `Lewat Jatuh Tempo`, serta mendukung salin data tabular langsung dari tabel untuk paste ke Excel dan cetak PDF inline via DomPDF (Folio/F4 landscape), tersedia dari menu `Layanan Publik` di landing page |
+| Cek Billing | `/cek-billing` | Cek status billing berdasarkan kode, tersedia dari menu `Layanan Publik` di landing page dan memakai sub-navigation layanan publik yang sama dengan halaman publik lainnya |
+| Histori Pajak | `/histori-pajak` | Cek seluruh dokumen pajak (Billing, STPD Manual, Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, SKRD Sewa Tanah) per NPWPD + tahun (dilindungi captcha Cloudflare Turnstile, rate limit 5x/15 menit per IP, audit log), menampilkan jatuh tempo, tanggal bayar, dan status efektif `Menunggu Pembayaran` / `Lewat Jatuh Tempo`, serta mendukung salin data tabular langsung dari tabel untuk paste ke Excel dan cetak PDF inline via DomPDF (Folio/F4 landscape), tersedia dari menu `Layanan Publik` di landing page dan memakai sub-navigation layanan publik yang sama dengan halaman publik lainnya |
 | Produk Hukum | `/produk-hukum` | Daftar regulasi (Perda, Perbup, UU) |
 | Berita | `/berita` | Daftar berita (filter kategori, paginated) |
 | Detail Berita | `/berita/{slug}` | Detail berita + view counter |

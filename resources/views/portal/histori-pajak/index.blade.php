@@ -20,13 +20,24 @@
 @section('styles')
 <style>
     .histori-page { padding: 100px 0 60px; min-height: 100vh; }
+    .histori-header { text-align: center; margin-bottom: 48px; }
+    .histori-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary); }
+    .histori-header p { color: var(--text-secondary); font-size: 0.95rem; max-width: 720px; margin: 0 auto; }
+    .publik-nav { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+    .publik-nav a {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 18px; border-radius: var(--radius-full);
+        font-size: 0.82rem; font-weight: 600; border: 1px solid var(--border);
+        color: var(--text-secondary); background: var(--bg-card);
+        transition: all var(--transition); text-decoration: none;
+    }
+    .publik-nav a:hover { border-color: var(--primary); color: var(--primary); }
+    .publik-nav a.active { background: var(--primary); color: white; border-color: var(--primary); }
     .histori-box {
         background: var(--bg-card); border-radius: var(--radius-xl);
         border: 1px solid var(--border); padding: 36px;
         max-width: 1200px; margin: 0 auto; box-shadow: var(--shadow-md);
     }
-    .histori-box h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary); }
-    .histori-box .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.6; }
     .form-grid { display: grid; gap: 14px; grid-template-columns: 2fr 1fr; }
     @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
     .form-input, .form-select {
@@ -96,11 +107,24 @@
     .histori-table tr.row-overdue { background: #fff5f5; }
     .histori-table tr.row-overdue td { color: #b91c1c; }
     .histori-table .badge-overdue { display:inline-block; padding:2px 8px; border-radius:6px; background:#dc2626; color:#fff; font-weight:600; font-size:0.85em; }
+    @media (max-width: 640px) { .histori-header h1 { font-size: 1.7rem; } }
 </style>
 @endsection
 
 @section('content')
-    <livewire:histori-pajak-public />
+    <section class="histori-page">
+        <div class="container">
+            <div class="histori-header">
+                <span class="section-badge"><i class="bi bi-bank"></i> LAYANAN PUBLIK</span>
+                <h1>Histori Pajak</h1>
+                <p>Lihat riwayat dokumen pajak per wajib pajak untuk satu tahun pajak dengan navigasi layanan publik yang sama seperti halaman publik lainnya.</p>
+            </div>
+
+            @include('portal.publik._nav', ['active' => 'histori-pajak'])
+
+            <livewire:histori-pajak-public />
+        </div>
+    </section>
 @endsection
 
 @section('scripts')

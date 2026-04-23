@@ -1,12 +1,4 @@
-<div>
-    <section class="histori-page">
-        <div class="container">
-            <div class="histori-box">
-                <h2><i class="bi bi-clock-history"></i> Histori Pajak per Wajib Pajak</h2>
-                <p class="subtitle">
-                    Masukkan NPWPD dan tahun pajak untuk melihat seluruh dokumen pajak (Billing, STPD Manual,
-                    Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, SKRD Sewa Tanah) atas nama Wajib Pajak tersebut.
-                </p>
+<div class="histori-box">
 
                 <form wire:submit.prevent="cari" novalidate>
                     <div class="form-grid">
@@ -139,6 +131,3 @@
                     @endif
                 @endif
             </div>
-        </div>
-    </section>
-</div>
