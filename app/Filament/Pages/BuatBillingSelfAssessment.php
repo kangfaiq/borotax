@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use Exception;
 use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
+use App\Domain\Shared\Services\DecimalInputNormalizer;
 use App\Filament\Pages\Concerns\InteractsWithDuplicateBillingInfo;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TarifPajak;
@@ -65,9 +66,9 @@ class BuatBillingSelfAssessment extends Page implements HasForms
 
     // ── State: PPJ-specific fields ──────────────────────────────────────────
     public ?float  $ppjPokokPajak              = null;
-    public ?float  $ppjKapasitasKva            = null;
-    public ?float  $ppjTingkatPenggunaanPersen = null;
-    public ?float  $ppjJangkaWaktuJam          = null;
+    public string|float|null $ppjKapasitasKva = null;
+    public string|float|null $ppjTingkatPenggunaanPersen = null;
+    public string|float|null $ppjJangkaWaktuJam = null;
     public ?string $ppjHargaSatuanListrikId    = null;
     public ?float  $ppjHargaSatuan             = null;
     public array   $ppjHargaSatuanOptions      = [];
@@ -260,8 +261,17 @@ class BuatBillingSelfAssessment extends Page implements HasForms
         return ($this->selectedTaxObjectData['sub_jenis_kode'] ?? null) === 'PPJ_DIHASILKAN_SENDIRI';
     }
 
+    private function normalizePpjDecimalInputs(): void
+    {
+        $this->ppjKapasitasKva = DecimalInputNormalizer::toFloat($this->ppjKapasitasKva);
+        $this->ppjTingkatPenggunaanPersen = DecimalInputNormalizer::toFloat($this->ppjTingkatPenggunaanPersen);
+        $this->ppjJangkaWaktuJam = DecimalInputNormalizer::toFloat($this->ppjJangkaWaktuJam);
+    }
+
     public function terbitkanBilling(): void
     {
+        $this->normalizePpjDecimalInputs();
+
         $isPpjSumberLain = $this->isPpjSumberLainSelected();
         $isPpjNonPln = $this->isPpjNonPlnSelected();
 
@@ -400,6 +410,8 @@ class BuatBillingSelfAssessment extends Page implements HasForms
 
     private function doGenerateBilling(): void
     {
+        $this->normalizePpjDecimalInputs();
+
         if (!$this->wajibPajakData || !$this->selectedTaxObjectData) {
             Notification::make()->warning()->title('Data tidak lengkap')->send();
             return;

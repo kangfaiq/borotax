@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
@@ -71,18 +72,15 @@ class NpaAirTanahResource extends Resource
                         ->columnSpanFull()->schema([
                         Repeater::make('npa_tiers')
                             ->schema([
-                                TextInput::make('min_vol')
+                                FilamentDecimalInput::configure(TextInput::make('min_vol')
                                     ->label('Batas Bawah (m³)')
-                                    ->numeric()
-                                    ->required(),
-                                TextInput::make('max_vol')
+                                    ->required()),
+                                FilamentDecimalInput::configure(TextInput::make('max_vol')
                                     ->label('Batas Atas (m³)')
-                                    ->numeric()
-                                    ->helperText('Kosongkan untuk tak terhingga.'),
-                                TextInput::make('npa')
+                                    ->helperText('Kosongkan untuk tak terhingga.')),
+                                FilamentDecimalInput::configure(TextInput::make('npa')
                                     ->label('Tarif NPA (Rp)')
-                                    ->numeric()
-                                    ->required(),
+                                    ->required()),
                             ])
                             ->columns(1)
                             ->defaultItems(1)

@@ -271,14 +271,51 @@
                 jenisSarangItems: @js($jenisSarangItems),
                 selectedId: @entangle('selectedJenisSarangId').live,
                 volumeKg: @entangle('volumeKg').live,
+                volumeKgInput: '',
                 tarifPersen: {{ $tarifPersen }},
+                init() {
+                    if (this.volumeKg !== null && this.volumeKg !== undefined) this.volumeKgInput = String(this.volumeKg);
+                },
                 fmt(n)   { return n ? Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '0'; },
                 fmtRp(n) { return 'Rp ' + this.fmt(n); },
+                normalizeDecimalString(value) {
+                    if (value === null || value === undefined) return '';
+
+                    let normalized = String(value).trim().replace(/\s+/g, '');
+
+                    if (normalized === '') {
+                        return '';
+                    }
+
+                    const hasComma = normalized.includes(',');
+                    const hasDot = normalized.includes('.');
+
+                    if (hasComma && hasDot) {
+                        if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+                            normalized = normalized.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            normalized = normalized.replace(/,/g, '');
+                        }
+                    } else if (hasComma) {
+                        normalized = normalized.replace(',', '.');
+                    }
+
+                    return normalized;
+                },
+                parseDecimal(value) {
+                    const parsed = Number.parseFloat(this.normalizeDecimalString(value));
+
+                    return Number.isFinite(parsed) ? parsed : null;
+                },
+                onDecimalInput(property, inputProperty, event) {
+                    this[inputProperty] = event.target.value;
+                    this[property] = this.parseDecimal(event.target.value);
+                },
                 get selectedItem() {
                     return this.jenisSarangItems.find(i => i.id === this.selectedId) || null;
                 },
                 get hpu() { return this.selectedItem ? parseFloat(this.selectedItem.harga_patokan) : 0; },
-                get vol() { return parseFloat(this.volumeKg) || 0; },
+                get vol() { return this.parseDecimal(this.volumeKgInput) || 0; },
                 get dpp() { return this.hpu * this.vol; },
                 get pokokPajak() { return Math.round(this.dpp * this.tarifPersen / 100); },
                 get totalBilling() { return this.pokokPajak; },
@@ -334,9 +371,10 @@
                 {{-- Volume --}}
                 <div class="mb-4">
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Volume (kg) <span class="text-red-500">*</span></label>
-                    <input type="number"
-                           x-model="volumeKg"
-                           step="0.01" min="0.01" max="999999.99"
+                      <input type="text"
+                          x-model="volumeKgInput"
+                          @input="onDecimalInput('volumeKg', 'volumeKgInput', $event)"
+                          inputmode="decimal"
                            placeholder="0.00"
                            class="sw-ring block w-full py-2 px-3 border border-slate-200 dark:border-slate-700
                                   rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white

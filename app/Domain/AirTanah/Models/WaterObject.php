@@ -71,7 +71,7 @@ class WaterObject extends Model
         'is_opd' => 'boolean',
         'uses_meter' => 'boolean',
         'nopd' => 'integer',
-        'last_meter_reading' => 'integer',
+        'last_meter_reading' => 'decimal:2',
         'tarif_persen' => 'decimal:2',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',

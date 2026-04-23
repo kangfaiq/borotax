@@ -7,6 +7,7 @@ use App\Domain\Tax\Models\TaxAssessmentLetter;
 use App\Domain\Tax\Services\TaxAssessmentLetterService;
 use App\Enums\TaxAssessmentLetterType;
 use App\Enums\TaxAssessmentReason;
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use App\Filament\Resources\TaxAssessmentLetterResource\Pages;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -24,9 +25,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxAssessmentLetterResource extends Resource
 {
@@ -147,12 +145,12 @@ class TaxAssessmentLetterResource extends Resource
                             ->label('Tanggal Terbit')
                             ->required()
                             ->default(now()),
-                        TextInput::make('base_amount')
+                        FilamentDecimalInput::configure(TextInput::make('base_amount')
                             ->label('Nominal Dasar')
-                            ->numeric()
                             ->required(fn (Get $get) => $get('letter_type') !== TaxAssessmentLetterType::SKPDN->value)
                             ->default(0)
-                            ->prefix('Rp'),
+                            ->step(0.01)
+                            ->prefix('Rp')),
                         TextInput::make('interest_months')
                             ->label('Bulan Bunga')
                             ->numeric()
@@ -310,11 +308,11 @@ class TaxAssessmentLetterResource extends Resource
                         TextInput::make('target_billing_code')
                             ->label('Billing Tujuan')
                             ->required(),
-                        TextInput::make('allocation_amount')
+                        FilamentDecimalInput::configure(TextInput::make('allocation_amount')
                             ->label('Nominal Kompensasi')
-                            ->numeric()
                             ->required()
-                            ->prefix('Rp'),
+                            ->step(0.01)
+                            ->prefix('Rp')),
                     ])
                     ->action(function (TaxAssessmentLetter $record, array $data): void {
                         try {

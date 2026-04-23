@@ -45,9 +45,9 @@ class MeterReport extends Model
     ];
 
     protected $casts = [
-        'meter_reading_before' => 'integer',
-        'meter_reading_after' => 'integer',
-        'usage' => 'integer',
+        'meter_reading_before' => 'decimal:2',
+        'meter_reading_after' => 'decimal:2',
+        'usage' => 'decimal:2',
         'location_verified' => 'boolean',
         'reported_at' => 'datetime',
     ];
@@ -62,7 +62,7 @@ class MeterReport extends Model
         static::saving(function ($model) {
             // Auto calculate usage
             if (isset($model->meter_reading_before) && isset($model->meter_reading_after)) {
-                $model->usage = $model->meter_reading_after - $model->meter_reading_before;
+                $model->usage = round((float) $model->meter_reading_after - (float) $model->meter_reading_before, 2);
             }
         });
     }

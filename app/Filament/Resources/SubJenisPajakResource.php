@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
@@ -82,13 +83,12 @@ class SubJenisPajakResource extends Resource
                 Section::make('Konfigurasi Tarif')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('tarif_persen')
+                        FilamentDecimalInput::configure(TextInput::make('tarif_persen')
                             ->required()
-                            ->numeric()
                             ->suffix('%')
                             ->minValue(0)
                             ->maxValue(100)
-                            ->default(10),
+                            ->default(10)),
                         Toggle::make('is_insidentil')
                             ->label('Insidentil')
                             ->helperText('Aktifkan jika sub jenis pajak ini bersifat insidentil')

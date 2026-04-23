@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -79,13 +80,12 @@ class JenisPajakResource extends Resource
                 Section::make('Konfigurasi Pajak')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('tarif_default')
+                        FilamentDecimalInput::configure(TextInput::make('tarif_default')
                             ->required()
-                            ->numeric()
                             ->suffix('%')
                             ->minValue(0)
                             ->maxValue(100)
-                            ->default(10),
+                            ->default(10)),
                         Select::make('tipe_assessment')
                             ->required()
                             ->options([
@@ -93,14 +93,13 @@ class JenisPajakResource extends Resource
                                 'official_assessment' => 'Official Assessment',
                             ])
                             ->default('self_assessment'),
-                        TextInput::make('opsen_persen')
+                        FilamentDecimalInput::configure(TextInput::make('opsen_persen')
                             ->label('Tarif Opsen (%)')
-                            ->numeric()
                             ->suffix('%')
                             ->minValue(0)
                             ->maxValue(100)
                             ->placeholder('25')
-                            ->helperText('Kosongkan jika tidak ada opsen'),
+                            ->helperText('Kosongkan jika tidak ada opsen')),
                         TextInput::make('urutan')
                             ->numeric()
                             ->default(0),

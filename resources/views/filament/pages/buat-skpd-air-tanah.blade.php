@@ -882,21 +882,42 @@ document.addEventListener('alpine:init', () => {
             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             return parts.length > 1 ? parts[0] + ',' + parts[1] : parts[0];
         },
+        normalizeInput(value) {
+            if (!value) return '';
+
+            let normalized = String(value).replace(/[^0-9.,]/g, '');
+            let lastComma = normalized.lastIndexOf(',');
+            let lastDot = normalized.lastIndexOf('.');
+            let separatorIndex = Math.max(lastComma, lastDot);
+
+            let integerPart = separatorIndex >= 0
+                ? normalized.slice(0, separatorIndex)
+                : normalized;
+            let decimalPart = separatorIndex >= 0
+                ? normalized.slice(separatorIndex + 1)
+                : '';
+
+            integerPart = integerPart.replace(/[.,]/g, '');
+            decimalPart = decimalPart.replace(/[.,]/g, '').substring(0, 2);
+
+            if (integerPart === '' && decimalPart === '') {
+                return '';
+            }
+
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            return decimalPart !== '' ? `${integerPart},${decimalPart}` : integerPart;
+        },
         parse(s) {
             if (!s) return null;
-            let n = parseFloat(s.replace(/\./g, '').replace(',', '.'));
+            let normalized = this.normalizeInput(s);
+            if (!normalized) return null;
+
+            let n = parseFloat(normalized.replace(/\./g, '').replace(',', '.'));
             return isNaN(n) ? null : n;
         },
         onInput(e) {
-            let v = e.target.value.replace(/[^0-9,]/g, '');
-            let parts = v.split(',');
-            if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join('');
-            if (parts.length > 1 && parts[1].length > 2) v = parts[0] + ',' + parts[1].substring(0, 2);
-            // live format thousands on integer part
-            parts = v.split(',');
-            let intPart = parts[0].replace(/\./g, '');
-            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            v = parts.length > 1 ? intPart + ',' + parts[1] : intPart;
+            let v = this.normalizeInput(e.target.value);
             this.display = v;
             // preserve cursor position
             let pos = e.target.selectionStart;

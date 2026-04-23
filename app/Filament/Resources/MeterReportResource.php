@@ -19,7 +19,7 @@ use App\Domain\AirTanah\Models\SkpdAirTanah;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
 use App\Domain\Tax\Models\TarifPajak;
-use App\Domain\Tax\Models\TaxObject;
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -27,8 +27,6 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use App\Domain\Shared\Services\NotificationService;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -154,37 +152,42 @@ class MeterReportResource extends Resource
                                 ->label('Detail ABT')
                                 ->options(SubJenisPajak::query()->pluck('nama', 'id')) // Harusnya filter kode 4.1.01.08
                                 ->required(),
-                            TextInput::make('meter_reading_before')
+                            FilamentDecimalInput::configure(TextInput::make('meter_reading_before')
                                 ->label('Meter Awal')
-                                ->numeric()
+                                ->step(0.01)
                                 ->default($record->meter_reading_before)
-                                ->required(),
-                            TextInput::make('meter_reading_after')
+                                ->required()),
+                            FilamentDecimalInput::configure(TextInput::make('meter_reading_after')
                                 ->label('Meter Akhir')
-                                ->numeric()
+                                ->step(0.01)
                                 ->default($record->meter_reading_after)
-                                ->required(),
-                            TextInput::make('tarif_per_m3')
+                                ->required()),
+                            FilamentDecimalInput::configure(TextInput::make('tarif_per_m3')
                                 ->label('NPA (Rp/m3)')
-                                ->numeric()
+                                ->step(0.01)
                                 ->default($defaultNpa)
-                                ->required(),
-                            TextInput::make('tarif_persen')
+                                ->required()),
+                            FilamentDecimalInput::configure(TextInput::make('tarif_persen')
                                 ->label('Tarif Pajak (%)')
-                                ->numeric()
+                                ->step(0.01)
                                 ->default($defaultTarif)
-                                ->required(),
+                                ->required()),
                         ];
                     })
                     ->action(function (MeterReport $record, array $data): void {
                         // Recalculate usage
-                        $usage = $data['meter_reading_after'] - $data['meter_reading_before'];
+                        $meterReadingBefore = (float) $data['meter_reading_before'];
+                        $meterReadingAfter = (float) $data['meter_reading_after'];
+                        $tarifPerM3 = (float) $data['tarif_per_m3'];
+                        $tarifPersen = (float) $data['tarif_persen'];
+
+                        $usage = round($meterReadingAfter - $meterReadingBefore, 2);
                         if ($usage < 0)
-                            $usage = 0;
+                            $usage = 0.0;
 
                         // Hitung Pajak
-                        $dasar = $usage * $data['tarif_per_m3'];
-                        $pajak = $dasar * ($data['tarif_persen'] / 100);
+                        $dasar = $usage * $tarifPerM3;
+                        $pajak = $dasar * ($tarifPersen / 100);
 
                         // Collect dasar hukum for SKPD
                         $dasarHukumParts = [];
@@ -217,12 +220,15 @@ class MeterReportResource extends Resource
                             'alamat_wajib_pajak' => $record->user->alamat ?? '-',
                             'nama_objek' => $record->waterObject->name,
                             'alamat_objek' => $record->waterObject->address,
-                            'meter_reading_before' => $data['meter_reading_before'],
-                            'meter_reading_after' => $data['meter_reading_after'],
+                            'nopd' => (string) ($record->waterObject->nopd ?? ''),
+                            'kecamatan' => $record->waterObject->kecamatan,
+                            'kelurahan' => $record->waterObject->kelurahan,
+                            'meter_reading_before' => $meterReadingBefore,
+                            'meter_reading_after' => $meterReadingAfter,
                             'usage' => $usage,
                             'periode_bulan' => now()->format('Y-m'),
-                            'tarif_per_m3' => $data['tarif_per_m3'],
-                            'tarif_persen' => $data['tarif_persen'],
+                            'tarif_per_m3' => $tarifPerM3,
+                            'tarif_persen' => $tarifPersen,
                             'dasar_pengenaan' => $dasar,
                             'jumlah_pajak' => $pajak,
                             'status' => 'draft',
@@ -237,8 +243,8 @@ class MeterReportResource extends Resource
                             'status' => 'processing',
                             'skpd_id' => $skpd->id,
                             // Update meter reading if changed
-                            'meter_reading_before' => $data['meter_reading_before'],
-                            'meter_reading_after' => $data['meter_reading_after'],
+                            'meter_reading_before' => $meterReadingBefore,
+                            'meter_reading_after' => $meterReadingAfter,
                             'usage' => $usage,
                         ]);
 

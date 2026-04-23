@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Domain\Reklame\Models\ReklameNilaiStrategis;
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use App\Filament\Resources\ReklameNilaiStrategisResource\Pages\CreateReklameNilaiStrategis;
 use App\Filament\Resources\ReklameNilaiStrategisResource\Pages\EditReklameNilaiStrategis;
 use App\Filament\Resources\ReklameNilaiStrategisResource\Pages\ListReklameNilaiStrategis;
@@ -68,31 +69,27 @@ class ReklameNilaiStrategisResource extends Resource
                             'C' => 'C',
                         ])
                         ->required(),
-                    TextInput::make('luas_min')
+                    FilamentDecimalInput::configure(TextInput::make('luas_min')
                         ->label('Luas Minimum (m2)')
-                        ->numeric()
                         ->required()
                         ->minValue(0)
-                        ->step(0.01),
-                    TextInput::make('luas_max')
+                        ->step(0.01)),
+                    FilamentDecimalInput::configure(TextInput::make('luas_max')
                         ->label('Luas Maksimum (m2)')
-                        ->numeric()
                         ->minValue(0)
                         ->step(0.01)
                         ->nullable()
-                        ->helperText('Kosongkan jika batas atas tidak terbatas.'),
-                    TextInput::make('tarif_per_tahun')
+                        ->helperText('Kosongkan jika batas atas tidak terbatas.')),
+                    FilamentDecimalInput::configure(TextInput::make('tarif_per_tahun')
                         ->label('Tarif per Tahun')
-                        ->numeric()
                         ->required()
                         ->minValue(0)
-                        ->step(0.01),
-                    TextInput::make('tarif_per_bulan')
+                        ->step(0.01)),
+                    FilamentDecimalInput::configure(TextInput::make('tarif_per_bulan')
                         ->label('Tarif per Bulan')
-                        ->numeric()
                         ->required()
                         ->minValue(0)
-                        ->step(0.01),
+                        ->step(0.01)),
                     DatePicker::make('berlaku_mulai')
                         ->required()
                         ->default('2026-01-01'),

@@ -807,8 +807,8 @@
                     <div class="form-group">
                         <label>Volume <span class="req">*</span></label>
                         <div class="input-prefix">
-                            <input type="number" class="form-control" id="inputVolumeKg" name="volume_kg" placeholder="0.00"
-                                step="0.01" min="0.01" max="999999.99" value="{{ old('volume_kg') }}" autocomplete="off">
+                            <input type="text" class="form-control" id="inputVolumeKg" name="volume_kg" placeholder="0.00"
+                                inputmode="decimal" value="{{ old('volume_kg') }}" autocomplete="off">
                             <span class="prefix" style="border-left:none; border-right:1.5px solid var(--border); border-radius:0 var(--radius-md) var(--radius-md) 0;">kg</span>
                         </div>
                         @error('volume_kg')
@@ -899,8 +899,8 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Kapasitas Tersedia (kVA) <span class="req">*</span></label>
-                                    <input type="number" class="form-control" id="inputKapasitasKva"
-                                        name="kapasitas_kva" min="0.01" step="0.01"
+                                    <input type="text" class="form-control" id="inputKapasitasKva"
+                                        name="kapasitas_kva" inputmode="decimal"
                                         value="{{ old('kapasitas_kva') }}" placeholder="0.00" autocomplete="off">
                                     @error('kapasitas_kva')
                                         <div class="form-error">{{ $message }}</div>
@@ -908,8 +908,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Tingkat Penggunaan (%) <span class="req">*</span></label>
-                                    <input type="number" class="form-control" id="inputTingkatPenggunaan"
-                                        name="tingkat_penggunaan_persen" min="0.01" max="100" step="0.01"
+                                    <input type="text" class="form-control" id="inputTingkatPenggunaan"
+                                        name="tingkat_penggunaan_persen" inputmode="decimal"
                                         value="{{ old('tingkat_penggunaan_persen') }}" placeholder="0.00" autocomplete="off">
                                     @error('tingkat_penggunaan_persen')
                                         <div class="form-error">{{ $message }}</div>
@@ -920,8 +920,8 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Jangka Waktu Pemakaian (jam) <span class="req">*</span></label>
-                                    <input type="number" class="form-control" id="inputJangkaWaktuJam"
-                                        name="jangka_waktu_jam" min="0.01" step="0.01"
+                                    <input type="text" class="form-control" id="inputJangkaWaktuJam"
+                                        name="jangka_waktu_jam" inputmode="decimal"
                                         value="{{ old('jangka_waktu_jam') }}" placeholder="0.00" autocomplete="off">
                                     @error('jangka_waktu_jam')
                                         <div class="form-error">{{ $message }}</div>
@@ -991,12 +991,10 @@
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="margin-bottom:4px;">Volume (m3)</label>
-                                    <input type="number" class="form-control mineral-volume-input"
+                                    <input type="text" class="form-control mineral-volume-input"
                                         name="volumes[{{ $item->id }}]"
                                         value="{{ old('volumes.' . $item->id) }}"
-                                        min="0"
-                                        step="0.01"
-                                        max="999999.99"
+                                        inputmode="decimal"
                                         data-harga-patokan="{{ (float) $item->harga_patokan }}"
                                         placeholder="0.00"
                                         autocomplete="off">
@@ -1244,6 +1242,35 @@
             function formatThousands(val) {
                 val = val.replace(/\D/g, '');
                 return val.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function normalizeDecimalString(value) {
+                let normalized = String(value ?? '').trim().replace(/\s+/g, '');
+
+                if (!normalized) {
+                    return '';
+                }
+
+                const hasComma = normalized.includes(',');
+                const hasDot = normalized.includes('.');
+
+                if (hasComma && hasDot) {
+                    if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+                        normalized = normalized.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        normalized = normalized.replace(/,/g, '');
+                    }
+                } else if (hasComma) {
+                    normalized = normalized.replace(',', '.');
+                }
+
+                return normalized;
+            }
+
+            function parseDecimalInput(value) {
+                const parsed = Number.parseFloat(normalizeDecimalString(value));
+
+                return Number.isFinite(parsed) ? parsed : 0;
             }
 
             function formatVolume(num) {
@@ -1677,14 +1704,14 @@
                 }
 
                 if (isPpjNonPlnSelected()) {
-                    const kapasitasKva = parseFloat(inputKapasitasKva?.value) || 0;
-                    const tingkatPenggunaan = parseFloat(inputTingkatPenggunaan?.value) || 0;
-                    const jangkaWaktuJam = parseFloat(inputJangkaWaktuJam?.value) || 0;
+                    const kapasitasKva = parseDecimalInput(inputKapasitasKva?.value);
+                    const tingkatPenggunaan = parseDecimalInput(inputTingkatPenggunaan?.value);
+                    const jangkaWaktuJam = parseDecimalInput(inputJangkaWaktuJam?.value);
                     const hargaSatuanOption = inputHargaSatuanListrik
                         ? inputHargaSatuanListrik.options[inputHargaSatuanListrik.selectedIndex]
                         : null;
                     const hargaSatuan = hargaSatuanOption && hargaSatuanOption.dataset.hargaSatuan
-                        ? parseFloat(hargaSatuanOption.dataset.hargaSatuan)
+                        ? parseDecimalInput(hargaSatuanOption.dataset.hargaSatuan)
                         : 0;
                     const njtl = Math.round(kapasitasKva * (tingkatPenggunaan / 100) * jangkaWaktuJam * hargaSatuan);
                     const pokokPajak = Math.round(njtl * (tarif / 100));
@@ -1709,8 +1736,8 @@
                 let totalDpp = 0;
 
                 mineralInputs.forEach(function(input) {
-                    const volume = parseFloat(input.value) || 0;
-                    const hargaPatokan = parseFloat(input.dataset.hargaPatokan) || 0;
+                    const volume = parseDecimalInput(input.value);
+                    const hargaPatokan = parseDecimalInput(input.dataset.hargaPatokan);
 
                     if (volume <= 0) {
                         return;
@@ -1742,8 +1769,8 @@
             function recalcSarangWalet() {
                 if (!isSarangWalet || !jenisSarangSelect || !volumeInput) return;
                 var opt = jenisSarangSelect.options[jenisSarangSelect.selectedIndex];
-                var hpu = opt && opt.dataset.hpu ? parseFloat(opt.dataset.hpu) : 0;
-                var vol = parseFloat(volumeInput.value) || 0;
+                var hpu = opt && opt.dataset.hpu ? parseDecimalInput(opt.dataset.hpu) : 0;
+                var vol = parseDecimalInput(volumeInput.value);
                 var tarif = getSelectedTarif();
                 var dpp = hpu * vol;
                 var pajak = dpp * (tarif / 100);

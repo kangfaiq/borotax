@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -64,7 +65,7 @@ class DestinationResource extends Resource
                             ->required()
                             ->maxLength(100)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', \Illuminate\Support\str()->slug($state ?? ''))),
+                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', str()->slug($state ?? ''))),
                         TextInput::make('slug')
                             ->label('Slug')
                             ->required()
@@ -106,13 +107,12 @@ class DestinationResource extends Resource
                             })
                             ->helperText('Gambar otomatis dikompres ke format WebP (maks 1 MB)')
                             ->required(),
-                        TextInput::make('rating')
+                        FilamentDecimalInput::configure(TextInput::make('rating')
                             ->label('Rating')
-                            ->numeric()
                             ->minValue(0)
                             ->maxValue(5)
                             ->step(0.1)
-                            ->default(0),
+                            ->default(0)),
                         TextInput::make('review_count')
                             ->label('Jumlah Review')
                             ->numeric()
@@ -136,14 +136,12 @@ class DestinationResource extends Resource
                             ->label('Website')
                             ->url()
                             ->maxLength(255),
-                        TextInput::make('latitude')
+                        FilamentDecimalInput::configure(TextInput::make('latitude')
                             ->label('Latitude')
-                            ->numeric()
-                            ->required(),
-                        TextInput::make('longitude')
+                            ->required()),
+                        FilamentDecimalInput::configure(TextInput::make('longitude')
                             ->label('Longitude')
-                            ->numeric()
-                            ->required(),
+                            ->required()),
                     ])->columns(4),
 
                 Section::make('Fasilitas')

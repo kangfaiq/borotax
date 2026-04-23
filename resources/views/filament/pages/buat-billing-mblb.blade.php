@@ -290,30 +290,41 @@
                     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                     return parts.length > 1 ? parts[0] + ',' + parts[1] : parts[0];
                 },
+                normalizeDecimalString(value) {
+                    if (value === null || value === undefined) return '';
+
+                    let normalized = String(value).trim().replace(/\s+/g, '');
+
+                    if (normalized === '') {
+                        return '';
+                    }
+
+                    const hasComma = normalized.includes(',');
+                    const hasDot = normalized.includes('.');
+
+                    if (hasComma && hasDot) {
+                        if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+                            normalized = normalized.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            normalized = normalized.replace(/,/g, '');
+                        }
+                    } else if (hasComma) {
+                        normalized = normalized.replace(',', '.');
+                    }
+
+                    return normalized;
+                },
                 parseVol(str) {
-                    if (!str) return 0;
-                    let clean = str.replace(/\./g, '').replace(',', '.');
-                    return parseFloat(clean) || 0;
+                    const parsed = Number.parseFloat(this.normalizeDecimalString(str));
+
+                    return Number.isFinite(parsed) ? parsed : 0;
                 },
                 onVolInput(idx, event) {
                     let val = event.target.value;
-                    // hanya angka, titik (ribuan), dan koma (desimal)
                     val = val.replace(/[^0-9.,]/g, '');
-                    // max 1 koma
-                    let parts = val.split(',');
-                    if (parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
-                    // max 2 digit setelah koma
-                    if (parts.length === 2 && parts[1].length > 2) {
-                        val = parts[0] + ',' + parts[1].substring(0, 2);
-                    }
-                    // hapus titik lama, parse angka, format ulang ribuan
-                    let intPart = val.split(',')[0].replace(/\./g, '');
-                    let decPart = val.split(',')[1];
-                    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                    val = decPart !== undefined ? intPart + ',' + decPart : intPart;
+
                     event.target.value = val;
                     this.volDisplays[idx] = val;
-                    // simpan nilai numerik ke model
                     this.minerals[idx].volume = this.parseVol(val);
                 },
                 onVolFocus(idx, event) {

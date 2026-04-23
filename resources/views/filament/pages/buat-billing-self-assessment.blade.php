@@ -303,15 +303,52 @@
                 ppjPokokPajak: @entangle('ppjPokokPajak').live,
                 ppjPokokDisplay: '',
                 ppjKapasitasKva: @entangle('ppjKapasitasKva').live,
+                ppjKapasitasKvaInput: '',
                 ppjTingkatPersen: @entangle('ppjTingkatPenggunaanPersen').live,
+                ppjTingkatPersenInput: '',
                 ppjJangkaWaktuJam: @entangle('ppjJangkaWaktuJam').live,
+                ppjJangkaWaktuJamInput: '',
                 ppjHargaSatuan: @entangle('ppjHargaSatuan').live,
                 init() {
                     if (this.rawValue) this.displayValue = this.fmt(this.rawValue);
                     if (this.ppjPokokPajak) this.ppjPokokDisplay = this.fmt(this.ppjPokokPajak);
+                    if (this.ppjKapasitasKva !== null && this.ppjKapasitasKva !== undefined) this.ppjKapasitasKvaInput = String(this.ppjKapasitasKva);
+                    if (this.ppjTingkatPersen !== null && this.ppjTingkatPersen !== undefined) this.ppjTingkatPersenInput = String(this.ppjTingkatPersen);
+                    if (this.ppjJangkaWaktuJam !== null && this.ppjJangkaWaktuJam !== undefined) this.ppjJangkaWaktuJamInput = String(this.ppjJangkaWaktuJam);
                 },
                 fmt(n)   { return n ? Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.') : ''; },
                 fmtRp(n) { return 'Rp ' + (n ? Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '0'); },
+                normalizeDecimalString(value) {
+                    let normalized = String(value ?? '').trim().replace(/\s+/g, '');
+
+                    if (!normalized) {
+                        return '';
+                    }
+
+                    const hasComma = normalized.includes(',');
+                    const hasDot = normalized.includes('.');
+
+                    if (hasComma && hasDot) {
+                        if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+                            normalized = normalized.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            normalized = normalized.replace(/,/g, '');
+                        }
+                    } else if (hasComma) {
+                        normalized = normalized.replace(',', '.');
+                    }
+
+                    return normalized;
+                },
+                parseDecimal(value) {
+                    const parsed = Number.parseFloat(this.normalizeDecimalString(value));
+
+                    return Number.isFinite(parsed) ? parsed : null;
+                },
+                onDecimalInput(property, inputProperty, event) {
+                    this[inputProperty] = event.target.value;
+                    this[property] = this.parseDecimal(event.target.value);
+                },
                 onInput(e) {
                     let v = e.target.value.replace(/\./g,'');
                     if (!v || isNaN(v)) { this.rawValue = null; this.displayValue = ''; return; }
@@ -413,9 +450,10 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Kapasitas (kVA)</label>
-                            <input type="number"
-                                   x-model.number="ppjKapasitasKva"
-                                   step="0.01" min="0"
+                            <input type="text"
+                                x-model="ppjKapasitasKvaInput"
+                                @input="onDecimalInput('ppjKapasitasKva', 'ppjKapasitasKvaInput', $event)"
+                                inputmode="decimal"
                                    placeholder="0"
                                    class="sa-ring block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700
                                           rounded-lg bg-white dark:bg-slate-800 text-sm text-right
@@ -423,9 +461,10 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Tingkat Penggunaan (%)</label>
-                            <input type="number"
-                                   x-model.number="ppjTingkatPersen"
-                                   step="0.01" min="0" max="100"
+                            <input type="text"
+                                x-model="ppjTingkatPersenInput"
+                                @input="onDecimalInput('ppjTingkatPersen', 'ppjTingkatPersenInput', $event)"
+                                inputmode="decimal"
                                    placeholder="0"
                                    class="sa-ring block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700
                                           rounded-lg bg-white dark:bg-slate-800 text-sm text-right
@@ -435,9 +474,10 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Jangka Waktu (Jam)</label>
-                            <input type="number"
-                                   x-model.number="ppjJangkaWaktuJam"
-                                   step="0.01" min="0"
+                            <input type="text"
+                                x-model="ppjJangkaWaktuJamInput"
+                                @input="onDecimalInput('ppjJangkaWaktuJam', 'ppjJangkaWaktuJamInput', $event)"
+                                inputmode="decimal"
                                    placeholder="0"
                                    class="sa-ring block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700
                                           rounded-lg bg-white dark:bg-slate-800 text-sm text-right
@@ -450,7 +490,7 @@
                                            rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white">
                                 <option value="">-- Pilih --</option>
                                 @foreach($ppjHargaSatuanOptions as $opt)
-                                    <option value="{{ $opt['id'] }}">{{ $opt['nama'] }} - Rp {{ number_format($opt['harga'], 0, ',', '.') }}/kWh</option>
+                                    <option value="{{ $opt['id'] }}">{{ $opt['label'] }}</option>
                                 @endforeach
                             </select>
                         </div>

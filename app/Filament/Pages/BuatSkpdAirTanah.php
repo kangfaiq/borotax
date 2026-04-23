@@ -7,6 +7,7 @@ use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
 use App\Domain\AirTanah\Models\NpaAirTanah;
 use App\Domain\AirTanah\Models\SkpdAirTanah;
+use App\Domain\Shared\Services\DecimalInputNormalizer;
 use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Domain\AirTanah\Models\WaterObject;
 use App\Domain\Tax\Models\TarifPajak;
@@ -65,12 +66,12 @@ class BuatSkpdAirTanah extends Page implements HasForms
     public bool    $isMeterChange   = false;   // Skenario 3: pergantian meteran
 
     // ── State: Form Perhitungan ─────────────────────────────────────────────
-    public ?float  $meterReadingBefore = null;
-    public ?float  $meterReadingAfter  = null;
-    public ?float  $directUsage        = null; // Skenario 2: pemakaian langsung (tanpa meter)
-    public ?float  $meterOldEnd        = null; // Skenario 3: meter akhir meteran lama
-    public ?float  $meterNewStart      = null; // Skenario 3: meter awal meteran baru
-    public ?float  $meterNewEnd        = null; // Skenario 3: meter akhir meteran baru
+    public string|float|null $meterReadingBefore = null;
+    public string|float|null $meterReadingAfter  = null;
+    public string|float|null $directUsage        = null; // Skenario 2: pemakaian langsung (tanpa meter)
+    public string|float|null $meterOldEnd        = null; // Skenario 3: meter akhir meteran lama
+    public string|float|null $meterNewStart      = null; // Skenario 3: meter awal meteran baru
+    public string|float|null $meterNewEnd        = null; // Skenario 3: meter akhir meteran baru
     public ?string $catatanMeter       = null; // Skenario 3: catatan pergantian
 
     public ?string $periodeBulan       = null;
@@ -281,6 +282,8 @@ class BuatSkpdAirTanah extends Page implements HasForms
             return null;
         }
 
+        $this->normalizeDecimalInputs();
+
         // ── Hitung Usage berdasarkan skenario ────────────────────────────
         $usage = 0;
 
@@ -348,6 +351,8 @@ class BuatSkpdAirTanah extends Page implements HasForms
 
     public function buatSkpd(): void
     {
+        $this->normalizeDecimalInputs();
+
         if (!$this->selectedWaterObjectData) {
             Notification::make()->warning()->title('Pilih objek air tanah terlebih dahulu')->send();
             return;
@@ -587,6 +592,16 @@ class BuatSkpdAirTanah extends Page implements HasForms
         if (method_exists($this->lampiranUploadTemp, 'delete')) {
             $this->lampiranUploadTemp->delete();
         }
+    }
+
+    private function normalizeDecimalInputs(): void
+    {
+        $this->meterReadingBefore = DecimalInputNormalizer::toFloat($this->meterReadingBefore);
+        $this->meterReadingAfter = DecimalInputNormalizer::toFloat($this->meterReadingAfter);
+        $this->directUsage = DecimalInputNormalizer::toFloat($this->directUsage);
+        $this->meterOldEnd = DecimalInputNormalizer::toFloat($this->meterOldEnd);
+        $this->meterNewStart = DecimalInputNormalizer::toFloat($this->meterNewStart);
+        $this->meterNewEnd = DecimalInputNormalizer::toFloat($this->meterNewEnd);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

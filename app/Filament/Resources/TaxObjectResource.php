@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
@@ -38,8 +39,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxObjectResource extends Resource
@@ -259,11 +258,10 @@ class TaxObjectResource extends Resource
                             })
                             ->searchable()
                             ->required(),
-                        TextInput::make('tarif_persen')
+                        FilamentDecimalInput::configure(TextInput::make('tarif_persen')
                             ->label('Tarif (%)')
-                            ->numeric()
                             ->suffix('%')
-                            ->required(),
+                            ->required()),
                     ])->columns(2),
 
                 // === Section: Field Kondisional Reklame ===
@@ -284,68 +282,60 @@ class TaxObjectResource extends Resource
                             ->default('persegi'),
 
                         // Persegi: panjang × lebar
-                        TextInput::make('panjang')
+                        FilamentDecimalInput::configure(TextInput::make('panjang')
                             ->label('Panjang (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => ($get('bentuk') ?? 'persegi') === 'persegi')
-                            ->required(fn (Get $get) => ($get('bentuk') ?? 'persegi') === 'persegi'),
-                        TextInput::make('lebar')
+                            ->required(fn (Get $get) => ($get('bentuk') ?? 'persegi') === 'persegi')),
+                        FilamentDecimalInput::configure(TextInput::make('lebar')
                             ->label('Lebar (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => ($get('bentuk') ?? 'persegi') === 'persegi')
-                            ->required(fn (Get $get) => ($get('bentuk') ?? 'persegi') === 'persegi'),
+                            ->required(fn (Get $get) => ($get('bentuk') ?? 'persegi') === 'persegi')),
 
                         // Trapesium: sisi atas, sisi bawah, tinggi
-                        TextInput::make('sisi_atas')
+                        FilamentDecimalInput::configure(TextInput::make('sisi_atas')
                             ->label('Sisi Atas (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => $get('bentuk') === 'trapesium')
-                            ->required(fn (Get $get) => $get('bentuk') === 'trapesium'),
-                        TextInput::make('sisi_bawah')
+                            ->required(fn (Get $get) => $get('bentuk') === 'trapesium')),
+                        FilamentDecimalInput::configure(TextInput::make('sisi_bawah')
                             ->label('Sisi Bawah (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => $get('bentuk') === 'trapesium')
-                            ->required(fn (Get $get) => $get('bentuk') === 'trapesium'),
-                        TextInput::make('tinggi')
+                            ->required(fn (Get $get) => $get('bentuk') === 'trapesium')),
+                        FilamentDecimalInput::configure(TextInput::make('tinggi')
                             ->label('Tinggi (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => in_array($get('bentuk'), ['trapesium', 'segitiga']))
-                            ->required(fn (Get $get) => in_array($get('bentuk'), ['trapesium', 'segitiga'])),
+                            ->required(fn (Get $get) => in_array($get('bentuk'), ['trapesium', 'segitiga']))),
 
                         // Lingkaran & Elips: diameter
-                        TextInput::make('diameter')
+                        FilamentDecimalInput::configure(TextInput::make('diameter')
                             ->label(fn (Get $get) => $get('bentuk') === 'elips' ? 'Diameter 1 (m)' : 'Diameter (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => in_array($get('bentuk'), ['lingkaran', 'elips']))
-                            ->required(fn (Get $get) => in_array($get('bentuk'), ['lingkaran', 'elips'])),
-                        TextInput::make('diameter2')
+                            ->required(fn (Get $get) => in_array($get('bentuk'), ['lingkaran', 'elips']))),
+                        FilamentDecimalInput::configure(TextInput::make('diameter2')
                             ->label('Diameter 2 (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => $get('bentuk') === 'elips')
-                            ->required(fn (Get $get) => $get('bentuk') === 'elips'),
+                            ->required(fn (Get $get) => $get('bentuk') === 'elips')),
 
                         // Segitiga: alas
-                        TextInput::make('alas')
+                        FilamentDecimalInput::configure(TextInput::make('alas')
                             ->label('Alas (m)')
-                            ->numeric()
                             ->step(0.01)
                             ->suffix('m')
                             ->visible(fn (Get $get) => $get('bentuk') === 'segitiga')
-                            ->required(fn (Get $get) => $get('bentuk') === 'segitiga'),
+                            ->required(fn (Get $get) => $get('bentuk') === 'segitiga')),
 
                         TextInput::make('jumlah_muka')
                             ->label('Jumlah Muka / Sisi')

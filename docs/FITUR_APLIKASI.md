@@ -292,6 +292,7 @@ TOTAL_PAJAK        = DASAR_PENGENAAN + NILAI_STRATEGIS
 - Hanya untuk satuan waktu **perTahun** atau **perBulan**
 - Didapat dari tabel `reklame_nilai_strategis` berdasarkan kelas kelompok (A/B/C) dan range luas
 - Admin dapat mengelola tarif ini melalui menu **Master Data > Nilai Strategis Reklame**
+- Field angka desimal di form backoffice menerima input `.` maupun `,`, lalu dinormalisasi saat validasi/simpan; tampilan nilai tetap mengikuti format lokal Indonesia
 
 **Penyesuaian khusus:**
 - Dalam ruangan: diskon 75% (×0.25)
@@ -524,6 +525,7 @@ Dashboard menampilkan:
 #### Buat Billing Self-Assessment
 - **Jenis pajak:** Hotel (41101), Restoran (41102), Hiburan (41103), PPJ (41105), Parkir (41107)
 - **Fitur:** Pencarian NIK/NPWPD/nama, auto-deteksi masa pajak berikutnya, input omzet, deteksi duplikat, dan konfirmasi pembetulan atau penggantian billing sesuai status tagihan yang sudah ada
+- **Input desimal fleksibel:** field desimal pada self-assessment portal dan halaman backoffice `Buat Billing Self-Assessment` menerima titik (`.`) maupun koma (`,`); sistem menormalisasi nilai ke format numerik baku sebelum validasi dan penyimpanan, sedangkan tampilan hasil/perhitungan tetap memakai format Indonesia
 - **Instansi opsional:** untuk objek `is_opd` petugas dapat memilih OPD/instansi/lembaga terkait; field pilihan mendukung pencarian agar lebih mudah dipakai saat data instansi banyak, dan nilainya disimpan sebagai snapshot pada billing
 - **Warning lompat periode:** Untuk objek reguler bulanan, petugas tetap boleh memilih masa pajak yang melompati prefill periode berikutnya, tetapi sistem menampilkan konfirmasi khusus bahwa masa pajak sebelumnya belum dibuat
 - **Aturan prefill masa pajak:**
@@ -537,6 +539,7 @@ Dashboard menampilkan:
 #### Buat Billing MBLB
 - **Jenis pajak:** MBLB (41106)
 - **Fitur:** Input volume per jenis mineral dari daftar harga patokan aktif, kalkulasi otomatis DPP + opsen
+- **Input desimal fleksibel:** volume per mineral menerima titik (`.`) maupun koma (`,`), lalu dinormalisasi sebelum validasi, preview kalkulasi, dan penerbitan billing. Ringkasan nominal tetap tampil dengan format Indonesia.
 - **Portal WP:** submit sebagai pengajuan verifikasi; billing code baru diterbitkan setelah admin/verifikator menyetujui pengajuan dan meninjau lampiran
 - **Instansi opsional:** untuk sub-jenis `MBLB_WAPU`, petugas maupun wajib pajak dapat memilih instansi terkait; field di backoffice mendukung pencarian agar pemilihan instansi besar lebih cepat, dan snapshot-nya ikut dibawa sampai billing disetujui/diterbitkan
 - **Aturan prefill masa pajak:**
@@ -547,12 +550,14 @@ Dashboard menampilkan:
 #### Buat Billing Sarang Walet
 - **Jenis pajak:** Sarang Burung Walet (41109)
 - **Fitur:** Pilih jenis sarang, input volume (kg), masa pajak tahunan
+- **Input desimal fleksibel:** field volume (kg) menerima titik (`.`) maupun koma (`,`), lalu dinormalisasi sebelum validasi, preview perhitungan, dan penerbitan billing. Tampilan ringkasan tetap mengikuti format Indonesia.
 
 ### 6.3 Halaman Buat SKPD
 
 #### Buat SKPD Air Tanah
 - **Fitur:** Pilih objek air tanah, 4 skenario meter (baru/tanpa meter/ganti meter/normal), lookup NPA bertingkat (tiered), perhitungan pajak otomatis, notifikasi ke verifikator
 - **Layout preview:** panel rincian perhitungan dan tombol aksi di sisi kanan tetap bergerak sebagai satu blok pada layar besar agar tidak overlap saat discroll ke bagian bawah
+- **Input desimal fleksibel:** Field meter dan pemakaian air menerima input desimal dengan titik (`.`) maupun koma (`,`), lalu dinormalisasi ke format internal sebelum preview pemakaian, perhitungan NPA, dan penyimpanan draft. Tampilan angka tetap memakai format Indonesia.
 
 #### Buat SKPD Reklame
 - **Dua mode:** berbasis objek WP atau aset Pemkab
@@ -597,6 +602,7 @@ Catatan implementasi saat ini:
 - **Navigasi:** Verifikasi → Surat Ketetapan
 - **Jenis dokumen:** `SKPDKB`, `SKPDKBT`, `SKPDLB`, `SKPDN`
 - **Flow draft:** Pilih billing sumber → pilih jenis surat → pilih dasar penerbitan → isi nominal dasar dan bulan bunga → simpan draft
+- **Input nominal fleksibel:** Field nominal dasar draft dan nominal kompensasi `SKPDLB` menerima input desimal dengan titik (`.`) maupun koma (`,`), lalu dinormalisasi sebelum perhitungan bunga, kenaikan, total ketetapan, dan alokasi kredit.
 - **Flow approve:** Verifikator menerbitkan nomor dokumen resmi dan menetapkan pimpinan penandatangan
 - **Nomor dokumen:** Menggunakan format `{TIPE}/{YYYY}/{MM}/{000001}`
 - **Kode billing penagihan:** Hanya `SKPDKB` dan `SKPDKBT` yang membentuk billing turunan baru pada tabel `taxes`; billing ini tetap 18 digit, tetapi digit ke-17 dan ke-18 ditetapkan menjadi `19`
@@ -632,6 +638,8 @@ Catatan implementasi saat ini:
 - **Akses:** Petugas only
 - **Tab:** Air Tanah / Reklame
 - **Fitur:** Lihat semua SKPD yang dibuat petugas bersangkutan, cetak/unduh PDF, revisi & ajukan ulang (jika ditolak)
+- **Revisi SKPD Reklame:** Field dimensi reklame di modal revisi menerima input desimal dengan titik (`.`) maupun koma (`,`), lalu dinormalisasi sebelum validasi, hitung ulang luas, lookup tarif, dan simpan ulang draft. Tampilan nominal tetap mengikuti format Indonesia.
+- **Revisi SKPD Air Tanah:** Field `Meter Awal` dan `Meter Akhir` di modal revisi menerima input desimal dengan titik (`.`) maupun koma (`,`), lalu dinormalisasi sebelum validasi, hitung ulang pemakaian, dan simpan ulang draft. Tampilan nominal tetap mengikuti format Indonesia.
 
 ### 6.9 Laporan Pendapatan
 - **View tahun:** Ringkasan semua tahun (2019–sekarang) — total transaksi, total pendapatan, pending
@@ -717,6 +725,7 @@ Catatan implementasi saat ini:
     - PPJ `PPJ_DIHASILKAN_SENDIRI` → input kapasitas kVA, tingkat penggunaan, jangka waktu jam, dan harga satuan listrik aktif
     - Sarang Walet → pilih jenis sarang dan input volume (kg)
     - MBLB → input volume per mineral aktif, lalu submit sebagai pengajuan verifikasi
+  - Untuk field desimal (PPJ Non-PLN, Sarang Walet, dan MBLB), portal menerima input dengan titik atau koma lalu menormalkannya sebelum submit
   - Upload lampiran wajib pada flow portal, dengan preview dokumen sebelum submit
   - Gambar lampiran yang melebihi 1 MB dikompres otomatis di browser sebelum dikirim; PDF tetap dibatasi 1 MB
 3. **Sistem menghitung:**
@@ -1201,6 +1210,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - **Akses backoffice:** Admin only
 - Menjadi source of truth detail reklame `RKL_*` untuk kalkulator, tarif reklame, pembuatan SKPD, dan permohonan sewa reklame
 - Masing-masing detail reklame memiliki child tariff temporal pada menu yang sama
+- **Input desimal fleksibel:** Di child tariff temporal, field `NSPR`, `NJOPR`, dan `Tarif Pokok` menerima input desimal dengan titik (`.`) maupun koma (`,`), lalu dinormalisasi sebelum validasi dan simpan.
 
 ### 12.4 Pimpinan (Penandatangan)
 - **CRUD** data pimpinan: kabupaten, OPD, jabatan, bidang, sub-bidang, nama, pangkat, NIP
@@ -1212,20 +1222,24 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - **CRUD** harga patokan mineral: nama mineral, nama alternatif (JSON), harga patokan, satuan, dasar hukum, berlaku mulai/sampai
 - **Akses backoffice:** Admin only
 - Temporal — berlaku untuk periode tertentu
+- **Input numerik backoffice:** field harga patokan menerima titik atau koma untuk desimal; nilai dinormalisasi saat form disimpan
 
 ### 12.6 Harga Patokan Sarang Walet
 - **CRUD** harga patokan sarang: nama jenis, harga, satuan, dasar hukum, berlaku mulai/sampai
 - **Akses backoffice:** Admin only
+- **Input numerik backoffice:** field harga menerima titik atau koma untuk desimal; nilai dinormalisasi saat form disimpan
 
 ### 12.7 Harga Satuan Listrik
 - **CRUD** harga satuan listrik per wilayah: nama wilayah, harga per kWh, dasar hukum, berlaku mulai/sampai
 - **Akses backoffice:** Admin only
 - Digunakan untuk perhitungan PPJ Non-PLN
+- **Input numerik backoffice:** field harga per kWh menerima titik atau koma untuk desimal; nilai dinormalisasi saat form disimpan
 
 ### 12.8 NPA Air Tanah
 - **CRUD** NPA: kelompok pemakaian (1–5), kriteria SDA (1–4), NPA per m³, NPA tiers (bertingkat), berlaku mulai/sampai, dasar hukum
 - **Akses backoffice:** Admin only
 - Tier lookup: untuk setiap volume bracket, NPA yang berbeda bisa diterapkan
+- **Input numerik backoffice:** field volume tier dan NPA menerima titik atau koma untuk desimal; nilai dinormalisasi saat form disimpan
 
 ### 12.9 Tarif Pajak
 - Tarif per sub-jenis pajak, temporal (berlaku mulai/sampai)
@@ -1317,6 +1331,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 ### 13.6 Aset Reklame Pemkab (Milik Pemerintah)
 - Pengelolaan aset reklame milik pemerintah (billboard, neon box)
 - Atribut: kode aset, nama, jenis, lokasi, dimensi, harga sewa (per tahun/bulan/minggu), foto, GPS, kawasan, traffic
+- Field angka desimal di form backoffice menerima input `.` maupun `,`, lalu dinormalisasi saat validasi/simpan; `luas_m2` tetap dihitung otomatis dari panjang × lebar dan disimpan mengikuti presisi model
 - **Akses backoffice:** Admin, verifikator, dan petugas dapat list/view; create, edit, delete, restore, dan force delete hanya untuk admin
 - **Aksi operasional:** `set maintenance` dan `pinjam OPD` tersedia untuk admin, verifikator, dan petugas; `set tersedia` dan `selesai pinjam` hanya untuk admin
 
@@ -1370,6 +1385,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - **Status:** submitted → processing → approved / rejected
 - **Akses backoffice:** Admin, verifikator, dan petugas dapat list/detail; proses laporan untuk membuat draft SKPD hanya dilakukan admin/petugas
 - **Trigger:** Admin/petugas proses laporan → buat draft SKPD
+- **Pemrosesan decimal fleksibel:** Action `Proses SKPD` menerima input desimal dengan titik (`.`) maupun koma (`,`), lalu menormalisasi nilai meter dan tarif sebelum hitung `usage`, dasar pengenaan, dan draft SKPD.
 
 ### 14.3 NPA (Nilai Perolehan Air)
 - Tarif per m³ berdasarkan kelompok pemakaian + kriteria SDA
@@ -1682,6 +1698,7 @@ Koneksi **read-only** ke database `simpadu` (sistem lama) untuk referensi data h
 - **CRUD** destinasi melalui backoffice Filament
 - **Atribut utama:** name, slug (auto-generate dan dijaga unik), description, address, category, image_url, rating, review_count, price_range, facilities (array/JSON), phone (encrypted), website, latitude, longitude, featured badge
 - **Upload gambar backoffice:** file gambar diubah ke WebP, di-resize ke 1200×675, lalu dikompresi hingga maksimal sekitar 1 MB
+- **Input angka desimal:** field `rating`, `latitude`, dan `longitude` menerima input dengan titik (`.`) maupun koma (`,`), lalu dinormalisasi otomatis sebelum validasi dan penyimpanan
 - **Kategori:** wisata, kuliner, hotel, oleh-oleh, hiburan
 - **Scope/model helper:** `category(...)`, `featured`, accessor `category_label`
 - **Publik web:** `/destinasi` dan `/destinasi/{slug}` memakai route key `slug`

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use Exception;
 use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
+use App\Domain\Shared\Services\DecimalInputNormalizer;
 use App\Filament\Pages\Concerns\InteractsWithDuplicateBillingInfo;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TaxObject;
@@ -215,6 +216,14 @@ class BuatBillingMblb extends Page implements HasForms
 
     public function terbitkanBilling(): void
     {
+        $this->mineralItems = collect($this->mineralItems)
+            ->map(function (array $item): array {
+                $item['volume'] = DecimalInputNormalizer::normalizeDecimalString($item['volume'] ?? null);
+
+                return $item;
+            })
+            ->all();
+
         // Validate at least one mineral has volume > 0
         $hasVolume = collect($this->mineralItems)->contains(fn ($item) => ((float) ($item['volume'] ?? 0)) > 0);
         if (!$hasVolume) {
@@ -225,7 +234,7 @@ class BuatBillingMblb extends Page implements HasForms
         // Validate volumes max 2 decimal places
         foreach ($this->mineralItems as $item) {
             $vol = $item['volume'] ?? 0;
-            if ($vol > 0 && !preg_match('/^\d+(\.\d{1,2})?$/', (string) $vol)) {
+            if ((float) $vol > 0 && !preg_match('/^\d+(\.\d{1,2})?$/', (string) $vol)) {
                 Notification::make()->warning()->title('Volume maksimal 2 digit desimal')->send();
                 return;
             }

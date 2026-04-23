@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use Exception;
 use App\Domain\Master\Models\JenisPajak;
+use App\Domain\Shared\Services\DecimalInputNormalizer;
 use App\Filament\Pages\Concerns\InteractsWithDuplicateBillingInfo;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TaxObject;
@@ -56,7 +57,7 @@ class BuatBillingSarangWalet extends Page implements HasForms
     public ?array  $wajibPajakData        = null;
     public array   $jenisSarangItems      = [];
     public ?string $selectedJenisSarangId = null;
-    public ?float  $volumeKg             = null;
+    public string|float|null $volumeKg   = null;
     public ?int    $masaPajakTahun        = null;
 
     // ── State: Tax config ───────────────────────────────────────────────────
@@ -201,16 +202,19 @@ class BuatBillingSarangWalet extends Page implements HasForms
             return;
         }
 
-        $vol = (float) ($this->volumeKg ?? 0);
-        if ($vol <= 0) {
+        $normalizedVolume = DecimalInputNormalizer::normalizeDecimalString($this->volumeKg);
+
+        if ($normalizedVolume === null || (float) $normalizedVolume <= 0) {
             Notification::make()->warning()->title('Masukkan volume (kg)')->send();
             return;
         }
 
-        if (!preg_match('/^\d+(\.\d{1,2})?$/', (string) $vol)) {
+        if (!preg_match('/^\d+(\.\d{1,2})?$/', $normalizedVolume)) {
             Notification::make()->warning()->title('Volume maksimal 2 digit desimal')->send();
             return;
         }
+
+        $this->volumeKg = (float) $normalizedVolume;
 
         if (!$this->wajibPajakData) {
             Notification::make()->warning()->title('Data wajib pajak tidak ditemukan untuk objek ini')->send();

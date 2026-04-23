@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -60,12 +61,11 @@ class HargaPatokanSarangWaletResource extends Resource
                     ->required()
                     ->maxLength(100)
                     ->placeholder('Mangkuk'),
-                TextInput::make('harga_patokan')
+                FilamentDecimalInput::configure(TextInput::make('harga_patokan')
                     ->label('Harga Patokan (Rp/kg)')
                     ->required()
-                    ->numeric()
                     ->minValue(0)
-                    ->placeholder('6000000'),
+                    ->placeholder('6000000')),
                 TextInput::make('satuan')
                     ->label('Satuan')
                     ->default('kg')

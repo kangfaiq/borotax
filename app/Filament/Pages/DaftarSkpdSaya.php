@@ -13,10 +13,12 @@ use App\Domain\AirTanah\Models\NpaAirTanah;
 use App\Domain\AirTanah\Models\SkpdAirTanah;
 use App\Domain\Master\Models\Pimpinan;
 use App\Domain\Master\Models\SubJenisPajak;
+use App\Domain\Reklame\Models\HargaPatokanReklame;
 use App\Domain\Reklame\Models\KelompokLokasiJalan;
 use App\Domain\Reklame\Models\ReklameTariff;
 use App\Domain\Reklame\Models\SkpdReklame;
 use App\Domain\Reklame\Services\ReklameService;
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -203,6 +205,7 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                             'nama_reklame' => $record->nama_reklame,
                             'alamat_reklame' => $record->alamat_reklame,
                             'sub_jenis_pajak_id' => $record->sub_jenis_pajak_id,
+                            'harga_patokan_reklame_id' => $record->harga_patokan_reklame_id,
                             'kelompok_lokasi' => $record->kelompok_lokasi,
                             'bentuk' => $record->bentuk ?? 'persegi',
                             'panjang' => $record->panjang,
@@ -246,6 +249,15 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                                     ->searchable()
                                     ->required()
                                     ->reactive(),
+                                Select::make('harga_patokan_reklame_id')
+                                    ->label('Harga Patokan Reklame')
+                                    ->options(fn ($get) => HargaPatokanReklame::where('sub_jenis_pajak_id', $get('sub_jenis_pajak_id') ?? $record->sub_jenis_pajak_id)
+                                        ->where('is_active', true)
+                                        ->orderBy('urutan')
+                                        ->pluck('nama', 'id'))
+                                    ->searchable()
+                                    ->required()
+                                    ->reactive(),
                                 Select::make('kelompok_lokasi')
                                     ->label('Kelompok Lokasi')
                                     ->options(KelompokLokasiJalan::getKelompokOptions())
@@ -265,38 +277,60 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                                     ])
                                     ->required()
                                     ->reactive(),
-                                TextInput::make('panjang')->label('Panjang (m)')->numeric()
+                                FilamentDecimalInput::configure(TextInput::make('panjang')
+                                    ->label('Panjang (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => ($get('bentuk') ?? 'persegi') === 'persegi')
-                                    ->required(fn ($get) => ($get('bentuk') ?? 'persegi') === 'persegi'),
-                                TextInput::make('lebar')->label('Lebar (m)')->numeric()
+                                    ->required(fn ($get) => ($get('bentuk') ?? 'persegi') === 'persegi')),
+                                FilamentDecimalInput::configure(TextInput::make('lebar')
+                                    ->label('Lebar (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => ($get('bentuk') ?? 'persegi') === 'persegi')
-                                    ->required(fn ($get) => ($get('bentuk') ?? 'persegi') === 'persegi'),
-                                TextInput::make('sisi_atas')->label('Sisi Atas (m)')->numeric()
+                                    ->required(fn ($get) => ($get('bentuk') ?? 'persegi') === 'persegi')),
+                                FilamentDecimalInput::configure(TextInput::make('sisi_atas')
+                                    ->label('Sisi Atas (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => $get('bentuk') === 'trapesium')
-                                    ->required(fn ($get) => $get('bentuk') === 'trapesium'),
-                                TextInput::make('sisi_bawah')->label('Sisi Bawah (m)')->numeric()
+                                    ->required(fn ($get) => $get('bentuk') === 'trapesium')),
+                                FilamentDecimalInput::configure(TextInput::make('sisi_bawah')
+                                    ->label('Sisi Bawah (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => $get('bentuk') === 'trapesium')
-                                    ->required(fn ($get) => $get('bentuk') === 'trapesium'),
-                                TextInput::make('tinggi')->label('Tinggi (m)')->numeric()
+                                    ->required(fn ($get) => $get('bentuk') === 'trapesium')),
+                                FilamentDecimalInput::configure(TextInput::make('tinggi')
+                                    ->label('Tinggi (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => in_array($get('bentuk'), ['trapesium', 'segitiga']))
-                                    ->required(fn ($get) => in_array($get('bentuk'), ['trapesium', 'segitiga'])),
-                                TextInput::make('diameter')
+                                    ->required(fn ($get) => in_array($get('bentuk'), ['trapesium', 'segitiga']))),
+                                FilamentDecimalInput::configure(TextInput::make('diameter')
                                     ->label(fn ($get) => $get('bentuk') === 'elips' ? 'Diameter 1 (m)' : 'Diameter (m)')
-                                    ->numeric()
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => in_array($get('bentuk'), ['lingkaran', 'elips']))
-                                    ->required(fn ($get) => in_array($get('bentuk'), ['lingkaran', 'elips'])),
-                                TextInput::make('diameter2')->label('Diameter 2 (m)')->numeric()
+                                    ->required(fn ($get) => in_array($get('bentuk'), ['lingkaran', 'elips']))),
+                                FilamentDecimalInput::configure(TextInput::make('diameter2')
+                                    ->label('Diameter 2 (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => $get('bentuk') === 'elips')
-                                    ->required(fn ($get) => $get('bentuk') === 'elips'),
-                                TextInput::make('alas')->label('Alas (m)')->numeric()
+                                    ->required(fn ($get) => $get('bentuk') === 'elips')),
+                                FilamentDecimalInput::configure(TextInput::make('alas')
+                                    ->label('Alas (m)')
+                                    ->step(0.01)
+                                    ->suffix('m')
                                     ->visible(fn ($get) => $get('bentuk') === 'segitiga')
-                                    ->required(fn ($get) => $get('bentuk') === 'segitiga'),
+                                    ->required(fn ($get) => $get('bentuk') === 'segitiga')),
                             ])->columns(2),
                             TextInput::make('jumlah_muka')->label('Jumlah Muka')->numeric()->integer()->required(),
                             Select::make('satuan_waktu')
                                 ->label('Satuan Waktu')
                                 ->options(fn ($get) => ReklameTariff::getAvailableSatuanWaktu(
-                                    $get('sub_jenis_pajak_id') ?? $record->sub_jenis_pajak_id,
+                                    $get('harga_patokan_reklame_id') ?? $record->harga_patokan_reklame_id,
                                     $get('kelompok_lokasi') ?? $record->kelompok_lokasi
                                 ))
                                 ->required()
@@ -327,8 +361,13 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                                 TextInput::make('kecamatan')->label('Kecamatan')->required(),
                                 TextInput::make('kelurahan')->label('Kelurahan')->required(),
                             ])->columns(2),
-                            TextInput::make('meter_reading_before')->label('Meter Awal')->numeric(),
-                            TextInput::make('meter_reading_after')->label('Meter Akhir')->numeric()->required(),
+                            FilamentDecimalInput::configure(TextInput::make('meter_reading_before')
+                                ->label('Meter Awal')
+                                ->step(0.01)),
+                            FilamentDecimalInput::configure(TextInput::make('meter_reading_after')
+                                ->label('Meter Akhir')
+                                ->step(0.01)
+                                ->required()),
                             TextInput::make('periode_bulan')
                                 ->label('Periode (YYYY-MM)')
                                 ->required()
@@ -338,6 +377,8 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                     ->action(function ($record, array $data) {
                         DB::transaction(function () use ($record, $data) {
                             if ($this->jenisSkpd === 'reklame') {
+                                $hargaPatokanReklame = HargaPatokanReklame::find($data['harga_patokan_reklame_id']);
+
                                 // Hitung luas dari dimensi berdasarkan bentuk
                                 $bentuk = $data['bentuk'] ?? 'persegi';
                                 $luas = match ($bentuk) {
@@ -350,7 +391,7 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                                 $luas = round($luas, 2);
 
                                 $calc = app(ReklameService::class)->calculateTax(
-                                    $data['sub_jenis_pajak_id'],
+                                    $data['harga_patokan_reklame_id'],
                                     $data['kelompok_lokasi'],
                                     $data['satuan_waktu'],
                                     $luas,
@@ -375,6 +416,8 @@ class DaftarSkpdSaya extends Page implements HasTable, HasForms
                                     'nama_reklame' => $data['nama_reklame'],
                                     'alamat_reklame' => $data['alamat_reklame'],
                                     'sub_jenis_pajak_id' => $data['sub_jenis_pajak_id'],
+                                    'harga_patokan_reklame_id' => $data['harga_patokan_reklame_id'],
+                                    'jenis_reklame' => $hargaPatokanReklame?->nama,
                                     'kelompok_lokasi' => $data['kelompok_lokasi'],
                                     'bentuk' => $bentuk,
                                     'panjang' => $data['panjang'] ?? null,

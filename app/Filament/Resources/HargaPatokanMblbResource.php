@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -64,12 +65,11 @@ class HargaPatokanMblbResource extends Resource
                     ->label('Nama Alternatif')
                     ->placeholder('Tambah nama alternatif...')
                     ->helperText('Nama mineral lain yang kena tarif sama'),
-                TextInput::make('harga_patokan')
+                FilamentDecimalInput::configure(TextInput::make('harga_patokan')
                     ->label('Harga Patokan (Rp)')
                     ->required()
-                    ->numeric()
                     ->minValue(0)
-                    ->placeholder('100000'),
+                    ->placeholder('100000')),
                 TextInput::make('satuan')
                     ->label('Satuan')
                     ->default('m3')

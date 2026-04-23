@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Domain\Master\Models\SubJenisPajak;
 use App\Domain\Reklame\Models\HargaPatokanReklame;
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use App\Filament\Resources\HargaPatokanReklameResource\Pages\CreateHargaPatokanReklame;
 use App\Filament\Resources\HargaPatokanReklameResource\Pages\EditHargaPatokanReklame;
 use App\Filament\Resources\HargaPatokanReklameResource\Pages\ListHargaPatokanReklames;
@@ -128,17 +129,17 @@ class HargaPatokanReklameResource extends Resource
                             TextInput::make('satuan_label')
                                 ->required()
                                 ->maxLength(100),
-                            TextInput::make('nspr')
-                                ->numeric()
+                            FilamentDecimalInput::configure(TextInput::make('nspr')
                                 ->default(0)
-                                ->required(),
-                            TextInput::make('njopr')
-                                ->numeric()
+                                ->step(0.01)
+                                ->required()),
+                            FilamentDecimalInput::configure(TextInput::make('njopr')
                                 ->default(0)
-                                ->required(),
-                            TextInput::make('tarif_pokok')
-                                ->numeric()
-                                ->required(),
+                                ->step(0.01)
+                                ->required()),
+                            FilamentDecimalInput::configure(TextInput::make('tarif_pokok')
+                                ->step(0.01)
+                                ->required()),
                             DatePicker::make('berlaku_mulai')
                                 ->required()
                                 ->default('2026-01-01'),

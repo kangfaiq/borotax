@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -91,46 +92,41 @@ class AsetReklamePemkabResource extends Resource
                 Section::make('Dimensi & Koordinat')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('panjang')
+                        FilamentDecimalInput::configure(TextInput::make('panjang')
                             ->label('Panjang (m)')
-                            ->numeric()
                             ->required()
-                            ->step(0.01),
-                        TextInput::make('lebar')
+                            ->step(0.01)),
+                        FilamentDecimalInput::configure(TextInput::make('lebar')
                             ->label('Lebar (m)')
-                            ->numeric()
                             ->required()
-                            ->step(0.01),
-                        TextInput::make('luas_m2')
+                            ->step(0.01)),
+                        FilamentDecimalInput::configure(TextInput::make('luas_m2')
                             ->label('Luas (m²)')
-                            ->numeric()
                             ->step(0.01)
-                            ->helperText('Otomatis: panjang × lebar'),
+                            ->helperText('Otomatis: panjang × lebar')),
                         TextInput::make('jumlah_muka')
                             ->numeric()
                             ->required()
                             ->default(1)
                             ->minValue(1),
-                        TextInput::make('latitude')
-                            ->numeric()
-                            ->step(0.0000001),
-                        TextInput::make('longitude')
-                            ->numeric()
-                            ->step(0.0000001),
+                        FilamentDecimalInput::configure(TextInput::make('latitude')
+                            ->step(0.0000001)),
+                        FilamentDecimalInput::configure(TextInput::make('longitude')
+                            ->step(0.0000001)),
                     ])->columns(3),
 
                 Section::make('Harga Sewa Referensi')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('harga_sewa_per_tahun')
+                        FilamentDecimalInput::configure(TextInput::make('harga_sewa_per_tahun')
                             ->label('Per Tahun (Rp)')
-                            ->numeric(),
-                        TextInput::make('harga_sewa_per_bulan')
+                            ->minValue(0)),
+                        FilamentDecimalInput::configure(TextInput::make('harga_sewa_per_bulan')
                             ->label('Per Bulan (Rp)')
-                            ->numeric(),
-                        TextInput::make('harga_sewa_per_minggu')
+                            ->minValue(0)),
+                        FilamentDecimalInput::configure(TextInput::make('harga_sewa_per_minggu')
                             ->label('Per Minggu (Rp)')
-                            ->numeric(),
+                            ->minValue(0)),
                     ])->columns(3),
 
                 Section::make('Status')

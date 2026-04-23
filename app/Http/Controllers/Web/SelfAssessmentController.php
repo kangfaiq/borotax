@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use Carbon\Carbon;
+use App\Domain\Shared\Services\DecimalInputNormalizer;
 use App\Domain\Shared\Services\NotificationService;
 use App\Domain\Master\Models\Instansi;
 use App\Domain\Tax\Models\PortalMblbSubmission;
@@ -171,6 +172,28 @@ class SelfAssessmentController extends Controller
         return $this->storeStandard($request, $user, $taxObject);
     }
 
+    private function normalizeDecimalRequestInputs(Request $request, array $fields): void
+    {
+        $normalized = [];
+
+        foreach ($fields as $field) {
+            $normalized[$field] = DecimalInputNormalizer::normalizeDecimalString($request->input($field));
+        }
+
+        $request->merge($normalized);
+    }
+
+    private function normalizeDecimalArrayRequestInputs(Request $request, string $field): void
+    {
+        $normalized = [];
+
+        foreach ((array) $request->input($field, []) as $key => $value) {
+            $normalized[$key] = DecimalInputNormalizer::normalizeDecimalString($value);
+        }
+
+        $request->merge([$field => $normalized]);
+    }
+
     private function storeStandard(Request $request, $user, TaxObject $taxObject)
     {
         $request->validate([
@@ -237,6 +260,12 @@ class SelfAssessmentController extends Controller
                 'pokok_pajak.min' => 'Pokok pajak harus lebih dari 0.',
             ]);
         } elseif ($subJenisKode === 'PPJ_DIHASILKAN_SENDIRI') {
+            $this->normalizeDecimalRequestInputs($request, [
+                'kapasitas_kva',
+                'tingkat_penggunaan_persen',
+                'jangka_waktu_jam',
+            ]);
+
             $request->validate([
                 'kapasitas_kva' => 'required|numeric|min:0.01',
                 'tingkat_penggunaan_persen' => 'required|numeric|min:0.01|max:100',
@@ -408,6 +437,8 @@ class SelfAssessmentController extends Controller
             'volumes.required' => 'Masukkan volume mineral MBLB.',
         ]);
 
+        $this->normalizeDecimalArrayRequestInputs($request, 'volumes');
+
         foreach ($request->input('volumes', []) as $volume) {
             $volumeString = trim((string) $volume);
 
@@ -508,6 +539,8 @@ class SelfAssessmentController extends Controller
      */
     private function storeSarangWalet(Request $request, $user, TaxObject $taxObject)
     {
+        $this->normalizeDecimalRequestInputs($request, ['volume_kg']);
+
         $request->validate([
             'tax_object_id' => 'required|exists:tax_objects,id',
             'jenis_sarang_id' => 'required|exists:harga_patokan_sarang_walet,id',

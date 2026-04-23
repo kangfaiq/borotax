@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\Components\FilamentDecimalInput;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
@@ -60,12 +61,11 @@ class HargaSatuanListrikResource extends Resource
                     ->required()
                     ->maxLength(150)
                     ->placeholder('Kab. Bojonegoro'),
-                TextInput::make('harga_per_kwh')
+                FilamentDecimalInput::configure(TextInput::make('harga_per_kwh')
                     ->label('Harga Satuan (Rp/kWh)')
                     ->required()
-                    ->numeric()
                     ->minValue(0)
-                    ->placeholder('1500'),
+                    ->placeholder('1500')),
             ])->columns(2),
             Section::make('Referensi & Status')->schema([
                 TextInput::make('dasar_hukum')
