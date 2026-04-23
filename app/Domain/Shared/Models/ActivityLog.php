@@ -21,7 +21,7 @@ class ActivityLog extends Model
 
     protected const ACTION_LABELS = [
         'UPDATE_TAX_OBJECT_FROM_SKPD_REKLAME_APPROVAL' => 'Sinkronisasi Objek dari Persetujuan SKPD Reklame',
-        self::ACTION_SYNC_EXPIRED_TAX_STATUSES => 'Sinkronisasi Billing Kedaluwarsa',
+        self::ACTION_SYNC_EXPIRED_TAX_STATUSES => 'Sinkronisasi Billing Lewat Jatuh Tempo',
         self::ACTION_UPDATE_REKLAME_MATERIAL_FILE => 'Perubahan File Materi Reklame',
     ];
 

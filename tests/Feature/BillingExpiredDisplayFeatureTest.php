@@ -24,7 +24,7 @@ it('derives expired display status without changing the stored workflow status',
 
     expect($tax->status)->toBe(TaxStatus::Pending)
         ->and($tax->display_status)->toBe(TaxStatus::Expired)
-        ->and($tax->display_status_label)->toBe('Kedaluwarsa');
+        ->and($tax->display_status_label)->toBe('Lewat Jatuh Tempo');
 });
 
 it('shows overdue billing as expired on the portal billing check page', function () {
@@ -40,7 +40,7 @@ it('shows overdue billing as expired on the portal billing check page', function
     $this->actingAs($wajibPajak->user)
         ->get(route('portal.billing', ['code' => $tax->billing_code]))
         ->assertOk()
-        ->assertSee('Kedaluwarsa')
+        ->assertSee('Lewat Jatuh Tempo')
         ->assertSee('badge-expired', false);
 });
 
@@ -62,11 +62,11 @@ it('shows overdue billing as expired in portal dashboard and history badges', fu
         ->get(route('portal.dashboard'))
         ->assertOk()
         ->assertSee($tax->billing_code)
-        ->assertSee('Kedaluwarsa');
+        ->assertSee('Lewat Jatuh Tempo');
 
     $this->actingAs($wajibPajak->user)
         ->get(route('portal.history'))
         ->assertOk()
         ->assertSee($tax->billing_code)
-        ->assertSee('Kedaluwarsa');
+        ->assertSee('Lewat Jatuh Tempo');
 });

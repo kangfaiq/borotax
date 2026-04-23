@@ -18,7 +18,7 @@ it('mengubah status menjadi menunggu pembayaran jika belum melewati jatuh tempo'
         jumlahTerbayar: 0,
         tanggalBayar: null,
         status: 'expired',
-        statusLabel: 'Kedaluwarsa',
+        statusLabel: 'Lewat Jatuh Tempo',
     );
 
     expect($row->effectiveStatus())->toBe('menunggu_pembayaran')
@@ -39,7 +39,7 @@ it('mengubah status menjadi lewat jatuh tempo jika sudah melewati jatuh tempo', 
         jumlahTerbayar: 0,
         tanggalBayar: null,
         status: 'expired',
-        statusLabel: 'Kedaluwarsa',
+        statusLabel: 'Lewat Jatuh Tempo',
     );
 
     expect($row->effectiveStatus())->toBe('lewat_jatuh_tempo')

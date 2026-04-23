@@ -26,7 +26,7 @@ class HistoriPajakService
         'pending' => 'Menunggu Pembayaran',
         'verified' => 'Terverifikasi',
         'paid' => 'Lunas',
-        'expired' => 'Kedaluwarsa',
+        'expired' => 'Lewat Jatuh Tempo',
         'rejected' => 'Ditolak',
         'cancelled' => 'Dibatalkan',
         'partially_paid' => 'Sebagian',

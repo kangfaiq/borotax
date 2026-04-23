@@ -1111,13 +1111,13 @@ Kode billing terdiri dari **18 karakter** dengan pola umum: `35221XX[PADDING]YY[
 | `paid` | Lunas | success | ✅ |
 | `verified` | Terverifikasi | info | ✅ |
 | `partially_paid` | Dibayar Sebagian | info | ✅ |
-| `expired` | Kedaluwarsa | gray | ✅ |
+| `expired` | Lewat Jatuh Tempo | gray | ✅ |
 | `rejected` | Ditolak | danger | ❌ |
 | `cancelled` | Dibatalkan | gray | ❌ |
 
 **Status aktif** (blocking duplikat): `pending`, `paid`, `verified`, `expired`, `partially_paid`
 
-**Sinkronisasi jatuh tempo:** Jika `payment_expired_at` sudah lewat dan billing masih berstatus `pending`, `verified`, atau `partially_paid`, sistem menyinkronkan status tersimpan menjadi `expired` atau `Kedaluwarsa`. Billing `expired` tetap diperlakukan sebagai kewajiban aktif untuk pembayaran manual, pembuatan STPD manual, pembetulan, dashboard tagihan, dan blocking duplikat sampai ada proses bisnis lain yang menutupnya.
+**Sinkronisasi jatuh tempo:** Jika `payment_expired_at` sudah lewat dan billing masih berstatus `pending`, `verified`, atau `partially_paid`, sistem menyinkronkan status tersimpan menjadi `expired` dengan label tampil `Lewat Jatuh Tempo`. Billing `expired` tetap diperlakukan sebagai kewajiban aktif untuk pembayaran manual, pembuatan STPD manual, pembetulan, dashboard tagihan, dan blocking duplikat sampai ada proses bisnis lain yang menutupnya.
 
 **Scheduler:** Command `tax:sync-expired-statuses` dijalankan terjadwal setiap jam agar sinkronisasi status overdue tidak menunggu halaman portal/backoffice diakses.
 
@@ -1125,11 +1125,11 @@ Kode billing terdiri dari **18 karakter** dengan pola umum: `35221XX[PADDING]YY[
 
 **Batas aman notifikasi batch besar:** Jika batch auto-expire sangat besar, daftar kode billing dan ringkasan jenis pajak dipotong otomatis menjadi sampel terdepan dengan penanda `+N lainnya` agar body notifikasi tetap ringkas dan stabil di panel operator.
 
-**Histori auto-expire backoffice:** Halaman `Activity Log` di backoffice menyediakan shortcut `Histori Auto-Expire` dan filter `Riwayat Otomatis = Auto-Expire Billing` untuk melihat jejak sinkronisasi billing kedaluwarsa tanpa query manual.
+**Histori auto-expire backoffice:** Halaman `Activity Log` di backoffice menyediakan shortcut `Histori Auto-Expire` dan filter `Riwayat Otomatis = Auto-Expire Billing` untuk melihat jejak sinkronisasi billing lewat jatuh tempo tanpa query manual.
 
 **Filter tanggal cepat:** Operator dapat memfilter `Activity Log` dengan opsi cepat `Hari ini`, `7 hari terakhir`, dan `30 hari terakhir` untuk membaca batch auto-expire terbaru lebih cepat tanpa mengisi rentang tanggal manual.
 
-**Deep-link notifikasi backoffice:** Notifikasi sinkronisasi billing kedaluwarsa di bell icon Filament menyertakan tombol `Lihat Histori Auto-Expire` yang langsung membuka halaman histori auto-expire backoffice.
+**Deep-link notifikasi backoffice:** Notifikasi sinkronisasi billing lewat jatuh tempo di bell icon Filament menyertakan tombol `Lihat Histori Auto-Expire` yang langsung membuka halaman histori auto-expire backoffice.
 
 **Prioritas histori auto-expire:** Halaman `Histori Auto-Expire` menonjolkan batch dengan `Jumlah Billing` terbesar terlebih dahulu agar operator langsung melihat batch paling berdampak.
 
@@ -1540,7 +1540,7 @@ Disimpan di tabel `app_notifications`, tampil di portal & mobile app WP.
 | Self Assessment MBLB | Submission MBLB diproses | Verifikator memproses self assessment MBLB |
 | Laporan Meter Air Tanah | Laporan meter diproses | Verifikator/petugas memvalidasi laporan meter |
 | Pembayaran | Pembayaran manual dikonfirmasi | Verifikator mengonfirmasi pembayaran manual |
-| Status Pajak | Status pajak otomatis berubah | Cron `SyncExpiredTaxStatuses` mendeteksi masa berlaku habis; backoffice menerima 1 notifikasi terpisah per jenis pajak yang kedaluwarsa |
+| Status Pajak | Status pajak otomatis berubah | Cron `SyncExpiredTaxStatuses` mendeteksi masa berlaku habis; backoffice menerima 1 notifikasi terpisah per jenis pajak yang lewat jatuh tempo |
 
 #### 16.2.2 Notifikasi ke Backoffice (Filament Notification)
 Disimpan di tabel `notifications` (database notification Laravel), tampil di bell icon panel admin.
@@ -1558,7 +1558,7 @@ Disimpan di tabel `notifications` (database notification Laravel), tampil di bel
 | Portal MBLB | Submission MBLB baru dari portal | Verifikator |
 | Laporan Meter | Meter report dikirim WP | Petugas |
 | Perubahan Data | Permintaan perubahan data WP / objek pajak baru diajukan | Admin & Verifikator |
-| Status Pajak | Pajak kedaluwarsa terdeteksi cron | Role terkait (admin/verifikator/petugas), 1 notifikasi terpisah per jenis pajak, action menuju histori auto-expire |
+| Status Pajak | Pajak lewat jatuh tempo terdeteksi cron | Role terkait (admin/verifikator/petugas), 1 notifikasi terpisah per jenis pajak, action menuju histori auto-expire |
 
 ### 16.3 Broadcast
 - `NotificationService::broadcast()` — kirim notifikasi massal ke seluruh user dengan role `wajibPajak` (mis. pengumuman dari admin).

@@ -19,7 +19,7 @@ class SyncExpiredTaxStatuses extends Command
 
     protected $signature = 'tax:sync-expired-statuses';
 
-    protected $description = 'Sinkronisasi billing overdue menjadi status expired';
+    protected $description = 'Sinkronisasi billing overdue menjadi status lewat jatuh tempo';
 
     public function handle(): int
     {
@@ -56,14 +56,15 @@ class SyncExpiredTaxStatuses extends Command
 
                 NotificationService::notifyRole(
                     ['admin', 'verifikator', 'petugas'],
-                    "Sinkronisasi Billing Kedaluwarsa - {$label}",
-                    "{$count} billing {$label} otomatis berubah ke status expired hari ini.",
+                    "Sinkronisasi Billing Lewat Jatuh Tempo - {$label}",
+                    $body,
+                    actionLabel: 'Lihat Histori Auto-Expire',
                     actionUrl: $historyUrl,
                 );
             }
         }
 
-        $this->info("Selesai. {$updated} billing overdue disinkronkan menjadi expired.");
+        $this->info("Selesai. {$updated} billing overdue disinkronkan menjadi lewat jatuh tempo.");
 
         return self::SUCCESS;
     }
@@ -76,10 +77,10 @@ class SyncExpiredTaxStatuses extends Command
         $sourceStatusSummary = $this->formatSourceStatusSummary(collect($result['source_status_breakdown']));
 
         if ($updated === 1) {
-            return "1 billing otomatis berubah ke status expired. Billing batch: {$billingList}. Jenis pajak: {$jenisPajakSummary}. Status asal: {$sourceStatusSummary}.";
+            return "1 billing otomatis ditandai lewat jatuh tempo. Billing batch: {$billingList}. Jenis pajak: {$jenisPajakSummary}. Status asal: {$sourceStatusSummary}.";
         }
 
-        return "{$updated} billing otomatis berubah ke status expired. Billing batch: {$billingList}. Ringkasan per jenis pajak: {$jenisPajakSummary}. Status asal: {$sourceStatusSummary}.";
+        return "{$updated} billing otomatis ditandai lewat jatuh tempo. Billing batch: {$billingList}. Ringkasan per jenis pajak: {$jenisPajakSummary}. Status asal: {$sourceStatusSummary}.";
     }
 
     private function formatBillingBatchSummary($billingCodes): string

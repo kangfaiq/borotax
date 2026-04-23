@@ -97,7 +97,7 @@ class BuatStpd extends Page implements HasForms
                 Notification::make()
                     ->warning()
                     ->title('Billing tidak valid untuk STPD')
-                    ->body("Status Billing Sumber: " . strtoupper($tax->display_status->value) . ". Hanya billing Pending, Terverifikasi, Kedaluwarsa, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dibuatkan STPD.")
+                    ->body("Status Billing Sumber: " . strtoupper($tax->display_status->value) . ". Hanya billing Pending, Terverifikasi, Lewat Jatuh Tempo, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dibuatkan STPD.")
                     ->send();
                 return;
             }

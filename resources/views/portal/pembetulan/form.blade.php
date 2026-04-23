@@ -392,7 +392,7 @@
             $statusLabel = match($displayStatus) {
                 App\Enums\TaxStatus::Paid => 'Sudah Dibayar',
                 App\Enums\TaxStatus::Verified => 'Terverifikasi',
-                App\Enums\TaxStatus::Expired => 'Kedaluwarsa',
+                App\Enums\TaxStatus::Expired => 'Lewat Jatuh Tempo',
                 default => 'Belum Dibayar',
             };
         @endphp

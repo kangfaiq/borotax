@@ -379,7 +379,7 @@
                                             App\Enums\TaxStatus::PartiallyPaid => 'Dibayar Sebagian',
                                             App\Enums\TaxStatus::Paid => 'Lunas',
                                             App\Enums\TaxStatus::Verified => 'Terverifikasi',
-                                            App\Enums\TaxStatus::Expired => 'Kedaluwarsa',
+                                            App\Enums\TaxStatus::Expired => 'Lewat Jatuh Tempo',
                                             default => ucfirst($displayStatus->value),
                                         };
                                     @endphp

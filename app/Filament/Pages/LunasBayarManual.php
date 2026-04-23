@@ -98,7 +98,7 @@ class LunasBayarManual extends Page
                 Notification::make()
                     ->warning()
                     ->title('Billing tidak valid')
-                    ->body("Kode Pembayaran Aktif {$code} memiliki status: " . strtoupper($tax->display_status->value) . ". Hanya billing Pending, Terverifikasi (SKPD), Kedaluwarsa, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dilunaskan manual.")
+                    ->body("Kode Pembayaran Aktif {$code} memiliki status: " . strtoupper($tax->display_status->value) . ". Hanya billing Pending, Terverifikasi (SKPD), Lewat Jatuh Tempo, Dibayar Sebagian, atau billing Lunas dengan sanksi yang masih tersisa yang dapat dilunaskan manual.")
                     ->send();
                 return;
             }

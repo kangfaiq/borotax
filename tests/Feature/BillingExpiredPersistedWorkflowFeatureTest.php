@@ -39,8 +39,8 @@ it('persists overdue billing as expired and keeps it searchable on the manual pa
         ->call('searchBilling')
         ->assertSet('foundTax.id', $tax->id)
         ->assertSet('taxDetails.status', TaxStatus::Expired->value)
-        ->assertSet('taxDetails.status_label', 'Kedaluwarsa')
-        ->assertSee('KEDALUWARSA');
+        ->assertSet('taxDetails.status_label', 'Lewat Jatuh Tempo')
+        ->assertSee('LEWAT JATUH TEMPO');
 
     expect($tax->fresh()->status)->toBe(TaxStatus::Expired);
 });
@@ -63,8 +63,8 @@ it('persists overdue billing as expired and keeps it eligible on the stpd page',
         ->call('cariBilling')
         ->assertSet('selectedTaxId', $tax->id)
         ->assertSet('taxData.status', TaxStatus::Expired->value)
-        ->assertSet('taxData.status_label', 'Kedaluwarsa')
-        ->assertSee('KEDALUWARSA');
+        ->assertSet('taxData.status_label', 'Lewat Jatuh Tempo')
+        ->assertSee('LEWAT JATUH TEMPO');
 
     expect($tax->fresh()->status)->toBe(TaxStatus::Expired);
 });
@@ -84,13 +84,13 @@ it('keeps persisted expired billing visible on portal pembetulan screens', funct
         ->get(route('portal.pembetulan.index'))
         ->assertOk()
         ->assertSee($tax->billing_code)
-        ->assertSee('Kedaluwarsa')
+        ->assertSee('Lewat Jatuh Tempo')
         ->assertSee(route('portal.pembetulan.create', $tax->id), false);
 
     $this->actingAs($wajibPajak->user)
         ->get(route('portal.pembetulan.create', $tax->id))
         ->assertOk()
-        ->assertSee('Kedaluwarsa');
+        ->assertSee('Lewat Jatuh Tempo');
 
     expect($tax->fresh()->status)->toBe(TaxStatus::Expired);
 });

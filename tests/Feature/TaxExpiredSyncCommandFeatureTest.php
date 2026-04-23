@@ -52,7 +52,7 @@ it('syncs overdue unpaid billing statuses through the scheduled command', functi
     ]);
 
     $this->artisan('tax:sync-expired-statuses')
-        ->expectsOutput('Selesai. 2 billing overdue disinkronkan menjadi expired.')
+        ->expectsOutput('Selesai. 2 billing overdue disinkronkan menjadi lewat jatuh tempo.')
         ->assertSuccessful();
 
     expect($pendingTax->fresh()->status)->toBe(TaxStatus::Expired)

@@ -26,7 +26,7 @@ enum TaxStatus: string implements HasLabel, HasColor, HasIcon
             self::Paid => 'Lunas',
             self::Verified => 'Terverifikasi',
             self::PartiallyPaid => 'Dibayar Sebagian',
-            self::Expired => 'Kedaluwarsa',
+            self::Expired => 'Lewat Jatuh Tempo',
             self::Rejected => 'Ditolak',
             self::Cancelled => 'Dibatalkan',
         };

@@ -285,7 +285,7 @@
                                 @elseif($displayStatus === App\Enums\TaxStatus::Paid)
                                     <span class="badge badge-lunas">Lunas</span>
                                 @elseif($displayStatus === App\Enums\TaxStatus::Expired)
-                                    <span class="badge badge-expired">Kedaluwarsa</span>
+                                    <span class="badge badge-expired">Lewat Jatuh Tempo</span>
                                 @endif
                             </div>
                             <div class="result-body">

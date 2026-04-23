@@ -271,7 +271,7 @@
                                 <span class="badge badge-verified">Terverifikasi</span>
                                 @break
                             @case('expired')
-                                <span class="badge badge-expired">Kedaluwarsa</span>
+                                <span class="badge badge-expired">Lewat Jatuh Tempo</span>
                                 @break
                             @default
                                 <span class="badge badge-rejected">{{ ucfirst($displayStatus->value) }}</span>
