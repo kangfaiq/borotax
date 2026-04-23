@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
 
             // Data master penetapan pajak
             NpaAirTanahProgresifSeeder::class,
+            RetribusiSewaTanahTarifSeeder::class,
             HargaPatokanMblbSeeder::class,
             HargaPatokanSarangWaletSeeder::class,
             InstansiSeeder::class,

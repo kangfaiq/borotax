@@ -33,8 +33,7 @@ class RetribusiSewaTanahService
 
         $tarifNominal = (float) $tarif->tarif_nominal;
 
-        // Rumus: Luas m² × Jumlah Reklame × Harga Sub Jenis × Tarif Pajak % × Durasi
-        $jumlahRetribusi = $luasM2 * $jumlahReklame * $tarifNominal * ($tarifPajakPersen / 100) * $durasi;
+        $jumlahRetribusi = $luasM2 * $jumlahReklame * $tarifNominal * $durasi;
 
         return [
             'tarif_nominal' => $tarifNominal,

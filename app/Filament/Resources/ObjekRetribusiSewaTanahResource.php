@@ -29,6 +29,10 @@ class ObjekRetribusiSewaTanahResource extends Resource
     protected static ?string $model = ObjekRetribusiSewaTanah::class;
 
     private const BOJONEGORO_REGENCY_CODE = '35.22';
+    private const REKLAME_TO_RETRIBUSI_SUB_JENIS = [
+        'REKLAME_TETAP' => ['SEWA_TANAH_PERMANEN', 'SEWA_TANAH_RUMIJA'],
+        'REKLAME_KAIN' => ['SEWA_TANAH_KAIN'],
+    ];
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-map-pin';
 
@@ -54,11 +58,6 @@ class ObjekRetribusiSewaTanahResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $jenisPajak = JenisPajak::where('kode', '42101')->first();
-        $subJenisOptions = $jenisPajak
-            ? SubJenisPajak::where('jenis_pajak_id', $jenisPajak->id)->active()->ordered()->pluck('nama', 'id')->toArray()
-            : [];
-
         return $schema
             ->schema([
                 Section::make('1. Pilih NPWPD')
@@ -127,13 +126,14 @@ class ObjekRetribusiSewaTanahResource extends Resource
                             ->disabled(fn (Get $get): bool => blank($get('npwpd')))
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function (?string $state, Set $set): void {
+                            ->afterStateUpdated(function (?string $state, Get $get, Set $set): void {
                                 if (! $state) {
                                     $set('luas_m2', null);
                                     $set('nama_objek', null);
                                     $set('alamat_objek', null);
                                     $set('kecamatan', null);
                                     $set('kelurahan', null);
+                                    $set('sub_jenis_pajak_id', null);
 
                                     return;
                                 }
@@ -156,6 +156,15 @@ class ObjekRetribusiSewaTanahResource extends Resource
                                 $set('alamat_objek', $obj->alamat_objek);
                                 $set('kecamatan', $obj->kecamatan);
                                 $set('kelurahan', $obj->kelurahan);
+
+                                $allowedSubJenisOptions = static::getRetribusiSubJenisOptionsForTaxObject($state);
+                                $currentSubJenisId = $get('sub_jenis_pajak_id');
+
+                                if (count($allowedSubJenisOptions) === 1) {
+                                    $set('sub_jenis_pajak_id', array_key_first($allowedSubJenisOptions));
+                                } elseif (! array_key_exists((string) $currentSubJenisId, $allowedSubJenisOptions)) {
+                                    $set('sub_jenis_pajak_id', null);
+                                }
                             })
                             ->helperText('Daftar objek reklame hanya menampilkan objek milik NPWPD yang dipilih.'),
                         Forms\Components\TextInput::make('luas_m2')
@@ -188,7 +197,8 @@ class ObjekRetribusiSewaTanahResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('sub_jenis_pajak_id')
                             ->label('Sub Jenis Retribusi')
-                            ->options($subJenisOptions)
+                            ->options(fn (Get $get): array => static::getRetribusiSubJenisOptionsForTaxObject($get('tax_object_id')))
+                                ->helperText('Objek reklame kategori tetap hanya dapat dipasangkan dengan sewa tanah permanen atau RUMIJA, sedangkan objek reklame insidentil hanya dipasangkan dengan sewa tanah kain.')
                             ->required(),
                     ]),
                 Section::make('5. Data Objek Retribusi')
@@ -404,5 +414,39 @@ class ObjekRetribusiSewaTanahResource extends Resource
     protected static function formatReklameObjectLabel(ReklameObject $objek): string
     {
         return "{$objek->nopd} - {$objek->nama_objek_pajak} ({$objek->luas_m2} m²)";
+    }
+
+    public static function getRetribusiSubJenisOptionsForTaxObject(?string $taxObjectId): array
+    {
+        $jenisPajak = JenisPajak::where('kode', '42101')->first();
+
+        if (! $jenisPajak) {
+            return [];
+        }
+
+        $allowedCodes = static::resolveAllowedRetribusiSubJenisCodes($taxObjectId);
+
+        return SubJenisPajak::query()
+            ->where('jenis_pajak_id', $jenisPajak->id)
+            ->active()
+            ->ordered()
+            ->when($allowedCodes !== null, fn (Builder $query) => $query->whereIn('kode', $allowedCodes))
+            ->pluck('nama', 'id')
+            ->toArray();
+    }
+
+    protected static function resolveAllowedRetribusiSubJenisCodes(?string $taxObjectId): ?array
+    {
+        if (! $taxObjectId) {
+            return null;
+        }
+
+        $objekReklame = ReklameObject::query()
+            ->with('subJenisPajak:id,kode')
+            ->find($taxObjectId);
+
+        $kodeReklame = $objekReklame?->subJenisPajak?->kode;
+
+        return static::REKLAME_TO_RETRIBUSI_SUB_JENIS[$kodeReklame] ?? null;
     }
 }

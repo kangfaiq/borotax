@@ -205,7 +205,7 @@ class BuatSkrdSewaTanah extends Page
 
         $jumlahReklame = max(1, $this->jumlahReklame ?? 1);
         $this->previewJumlahRetribusi = round(
-            $this->luasM2 * $jumlahReklame * $this->previewTarif * ($this->tarifPajakPersen / 100) * $this->durasi
+            $this->luasM2 * $jumlahReklame * $this->previewTarif * $this->durasi
         );
 
         $this->updateMasaBerlakuSampai();

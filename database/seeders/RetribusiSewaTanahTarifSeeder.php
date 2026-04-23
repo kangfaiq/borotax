@@ -10,26 +10,38 @@ class RetribusiSewaTanahTarifSeeder extends Seeder
 {
     public function run(): void
     {
-        $tarifs = [
-            ['kode_sub' => 'SEWA_TANAH_PERMANEN', 'tarif_nominal' => 80000, 'satuan_waktu' => 'perTahun'],
-            ['kode_sub' => 'SEWA_TANAH_KAIN', 'tarif_nominal' => 20000, 'satuan_waktu' => 'perBulan'],
-            ['kode_sub' => 'SEWA_TANAH_RUMIJA', 'tarif_nominal' => 80000, 'satuan_waktu' => 'perTahun'],
+        $tarifGroups = [
+            [
+                'kode_reklame' => 'REKLAME_TETAP',
+                'tarif_nominal' => 80000,
+                'satuan_waktu' => 'perTahun',
+                'kode_sub' => ['SEWA_TANAH_PERMANEN', 'SEWA_TANAH_RUMIJA'],
+            ],
+            [
+                'kode_reklame' => 'REKLAME_KAIN',
+                'tarif_nominal' => 20000,
+                'satuan_waktu' => 'perBulan',
+                'kode_sub' => ['SEWA_TANAH_KAIN'],
+            ],
         ];
 
-        foreach ($tarifs as $data) {
-            $subJenisPajak = SubJenisPajak::where('kode', $data['kode_sub'])->first();
-            if (! $subJenisPajak) {
-                continue;
-            }
+        foreach ($tarifGroups as $group) {
+            foreach ($group['kode_sub'] as $kodeSub) {
+                $subJenisPajak = SubJenisPajak::where('kode', $kodeSub)->first();
 
-            TarifSewaTanah::updateOrCreate(
-                ['sub_jenis_pajak_id' => $subJenisPajak->id],
-                [
-                    'tarif_nominal' => $data['tarif_nominal'],
-                    'satuan_waktu' => $data['satuan_waktu'],
-                    'berlaku_mulai' => '2026-01-01',
-                ],
-            );
+                if (! $subJenisPajak) {
+                    continue;
+                }
+
+                TarifSewaTanah::updateOrCreate(
+                    ['sub_jenis_pajak_id' => $subJenisPajak->id],
+                    [
+                        'tarif_nominal' => $group['tarif_nominal'],
+                        'satuan_waktu' => $group['satuan_waktu'],
+                        'berlaku_mulai' => '2026-01-01',
+                    ],
+                );
+            }
         }
     }
 }

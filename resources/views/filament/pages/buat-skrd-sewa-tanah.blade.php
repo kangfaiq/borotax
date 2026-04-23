@@ -306,8 +306,8 @@
                                 </span>
                             </div>
                             <div class="flex justify-between gap-4">
-                                <span class="text-slate-500 dark:text-slate-400">Tarif Retribusi</span>
-                                <span class="font-medium text-slate-900 dark:text-white">{{ number_format($tarifPajakPersen, 0) }}%</span>
+                                <span class="text-slate-500 dark:text-slate-400">Rate Sub Jenis</span>
+                                <span class="font-medium text-slate-900 dark:text-white">Nominal final dari master retribusi</span>
                             </div>
                             <div class="flex justify-between gap-4">
                                 <span class="text-slate-500 dark:text-slate-400">Durasi</span>
@@ -316,7 +316,8 @@
 
                             <div class="rounded-xl border border-dashed border-primary-soft bg-primary-soft px-4 py-3">
                                 <p class="text-[11px] font-semibold text-primary mb-1">Rumus</p>
-                                <p class="text-sm text-slate-700 dark:text-slate-200">Luas m² × Jumlah Reklame × Harga Sub Jenis × Tarif Retribusi × Durasi</p>
+                                <p class="text-sm text-slate-700 dark:text-slate-200">Luas m² × Jumlah Reklame × Rate Sub Jenis × Durasi</p>
+                                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Rate sub jenis diambil langsung dari master tarif sewa tanah dan tidak dikalikan persentase lain lagi saat menghitung SKRD.</p>
                             </div>
 
                             <div class="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between gap-4 items-center">

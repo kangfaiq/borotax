@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\ObjekRetribusiSewaTanahResource;
+use App\Domain\Master\Models\SubJenisPajak;
 use Database\Seeders\JenisPajakSeeder;
 use Database\Seeders\SubJenisPajakSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -116,6 +117,40 @@ class ObjekRetribusiSewaTanahResourceTest extends TestCase
             'kecamatan' => 'Bojonegoro',
             'kelurahan' => 'Kadipaten',
         ]);
+    }
+
+    public function test_reklame_tetap_object_only_allows_permanen_and_rumija_sub_jenis(): void
+    {
+        $this->seedReferences();
+
+        $wajibPajak = $this->createApprovedWajibPajakFixture();
+        $reklameTetap = SubJenisPajak::where('kode', 'REKLAME_TETAP')->firstOrFail();
+        $taxObject = $this->createTaxObjectFixture($wajibPajak, '41104', [
+            'sub_jenis_pajak_id' => $reklameTetap->id,
+        ]);
+
+        $options = ObjekRetribusiSewaTanahResource::getRetribusiSubJenisOptionsForTaxObject($taxObject->id);
+
+        $this->assertCount(2, $options);
+        $this->assertContains('Pemakaian Tanah untuk Pemasangan Reklame Permanen', $options);
+        $this->assertContains('Pemakaian Tanah untuk Ruang Udara diatas RUMIJA', $options);
+        $this->assertNotContains('Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul', $options);
+    }
+
+    public function test_reklame_kain_object_only_allows_sewa_tanah_kain_sub_jenis(): void
+    {
+        $this->seedReferences();
+
+        $wajibPajak = $this->createApprovedWajibPajakFixture();
+        $reklameKain = SubJenisPajak::where('kode', 'REKLAME_KAIN')->firstOrFail();
+        $taxObject = $this->createTaxObjectFixture($wajibPajak, '41104', [
+            'sub_jenis_pajak_id' => $reklameKain->id,
+        ]);
+
+        $options = ObjekRetribusiSewaTanahResource::getRetribusiSubJenisOptionsForTaxObject($taxObject->id);
+
+        $this->assertCount(1, $options);
+        $this->assertContains('Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul', $options);
     }
 
     private function seedReferences(): void

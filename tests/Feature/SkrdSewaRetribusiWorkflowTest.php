@@ -86,7 +86,7 @@ class SkrdSewaRetribusiWorkflowTest extends TestCase
     }
 
     // ── Service Calculation ──
-    // Formula: luasM2 × jumlahReklame × tarifNominal × (tarifPajakPersen / 100) × durasi
+    // Formula: luasM2 × jumlahReklame × tarifNominal × durasi
 
     public function test_service_calculates_retribusi_permanen_tahunan(): void
     {
@@ -95,8 +95,8 @@ class SkrdSewaRetribusiWorkflowTest extends TestCase
         $service = new RetribusiSewaTanahService();
         $subJenis = SubJenisPajak::where('kode', 'SEWA_TANAH_PERMANEN')->first();
 
-        // luas=10, jumlah=2, tarif=80000, persen=25%, durasi=2
-        // = 10 * 2 * 80000 * 0.25 * 2 = 800000
+        // luas=10, jumlah=2, rate final=80000, durasi=2
+        // = 10 * 2 * 80000 * 2 = 3200000
         $result = $service->calculateRetribusi($subJenis->id, 10.0, 2, 2);
 
         $this->assertEquals(80000, $result['tarif_nominal']);
@@ -105,7 +105,7 @@ class SkrdSewaRetribusiWorkflowTest extends TestCase
         $this->assertEquals(10.0, $result['luas_m2']);
         $this->assertEquals(2, $result['jumlah_reklame']);
         $this->assertEquals(25.00, $result['tarif_pajak_persen']);
-        $this->assertEquals(800000, $result['jumlah_retribusi']);
+        $this->assertEquals(3200000, $result['jumlah_retribusi']);
     }
 
     public function test_service_calculates_retribusi_kain_bulanan(): void
@@ -115,13 +115,13 @@ class SkrdSewaRetribusiWorkflowTest extends TestCase
         $service = new RetribusiSewaTanahService();
         $subJenis = SubJenisPajak::where('kode', 'SEWA_TANAH_KAIN')->first();
 
-        // luas=5, jumlah=1, tarif=20000, persen=25%, durasi=3
-        // = 5 * 1 * 20000 * 0.25 * 3 = 75000
+        // luas=5, jumlah=1, rate final=20000, durasi=3
+        // = 5 * 1 * 20000 * 3 = 300000
         $result = $service->calculateRetribusi($subJenis->id, 5.0, 1, 3);
 
         $this->assertEquals(20000, $result['tarif_nominal']);
         $this->assertSame('perBulan', $result['satuan_waktu']);
-        $this->assertEquals(75000, $result['jumlah_retribusi']);
+        $this->assertEquals(300000, $result['jumlah_retribusi']);
     }
 
     // ── Draft SKRD ──
@@ -159,8 +159,8 @@ class SkrdSewaRetribusiWorkflowTest extends TestCase
         $this->assertEquals(12.0, (float) $skrd->luas_m2);
         $this->assertEquals(3, $skrd->jumlah_reklame);
         $this->assertEquals(25.00, (float) $skrd->tarif_pajak_persen);
-        // 12 * 3 * 80000 * 0.25 * 1 = 720000
-        $this->assertEquals(720000, (float) $skrd->jumlah_retribusi);
+        // 12 * 3 * 80000 * 1 = 2880000
+        $this->assertEquals(2880000, (float) $skrd->jumlah_retribusi);
         $this->assertSame('perTahun', $skrd->satuan_waktu);
     }
 

@@ -180,9 +180,9 @@ Catatan: tabel berikut menggambarkan akses halaman utama. Untuk beberapa modul, 
 | `MBLB_WAPU` | MBLB (41106) | MBLB Pemungut | Multi-billing per masa pajak |
 | *(insidentil)* | Hiburan/Parkir | Event-based | Bebas denda, multi-billing |
 | *(Katering/OPD)* | Restoran | OPD/Katering | Bebas denda, multi-billing |
-| `SEWA_TANAH_PERMANEN` | Sewa Tanah (42101) | Pemakaian Tanah untuk Pemasangan Reklame Permanen | Tarif Rp 80.000/tahun |
-| `SEWA_TANAH_KAIN` | Sewa Tanah (42101) | Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul | Tarif Rp 20.000/bulan |
-| `SEWA_TANAH_RUMIJA` | Sewa Tanah (42101) | Pemakaian Tanah untuk Ruang Udara diatas RUMIJA | Tarif Rp 80.000/tahun |
+| `SEWA_TANAH_PERMANEN` | Sewa Tanah (42101) | Pemakaian Tanah untuk Pemasangan Reklame Permanen | Rate final Rp 80.000/tahun |
+| `SEWA_TANAH_KAIN` | Sewa Tanah (42101) | Pemakaian Tanah untuk Pemasangan Kain Reklame/Umbul-umbul | Rate final Rp 20.000/bulan, dipakai untuk reklame insidentil |
+| `SEWA_TANAH_RUMIJA` | Sewa Tanah (42101) | Pemakaian Tanah untuk Ruang Udara diatas RUMIJA | Rate final Rp 80.000/tahun |
 
 ---
 
@@ -1203,7 +1203,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - **CRUD** sub-jenis pajak: kode, nama, tarif persen, insidentil flag, dasar hukum, berlaku mulai/sampai
 - **Akses backoffice:** Admin only
 - Relasi ke jenis pajak induk
-- Khusus reklame, sub jenis pajak dipakai sebagai kategori operasional/umbrella pada objek pajak dan flow SKPD, misalnya `REKLAME_TETAP` dan `REKLAME_KAIN`
+- Khusus reklame, sub jenis pajak dipakai sebagai kategori operasional/umbrella pada objek pajak dan flow SKPD, yaitu `REKLAME_TETAP` untuk reklame tetap dan `REKLAME_KAIN` sebagai umbrella reklame insidentil
 
 ### 12.3 Harga Patokan Reklame
 - **CRUD** detail jenis reklame: kode detail, nama, sub jenis induk reklame, flag insidentil, urutan, status aktif
@@ -1289,7 +1289,7 @@ Jika pembetulan pertama yang salah dibatalkan, billing pengganti berikutnya teta
 - Temporal (berlaku mulai/sampai)
 - Komponen: NSPR, NJOPR, tarif pokok (= (NSPR+NJOPR) × 25%)
 - Satuan waktu: perTahun, perBulan, perMinggu, perHari, perLembar, perMingguPerBuah, perHariPerBuah
-- Source of truth detail reklame berada pada master **Harga Patokan Reklame**, sedangkan `Sub Jenis Pajak` reklame tetap dipakai sebagai kategori induk (`REKLAME_TETAP` atau `REKLAME_KAIN`)
+- Source of truth detail reklame berada pada master **Harga Patokan Reklame**, sedangkan `Sub Jenis Pajak` reklame tetap dipakai sebagai kategori induk (`REKLAME_TETAP` untuk reklame tetap dan `REKLAME_KAIN` untuk reklame insidentil)
 
 ### 13.3 Nilai Strategis Reklame
 - Surcharge tambahan berdasarkan kelas kelompok (A/B/C) dan range luas
@@ -1436,9 +1436,14 @@ Retribusi Sewa Tanah adalah retribusi daerah atas pemakaian tanah milik pemerint
 | `SEWA_TANAH_RUMIJA` | Pemakaian Tanah untuk Ruang Udara diatas RUMIJA | Rp 80.000 | per Tahun |
 
 - Tarif disimpan di tabel `tarif_sewa_tanah` dan bersifat temporal (berlaku mulai/sampai)
-- **Rumus Perhitungan:** `Jumlah Retribusi = Luas m² × Jumlah Reklame × Harga Sub Jenis × Tarif Retribusi (25%) × Durasi`
+- Retribusi sewa tanah tetap berdiri sebagai master retribusi tersendiri, bukan memakai master pajak reklame
+- `SEWA_TANAH_KAIN` adalah sub jenis retribusi sewa tanah yang dipakai untuk penempatan reklame insidentil
+- **Rumus Perhitungan:** `Jumlah Retribusi = Luas m² × Jumlah Reklame × Rate Sub Jenis × Durasi`
 - Luas m² diambil dari objek retribusi (yang terhubung ke objek reklame di tabel `tax_objects`)
-- Tarif retribusi 25% diambil dari `tarif_default` pada jenis pajak Reklame (kode `41104`)
+- Nilai `rate` yang disimpan pada `tarif_sewa_tanah` adalah nominal final yang dipakai langsung saat menghitung SKRD
+- Pairing sub jenis pada pendaftaran objek retribusi mengikuti kategori objek reklame:
+  - `REKLAME_TETAP` hanya dapat dipasangkan dengan `SEWA_TANAH_PERMANEN` atau `SEWA_TANAH_RUMIJA`
+  - `REKLAME_KAIN` sebagai kategori reklame insidentil hanya dapat dipasangkan dengan `SEWA_TANAH_KAIN`
 
 ### 14a.3 Objek Retribusi Sewa Tanah
 
