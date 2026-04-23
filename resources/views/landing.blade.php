@@ -8,6 +8,8 @@
     <div class="navbar-dropdown">
         <a href="#layanan-publik" class="navbar-dropdown-toggle">Layanan Publik <i class="bi bi-chevron-down" style="font-size:0.7rem;"></i></a>
         <div class="navbar-dropdown-menu">
+            <a href="{{ url('/cek-billing') }}"><i class="bi bi-receipt-cutoff"></i> Cek Billing</a>
+            <a href="{{ url('/histori-pajak') }}"><i class="bi bi-clock-history"></i> Histori Pajak</a>
             <a href="{{ url('/sewa-reklame') }}"><i class="bi bi-megaphone"></i> Sewa Reklame</a>
             <a href="{{ url('/kalkulator-sanksi') }}"><i class="bi bi-calculator"></i> Kalkulator Sanksi</a>
             <a href="{{ url('/produk-hukum') }}"><i class="bi bi-journal-bookmark"></i> Produk Hukum</a>
@@ -17,8 +19,6 @@
     </div>
     <a href="{{ url('/destinasi') }}">Wisata</a>
     <a href="{{ url('/berita') }}">Berita</a>
-    <a href="{{ url('/cek-billing') }}">Cek Billing</a>
-    <a href="{{ url('/histori-pajak') }}">Histori Pajak</a>
     <a href="{{ url('/login') }}" class="navbar-cta">Login Wajib Pajak</a>
 @endsection
 
@@ -27,6 +27,8 @@
     <a href="#cara-kerja">Cara Kerja</a>
     <div class="navbar-mobile-group">
         <div class="navbar-mobile-group-title"><i class="bi bi-grid-fill" style="font-size:0.8rem;"></i> Layanan Publik</div>
+        <a href="{{ url('/cek-billing') }}"><i class="bi bi-receipt-cutoff"></i> Cek Billing</a>
+        <a href="{{ url('/histori-pajak') }}"><i class="bi bi-clock-history"></i> Histori Pajak</a>
         <a href="{{ url('/sewa-reklame') }}"><i class="bi bi-megaphone"></i> Sewa Reklame</a>
         <a href="{{ url('/kalkulator-sanksi') }}"><i class="bi bi-calculator"></i> Kalkulator Sanksi</a>
         <a href="{{ url('/produk-hukum') }}"><i class="bi bi-journal-bookmark"></i> Produk Hukum</a>
@@ -35,8 +37,6 @@
     </div>
     <a href="{{ url('/destinasi') }}">Wisata</a>
     <a href="{{ url('/berita') }}">Berita</a>
-    <a href="{{ url('/cek-billing') }}">Cek Billing</a>
-    <a href="{{ url('/histori-pajak') }}">Histori Pajak</a>
     <a href="{{ url('/login') }}">Login Wajib Pajak</a>
 @endsection
 
