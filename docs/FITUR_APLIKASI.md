@@ -342,20 +342,23 @@ Perhitungan dilakukan per-tier: volume dipecah sesuai bracket dan dikalikan NPA 
 
 ```
 [Wajib Pajak]                    [Petugas/Admin]              [Verifikator/Admin]
-     |                                 |                              |
-     |-- Registrasi via Mobile ------->|                              |
-     |   (OTP Email → Verifikasi)      |                              |
-     |                                 |                              |
-     |   ATAU                          |                              |
-     |                                 |-- Daftarkan WP Manual ------>|
-     |                                 |   (via Backoffice)           |
-     |                                 |                              |
-    |                                 |                              |-- Verifikasi WP
-    |                                 |                              |   (Setujui/Tolak/
-    |                                 |                              |    Perlu Perbaikan)
-     |                                 |                              |
-     |<----- Notifikasi Status --------|<-----------------------------|
-     |   (NPWPD digenerate jika disetujui)                            |
+  |                                 |                              |
+  |-- Registrasi via Mobile/API --->|                              |
+  |   (OTP Email → submit data)     |                              |
+  |                                 |                              |
+  |                                 |                              |-- Verifikasi WP
+  |                                 |                              |   (Setujui/Tolak/
+  |                                 |                              |    Perlu Perbaikan)
+  |                                 |                              |
+  |<----- Notifikasi Status --------|<-----------------------------|
+  |   (NPWPD digenerate jika disetujui)                            |
+  |                                 |                              |
+  |   ATAU                          |                              |
+  |                                 |-- Daftarkan WP Manual ------>|
+  |                                 |   (via Backoffice)           |
+  |                                 |                              |
+  |<----- Akun + NPWPD Langsung ----|                              |
+  |   (auto-approve, wajib ganti password saat login pertama)      |
 ```
 
 **Format NPWPD:** `P1XXXXXXXXXXX` (perorangan) atau `P2XXXXXXXXXXX` (perusahaan) — 13 karakter, sekuensial.
@@ -365,6 +368,11 @@ Perhitungan dilakukan per-tier: volume dipecah sesuai bracket dan dikalikan NPA 
 - `disetujui` → Disetujui (NPWPD terbit)
 - `ditolak` → Ditolak
 - `perluPerbaikan` → Perlu Perbaikan (menunggu perbaikan data dari wajib pajak)
+
+**Catatan implementasi saat ini:**
+- Registrasi mandiri via mobile/API masuk ke status `menungguVerifikasi` dan diproses dari modul verifikasi WP.
+- Pendaftaran WP via backoffice oleh admin/petugas langsung membuat akun portal, mengisi `tanggal_verifikasi`, mengenerate NPWPD, dan menyimpan record sebagai `disetujui` tanpa antrean verifikasi terpisah.
+- Akun backoffice yang baru dibuat untuk WP diberi flag `must_change_password = true`, sehingga login pertama wajib melewati alur ganti password.
 
 ### 5.2 Alur Self-Assessment (PBJT)
 
@@ -501,6 +509,519 @@ Perhitungan dilakukan per-tier: volume dipecah sesuai bracket dan dikalikan NPA 
 - `diajukan` → `diproses` → `disetujui` / `ditolak`
 - `diajukan` → `perlu_revisi` → `diajukan` (kembali setelah revisi)
 
+### 5.7 Alur Lupa Password (Portal Web & API Mobile)
+
+```
+[Wajib Pajak]                    [Sistem]
+  |                              |
+  |-- Minta OTP reset ---------->|
+  |   (email akun portal)        |
+  |                              |
+  |<-- OTP 6 digit via email ----|
+  |   (3 menit, cooldown 2 menit)|
+  |                              |
+  |-- Verifikasi OTP ----------->|
+  |                              |
+  |<-- verification token -------|
+  |                              |
+  |-- Set password baru -------->|
+  |                              |
+  |<-- Password diperbarui ------|
+```
+
+- Berlaku untuk akun portal wajib pajak yang aktif dan memiliki email login.
+- OTP reset password berlaku 3 menit, maksimal 3 percobaan verifikasi, dan maksimal 3 request per 15 menit.
+- Request ulang OTP menonaktifkan OTP reset sebelumnya yang masih aktif.
+- Jika email tidak memenuhi syarat, sistem tetap mengembalikan respons netral agar tidak membuka informasi keberadaan akun.
+
+### 5.8 Alur Wajib Ganti Password Saat Login Pertama
+
+```
+[Wajib Pajak]                    [Portal/API]                 [Sistem]
+  |                                 |                          |
+  |-- Login ----------------------->|                          |
+  |                                 |-- Cek must_change_password|
+  |                                 |                          |
+  |<-- Dialihkan / dibatasi --------|<-------------------------|
+  |   ke ubah password pertama      |                          |
+  |                                 |                          |
+  |-- Simpan password baru -------->|------------------------->|
+  |                                 |                          |
+  |<-- Akses penuh dipulihkan ------|<-------------------------|
+```
+
+- Dipakai untuk akun WP hasil pendaftaran backoffice atau akun yang password-nya di-reset oleh petugas/admin.
+- Di portal web, user diarahkan paksa ke `/portal/password/change-first` sebelum bisa membuka halaman portal lain.
+- Di API mobile, token login tetap diterbitkan, tetapi akses dibatasi sampai user menyelesaikan `update-password`.
+
+### 5.9 Alur Perubahan Data Wajib Pajak (Data Change Request)
+
+```
+[Admin/Petugas]                   [Verifikator/Admin]              [Sistem]
+   |                                  |                            |
+   |-- Edit data WP ----------------->|                            |
+   |   (record sudah disetujui)       |                            |
+   |                                  |                            |
+   |                           [Buat DataChangeRequest pending]    |
+   |                                  |                            |
+   |                                  |-- Review request --------->|
+   |                                  |   Setujui / Tolak          |
+   |                                  |                            |
+   |<----- Hasil review --------------|<---------------------------|
+```
+
+- Perubahan sensitif pada WP yang sudah `disetujui` tidak langsung mengubah record utama.
+- Sistem membuat `DataChangeRequest` berstatus `pending` agar ada jejak review dan audit.
+- Hanya setelah disetujui oleh admin/verifikator perubahan diterapkan ke data wajib pajak.
+
+### 5.10 Alur Histori Pajak Publik
+
+```
+[Publik/WP]                         [Sistem]
+  |                                  |
+  |-- Isi NPWPD + Tahun -----------> |
+  |   (captcha + rate limit)         |
+  |                                  |
+  |<-- Tabel histori dokumen --------|
+  |   + status efektif pembayaran    |
+  |                                  |
+  |-- Cetak PDF histori -----------> |
+  |                                  |
+  |<-- PDF inline Folio/F4 ----------|
+```
+
+- Histori publik mencakup Billing, STPD Manual, Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, dan SKRD Sewa Tanah.
+- Endpoint PDF publik memakai route terpisah `/histori-pajak/pdf`.
+
+### 5.11 Alur Pengajuan MBLB Portal (Self-Assessment dengan Verifikasi)
+
+```
+[Wajib Pajak]                    [Admin/Verifikator]              [Sistem]
+  |                                  |                              |
+  |-- Submit MBLB via portal ------->|                              |
+  |   (volume per mineral + lampiran)|                              |
+  |                                  |                              |
+  |                            [PortalMblbSubmission status pending]|
+  |                                  |                              |
+  |                                  |-- Review submission -------->|
+  |                                  |   Setujui / Tolak / Revisi   |
+  |                                  |                              |
+  |                                  |          (Setujui)           |
+  |                                  |                       [Generate Billing Code]
+  |                                  |                       [Hitung pokok + opsen]
+  |                                  |                       [Buat record Tax]
+  |                                  |                              |
+  |<------------- Notifikasi hasil --|<-----------------------------|
+```
+
+- Berbeda dengan self-assessment lain, MBLB portal tidak langsung menerbitkan billing.
+- Submission dan lampiran ditinjau admin/verifikator dulu sebelum billing dibuat.
+- Halaman sukses portal mengarah ke `/portal/self-assessment/mblb-submissions/{submissionId}/success` selama menunggu verifikasi.
+
+### 5.12 Alur Perpanjangan Reklame
+
+```
+[Wajib Pajak]              [Petugas]               [Verifikator]          [Sistem]
+   |                           |                        |                    |
+   |-- Ajukan perpanjangan --->|                        |                    |
+   |   (durasi 30/90/180/365)  |                        |                    |
+   |                           |                        |                    |
+   |                           |-- Buat draft SKPD --->|                    |
+   |                           |   perpanjangan         |                    |
+   |                           |                        |                    |
+   |                           |                        |-- Setujui SKPD -->|
+   |                           |                        |   ATAU Tolak       |
+   |                           |                        |              [Generate nomor SKPD]
+   |                           |                        |              [Generate billing]
+   |                           |                        |              [Update masa berlaku objek]
+   |                           |                        |                    |
+   |<----- Notifikasi SKPD perpanjangan -----------------|<------------------|
+```
+
+- Hanya boleh diajukan jika izin reklame ≤ 30 hari dari kadaluarsa atau sudah kadaluarsa.
+- Tidak boleh ada pengajuan aktif (`diajukan`/`menungguVerifikasi`/`diproses`) yang sama untuk objek tersebut.
+- Status objek reklame otomatis menjadi `kadaluarsa` saat `masa_berlaku_sampai` lewat.
+
+### 5.13 Alur Lapor Meter Air Tanah (Mobile)
+
+```
+[Wajib Pajak Mobile]              [Petugas/Verifikator]              [Sistem]
+   |                                    |                              |
+   |-- Submit laporan meter ----------->|                              |
+   |   (foto meter + GPS + reading)     |                              |
+   |                                    |                       [Simpan MeterReport]
+   |                                    |                       [Update last_meter_reading]
+   |                                    |                       [Notifikasi role petugas]
+   |                                    |                              |
+   |                                    |-- Proses laporan ----------->|
+   |                                    |   → buat draft SKPD Air Tanah|
+   |                                    |                              |
+   |                                    |   (lanjut ke alur SKPD       |
+   |                                    |    Air Tanah pada 5.4)       |
+```
+
+- Laporan meter hanya valid untuk objek air tanah aktif milik user login.
+- Setelah disubmit, laporan berstatus `submitted` dan masuk ke modul Laporan Meter backoffice.
+
+### 5.14 Alur Gebyar Sadar Pajak
+
+```
+[Wajib Pajak]                       [Admin]                           [Sistem]
+   |                                   |                                 |
+   |-- Submit struk + jumlah --------->|                                 |
+   |   transaksi pajak                 |                                 |
+   |                                   |                          [GebyarSubmission pending]
+   |                                   |                          [kupon_count default 1]
+   |                                   |                                 |
+   |                                   |-- Review submission ----------->|
+   |                                   |   Setujui (kupon final) / Tolak |
+   |                                   |                                 |
+   |<--------- Notifikasi hasil -------|<--------------------------------|
+```
+
+- Submission masuk dalam status `pending` dan menunggu review admin.
+- Default kupon `1`; admin dapat menyesuaikan jumlah kupon saat menyetujui.
+
+### 5.15 Alur Lunas Bayar Manual (Backoffice)
+
+```
+[Admin]                                   [Sistem]
+  |                                         |
+  |-- Cari billing (kode/NPWPD) ----------->|
+  |   Input pokok + sanksi + bukti bayar    |
+  |                                         |
+  |                                  [Buat TaxPayment]
+  |                                  [Recalculate sisa tagihan]
+  |                                  [Update status: paid / partially_paid]
+  |                                  [Auto-issue SPTPD jika triwulan lengkap]
+  |                                  [Auto-issue STPD jika sanksi & triwulan lengkap]
+  |                                         |
+  |<------ Konfirmasi pelunasan ------------|
+```
+
+- Hanya untuk role admin.
+- Billing `expired` tetap dapat dilunaskan manual selama masih ada sisa tagihan.
+
+### 5.16 Alur Pembatalan Pembayaran
+
+```
+[Admin]                                   [Sistem]
+  |                                         |
+  |-- Pilih pembayaran -------------------->|
+  |   Input alasan pembatalan               |
+  |                                         |
+  |                                  [Soft-delete TaxPayment]
+  |                                  [Recalculate sisa tagihan]
+  |                                  [Revoke SPTPD jika tidak lagi lunas]
+  |                                  [Revoke STPD jika pokok tidak lunas]
+  |                                  [Reopen status sesuai domain]
+  |                                         |
+  |<------ Notifikasi pembatalan -----------|
+```
+
+- Status billing kembali ke `pending`/`verified`/`expired`/`partially_paid` sesuai sisa pembayaran dan jatuh tempo.
+- Nomor SPTPD/STPD dipertahankan jika pokok tetap lunas penuh.
+
+### 5.17 Alur STPD Manual
+
+```
+[Petugas]                       [Verifikator/Admin]                 [Sistem]
+   |                                    |                              |
+   |-- Pilih billing + tipe STPD ------>|                              |
+   |   (pokok_sanksi / sanksi_saja)     |                              |
+   |                                    |                       [Buat StpdManual draft]
+   |                                    |                       [Notifikasi verifikator]
+   |                                    |                              |
+   |                                    |-- Setujui & Terbitkan ------>|
+   |                                    |   ATAU Tolak                 |
+   |                                    |                       [Generate nomor STPD resmi]
+   |                                    |                       [Set kode pembayaran]
+   |                                    |                       [Sync stpd_number ke billing]
+   |                                    |                              |
+   |<--------- Notifikasi STPD terbit --|<-----------------------------|
+```
+
+- Pembuat draft tidak boleh memverifikasi dokumennya sendiri.
+- Kode pembayaran `pokok_sanksi` mengikuti billing asal; `sanksi_saja` memakai kode turunan dengan digit ke-8 dan ke-9 menjadi `77`.
+
+### 5.18 Alur Surat Ketetapan Pajak Daerah (SKPDKB/KBT/LB/N)
+
+```
+[Admin/Petugas]              [Admin/Verifikator]                  [Sistem]
+   |                                |                                |
+   |-- Pilih billing sumber ------->|                                |
+   |   Pilih jenis surat + dasar    |                                |
+   |   Isi nominal & bulan bunga    |                                |
+   |                                |                          [Buat draft TaxAssessmentLetter]
+   |                                |                                |
+   |                                |-- Setujui & Terbitkan -------->|
+   |                                |   ATAU Tolak                   |
+   |                                |                          [Generate nomor surat resmi]
+   |                                |                          [SKPDKB/KBT → buat billing baru (suffix 19)]
+   |                                |                          [SKPDLB → simpan saldo kredit]
+   |                                |                          [SKPDN → tidak ada billing baru]
+   |                                |                                |
+   |<-------- Notifikasi surat terbit ------------------------------|
+```
+
+- Pembuat draft tidak boleh memverifikasi dokumennya sendiri.
+- Saldo kredit `SKPDLB` dapat dialokasikan ke billing lain milik WP yang sama melalui aksi kompensasi.
+
+### 5.19 Alur Peminjaman Aset Reklame oleh OPD
+
+```
+[Admin/Petugas]                       [Sistem]
+   |                                     |
+   |-- Catat peminjaman aset ----------->|
+   |   (OPD peminjam, materi, periode)   |
+   |                                     |
+   |                              [Set status aset: dipinjam_opd]
+   |                              [Catat periode pinjam]
+   |                                     |
+   |   (saat pinjam_selesai lewat)       |
+   |                              [SyncKetersediaanAsetReklame]
+   |                              [Tutup pinjam aktif]
+   |                              [Set status aset: tersedia]
+```
+
+- Berbeda dari sewa komersial; tidak menerbitkan SKPD/billing.
+- Pengembalian otomatis ketika `pinjam_selesai` lewat melalui scheduler `SyncKetersediaanAsetReklame`.
+
+### 5.20 Alur Retribusi Sewa Tanah (SKRD)
+
+```
+[Petugas]                      [Verifikator/Admin]                 [Sistem]
+   |                                   |                              |
+   |-- Pilih wajib bayar + objek ----->|                              |
+   |   Pilih sub-jenis sewa tanah      |                              |
+   |   Input durasi + masa berlaku     |                              |
+   |                                   |                       [Hitung Retribusi = Tarif × Durasi]
+   |                                   |                       [Buat draft SkrdSewaRetribusi]
+   |                                   |                              |
+   |                                   |-- Setujui & Terbitkan ----->|
+   |                                   |   ATAU Tolak                 |
+   |                                   |                       [Generate nomor SKRD]
+   |                                   |                       [Generate billing prefix 41104]
+   |                                   |                              |
+   |<--------- Notifikasi SKRD terbit -|<-----------------------------|
+```
+
+- Tarif tetap nominal (bukan persentase) per sub-jenis sewa tanah.
+- Kode billing memakai prefix `41104` lewat `billing_kode_override`.
+
+### 5.21 Alur Auto-Expire Billing (Scheduler)
+
+```
+[Cron tax:sync-expired-statuses]              [Sistem]
+   |                                             |
+   |-- Jalan tiap jam -------------------------->|
+   |                                       [Cari billing pending/verified/partially_paid
+   |                                        dengan payment_expired_at < now()]
+   |                                       [Set status: expired]
+   |                                       [Catat batch ke ActivityLog]
+   |                                       [Kirim notifikasi backoffice
+   |                                        (deep-link Histori Auto-Expire)]
+```
+
+- Billing `expired` tetap diperlakukan sebagai kewajiban aktif untuk pelunasan manual, STPD manual, pembetulan, dan blocking duplikat.
+- Notifikasi backoffice memuat ringkasan jumlah, daftar kode billing, status asal, dan dipotong otomatis bila batch sangat besar.
+
+### 5.22 Alur Single Session Lintas Kanal
+
+```
+[Akun WP / Backoffice]                    [Sistem]
+   |                                         |
+   |-- Login dari kanal baru --------------->|
+   |   (portal / backoffice / mobile)        |
+   |                                         |
+   |                                  [Rotasi active_session_id]
+   |                                  [Catat metadata kanal/IP/device/waktu]
+   |                                  [Tampilkan notif "sesi sebelumnya digantikan"]
+   |                                         |
+   |   (request berikutnya dari sesi lama)   |
+   |                                  [Tolak akses + pesan kanal baru]
+   |                                  [Token API lama menjadi stale]
+```
+
+- Berlaku lintas kanal: portal web, backoffice Filament, dan API Sanctum.
+- Pesan kepada user menyebutkan kanal dan perangkat tempat login baru terjadi.
+
+### 5.23 Alur Pembatalan Billing
+
+```
+[Admin/Petugas]                                 [Sistem]
+   |                                               |
+   |-- Pilih billing pending/verified/expired --->|
+   |   Input alasan pembatalan                     |
+   |                                               |
+   |                                        [Validasi: tidak ada pembayaran lunas]
+   |                                        [Soft-delete Tax + relasi billing]
+   |                                        [Catat alasan + petugas pembatal]
+   |                                        [ActivityLog: billing_cancelled]
+   |                                               |
+   |   (opsional pemulihan)                        |
+   |-- Restore billing dibatalkan ---------------->|
+   |                                        [Restore record + reset status awal]
+   |                                        [ActivityLog: billing_restored]
+```
+
+- Berbeda dengan Pembatalan Pembayaran (5.16) — ini membatalkan billing yang belum lunas, bukan transaksi pembayaran.
+- Billing yang sudah ada pembayaran lunas/sebagian tidak dapat dibatalkan; harus melalui Pembatalan Pembayaran terlebih dulu.
+- Riwayat pembatalan tetap tersimpan dan dapat dilihat di halaman Pembatalan Billing.
+
+### 5.24 Alur Pembetulan SPT/SPTPD
+
+```
+[WP Portal/Mobile atau Petugas]      [Verifikator]                [Sistem]
+   |                                      |                          |
+   |-- Ajukan pembetulan billing -------->|                          |
+   |   (alasan + nilai usulan + lampiran) |                          |
+   |                                      |                  [PembetulanRequest pending]
+   |                                      |                          |
+   |                                      |-- Review usulan -------->|
+   |                                      |   Setujui / Tolak        |
+   |                                      |                          |
+   |                                      |   (Setujui)              |
+   |                                      |                  [Update nilai pajak terhutang]
+   |                                      |                  [Recalculate sisa & sanksi]
+   |                                      |                  [Catat versi pembetulan]
+   |                                      |                          |
+   |<-------- Notifikasi hasil -----------|<-------------------------|
+```
+
+- Pembetulan hanya valid untuk billing yang sudah diterbitkan dan belum lunas penuh.
+- Histori nilai sebelum/sesudah pembetulan disimpan untuk audit trail.
+
+### 5.25 Alur Permohonan Sewa Reklame Publik
+
+```
+[Publik / Calon Penyewa]              [Admin/Petugas]                 [Sistem]
+   |                                       |                             |
+   |-- Pilih aset reklame Pemkab --------->|                             |
+   |   Isi data pemohon + materi + periode |                             |
+   |   Unggah desain materi                |                             |
+   |                                       |                      [PermohonanSewaReklame pending]
+   |                                       |                      [Aset: status pending sewa]
+   |                                       |                             |
+   |                                       |-- Review permohonan ------>|
+   |                                       |   Setujui / Tolak           |
+   |                                       |                             |
+   |                                       |   (Setujui)                 |
+   |                                       |                      [Buat SKPD Reklame]
+   |                                       |                      [Generate billing]
+   |                                       |                      [Aset: status disewa]
+   |                                       |                             |
+   |<--------- Notifikasi + tagihan -------|<----------------------------|
+```
+
+- Hanya aset reklame Pemkab berstatus `tersedia` yang dapat diajukan publik.
+- Permohonan yang ditolak/expired mengembalikan status aset ke `tersedia`.
+- Setelah masa sewa berakhir, status aset kembali `tersedia` melalui scheduler `SyncKetersediaanAsetReklame`.
+
+### 5.26 Alur Buat Billing Self-Assessment Backoffice
+
+```
+[Admin/Petugas]                          [Sistem]
+   |                                        |
+   |-- Pilih wajib pajak + objek pajak --->|
+   |   Pilih jenis pajak self-assessment   |
+   |   Input dasar pengenaan + masa pajak  |
+   |                                        |
+   |                                 [Hitung pokok + sanksi]
+   |                                 [Generate kode billing]
+   |                                 [Set payment_expired_at]
+   |                                 [Catat petugas pembuat]
+   |                                        |
+   |<------ Billing terbit -----------------|
+```
+
+- Counterpart backoffice dari self-assessment portal/mobile; biasanya dipakai saat WP datang ke loket.
+- Berlaku untuk pajak self-assessment umum (Restoran, Hotel, Hiburan, Parkir, PJU, dsb.).
+
+### 5.27 Alur Buat Billing Sarang Walet
+
+```
+[Petugas]                              [Sistem]
+   |                                      |
+   |-- Pilih WP + objek sarang walet --->|
+   |   Input volume produksi + jenis      |
+   |                                      |
+   |                              [Cari HargaPatokanSarangWalet aktif]
+   |                              [Pokok = Volume × Harga × Tarif]
+   |                              [Generate billing + kode pembayaran]
+   |                                      |
+   |<------ Billing terbit ---------------|
+```
+
+- Harga patokan sarang walet ditentukan per jenis dan tahun aktif.
+- Tarif efektif mengikuti pengaturan jenis/sub-jenis pajak terkait.
+
+### 5.28 Alur Buat Billing MBLB Backoffice
+
+```
+[Admin/Petugas]                        [Sistem]
+   |                                      |
+   |-- Pilih WP + lokasi tambang ------->|
+   |   Input volume per mineral           |
+   |                                      |
+   |                              [Cari HargaPatokanMblb aktif per mineral]
+   |                              [Pokok = Σ(Volume × HPP × Tarif)]
+   |                              [Hitung opsen jika berlaku]
+   |                              [Generate billing langsung terbit]
+   |                                      |
+   |<------ Billing terbit ---------------|
+```
+
+- Counterpart backoffice dari 5.11 MBLB Portal — di sini billing terbit langsung tanpa antrian verifikasi pengajuan.
+- Harga patokan MBLB diatur per mineral dan periode aktif.
+
+### 5.29 Alur Akses Dokumen Pribadi Wajib Pajak
+
+```
+[Wajib Pajak Login (Portal/Mobile)]            [Sistem]
+   |                                              |
+   |-- Buka Daftar SKPD Saya / Riwayat Dok. ---->|
+   |                                       [Filter dokumen by user_id WP]
+   |                                       [Scope hanya milik akun login]
+   |                                              |
+   |<-- Daftar SKPD/STPD/Surat Ketetapan/SKRD ---|
+   |                                              |
+   |-- Pilih dokumen → Preview/Cetak ------------>|
+   |                                       [Validasi kepemilikan + status terbit]
+   |                                              |
+   |<-- PDF inline / preview HTML ---------------|
+```
+
+- Menggantikan kebutuhan akses publik untuk WP yang sudah login; tidak butuh captcha.
+- Mencakup SKPD Reklame, SKPD Air Tanah, STPD Manual, Surat Ketetapan, dan SKRD Sewa Tanah.
+- WP hanya dapat melihat dokumen yang `user_id`-nya cocok dengan akun login.
+
+### 5.30 Alur Notifikasi & Deep-link Backoffice
+
+```
+[Sistem / Event Domain]                      [Backoffice User]
+   |                                              |
+   |-- Trigger event (auto-expire,                |
+   |   DCR baru, MBLB pending, Gebyar             |
+   |   pending, pembetulan, dll.) ---------->     |
+   |                                              |
+   |   [Buat DatabaseNotification per role        |
+   |    target: admin/verifikator/petugas]        |
+   |   [Sertakan URL deep-link]                   |
+   |                                              |
+   |                                       [Bell icon Filament: badge +1]
+   |                                              |
+   |                                  <-- Klik notifikasi --
+   |                                              |
+   |   [Redirect ke halaman terkait               |
+   |    (resource list / detail / histori)]       |
+   |   [Mark notifikasi sebagai dibaca]           |
+```
+
+- Notifikasi backoffice memakai database channel Laravel + tampilan Filament bell.
+- Setiap event memilih role target yang relevan agar tidak membanjiri user lain.
+- Deep-link mengarah langsung ke konteks (mis. Histori Auto-Expire, daftar DCR pending, MBLB submission detail).
+
 ---
 
 ## 6. Fitur Backoffice (Admin Panel)
@@ -592,6 +1113,7 @@ Catatan implementasi saat ini:
 - Verifikator/admin kemudian mereview request tersebut dari modul `Data Change Request` untuk `approve` atau `reject`.
 - Edit record Wajib Pajak yang sudah `disetujui` tetap tersedia untuk admin/petugas, tetapi perubahan sensitifnya tetap masuk ke workflow `DataChangeRequest` agar ada jejak review.
 - Aksi verifikasi Wajib Pajak (`Setujui`, `Tolak`, `Perlu Perbaikan`) digunakan untuk record berstatus `menungguVerifikasi` dan dijalankan oleh admin/verifikator.
+- Pendaftaran WP manual dari modul backoffice admin/petugas tidak masuk antrean ini; flow tersebut langsung mengisi status `disetujui`, NPWPD, dan metadata verifikasi saat record dibuat.
 - Persetujuan SKPD Reklame tetap satu tahap, tetapi sinkronisasi perubahan ke `tax_objects` sekarang menulis `ActivityLog` hanya untuk field objek yang benar-benar berubah, lengkap dengan nomor SKPD draft/final, `request_id` bila berasal dari pengajuan, nama petugas pembuat draft, dan nama verifikator penyetuju.
 - Widget riwayat perubahan objek pajak menampilkan label aksi log yang human-readable, sehingga proses seperti sinkronisasi objek dari persetujuan SKPD Reklame tidak lagi tampil sebagai kode action internal.
 
@@ -681,6 +1203,8 @@ Catatan implementasi saat ini:
 ### 6.13 Pendaftaran
 - **Data Wajib Pajak:** List dan detail dapat diakses semua role backoffice untuk kebutuhan operasional dan verifikasi
 - **Daftar Wajib Pajak:** Pendaftaran WP baru hanya untuk admin dan petugas, dengan form perorangan/perusahaan serta cascading wilayah
+- **Auto-approve backoffice:** Pendaftaran WP dari modul backoffice langsung membuat record `disetujui`, mengisi `tanggal_verifikasi`, menetapkan petugas pembuat sebagai verifikator pada record, dan langsung mengenerate NPWPD tanpa menunggu review terpisah
+- **Akun portal hasil pendaftaran:** Jika email belum ada, petugas dapat tetap membuat akun WP; user portal dibuat dalam status auth `verified`, diberi password awal operasional, dan diwajibkan mengganti password saat login pertama (`must_change_password = true`)
 - **Email login otomatis:** Jika email dikosongkan saat pendaftaran WP backoffice, sistem membuat email login yang tetap terbaca dari kombinasi nama, alamat, nomor kontak, dan suffix acak agar WP tetap bisa login memakai email atau NIK
 - **Label UI email login:** Setelah akun dibuat, notifikasi backoffice dan form data WP menandai apakah akun memakai `Username login otomatis` atau tetap memakai email asli wajib pajak
 - **Badge tabel/detail WP:** Tabel pendaftaran WP dan tabel/detail data WP menampilkan badge warna `Username Otomatis` atau `Email WP` agar operator bisa membedakan sumber username login tanpa membuka form edit
@@ -694,6 +1218,7 @@ Catatan implementasi saat ini:
 
 - **Wajib ganti password saat login pertama:** user wajib pajak yang dibuat atau di-reset dari backoffice dengan flag `must_change_password = true` akan diarahkan paksa ke halaman ubah password pertama kali sebelum bisa mengakses halaman portal lain.
 - **Lupa password via OTP email:** halaman login portal menyediakan tautan `Lupa password?` yang membuka alur guest untuk meminta OTP 6 digit ke email akun portal aktif, memverifikasi OTP, lalu menetapkan password baru tanpa harus login.
+- **Eligibilitas lupa password:** hanya akun portal wajib pajak yang aktif dan memiliki email login yang benar-benar menerima OTP; untuk email yang tidak eligible, UI tetap menampilkan respons netral.
 - **Route first-login password change:** `/portal/password/change-first`
 - **Route ubah password reguler:** `/portal/password/change`
 - **Route lupa password portal:** `/lupa-password`, `/lupa-password/verifikasi`, dan `/lupa-password/reset`
@@ -921,6 +1446,7 @@ Wajib pajak dapat melihat dan mengunduh:
 | Login Portal | `/login` | Form login portal wajib pajak |
 | Cek Billing | `/cek-billing` | Cek status billing berdasarkan kode, tersedia dari menu `Layanan Publik` di landing page dan memakai sub-navigation layanan publik yang sama dengan halaman publik lainnya |
 | Histori Pajak | `/histori-pajak` | Cek seluruh dokumen pajak (Billing, STPD Manual, Surat Ketetapan, SKPD Reklame, SKPD Air Tanah, SKRD Sewa Tanah) per NPWPD + tahun (dilindungi captcha Cloudflare Turnstile, rate limit 5x/15 menit per IP, audit log), menampilkan jatuh tempo, tanggal bayar, dan status efektif `Menunggu Pembayaran` / `Lewat Jatuh Tempo`, serta mendukung salin data tabular langsung dari tabel untuk paste ke Excel dan cetak PDF inline via DomPDF (Folio/F4 landscape), tersedia dari menu `Layanan Publik` di landing page dan memakai sub-navigation layanan publik yang sama dengan halaman publik lainnya |
+| PDF Histori Pajak | `/histori-pajak/pdf` | Generate PDF inline histori pajak publik berdasarkan NPWPD dan tahun yang sudah lolos validasi form/captcha |
 | Produk Hukum | `/produk-hukum` | Daftar regulasi (Perda, Perbup, UU) |
 | Berita | `/berita` | Daftar berita (filter kategori, paginated) |
 | Detail Berita | `/berita/{slug}` | Detail berita + view counter |
