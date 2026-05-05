@@ -190,6 +190,21 @@
             color: var(--text-secondary);
         }
 
+        .mblb-submission-empty-action {
+            display: flex;
+            justify-content: center;
+        }
+
+        .mblb-submission-empty .mblb-submission-btn {
+            width: auto;
+            min-height: auto;
+            justify-content: center;
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            line-height: 1.2;
+            box-shadow: none;
+        }
+
         @media (max-width: 768px) {
             .mblb-submission-hero {
                 padding: 22px 20px;
@@ -299,9 +314,11 @@
                     Anda dapat membuat pengajuan MBLB baru dari menu Self Assessment.
                     Submission yang disetujui akan berpindah ke Cek Billing dan Riwayat Transaksi.
                 </p>
-                <a href="{{ route('portal.self-assessment.index') }}" class="mblb-submission-btn primary">
-                    <i class="bi bi-file-earmark-plus"></i> Buat Pengajuan MBLB
-                </a>
+                <div class="mblb-submission-empty-action">
+                    <a href="{{ route('portal.self-assessment.index') }}" class="mblb-submission-btn primary">
+                        <i class="bi bi-file-earmark-plus"></i> Buat Pengajuan MBLB
+                    </a>
+                </div>
             </div>
         @endforelse
         </div>
