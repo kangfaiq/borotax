@@ -224,6 +224,100 @@
             padding-right: 36px;
         }
 
+        .portal-combobox {
+            position: relative;
+        }
+
+        .portal-combobox-native {
+            display: none;
+        }
+
+        .portal-combobox-input {
+            padding-right: 44px;
+        }
+
+        .portal-combobox-clear {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--text-tertiary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .portal-combobox-clear:hover {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+
+        .portal-combobox-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            display: none;
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+        }
+
+        .portal-combobox.is-open .portal-combobox-menu {
+            display: block;
+        }
+
+        .portal-combobox-option,
+        .portal-combobox-empty {
+            width: 100%;
+            padding: 10px 14px;
+            text-align: left;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.84rem;
+        }
+
+        .portal-combobox-option {
+            display: block;
+            cursor: pointer;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .portal-combobox-option:hover,
+        .portal-combobox-option.is-active {
+            background: var(--primary-50);
+            color: var(--primary-dark);
+        }
+
+        .portal-combobox-option-label {
+            display: block;
+            font-weight: 600;
+        }
+
+        .portal-combobox-option-meta {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.74rem;
+            color: var(--text-tertiary);
+        }
+
+        .portal-combobox-empty {
+            display: none;
+            color: var(--text-secondary);
+        }
+
         .input-prefix {
             display: flex;
             align-items: center;
@@ -983,16 +1077,32 @@
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:16px;">
-                        <label for="inputMineralSearch">Cari Jenis Material</label>
-                        <input type="search" class="form-control" id="inputMineralSearch"
-                            placeholder="Cari jenis material MBLB..." autocomplete="off">
+                        <label for="inputMineralCombobox">Cari Jenis Material</label>
+                        <div class="portal-combobox" id="mineralCombobox">
+                            <input type="search" class="form-control portal-combobox-input" id="inputMineralCombobox"
+                                data-combobox-input placeholder="Cari jenis material MBLB..." autocomplete="off">
+                            <button type="button" class="portal-combobox-clear" data-combobox-clear hidden aria-label="Tampilkan semua material">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            <div class="portal-combobox-menu" data-combobox-menu>
+                                <div data-combobox-options></div>
+                                <div class="portal-combobox-empty" data-combobox-empty>
+                                    Tidak ada jenis material yang cocok dengan pencarian.
+                                </div>
+                            </div>
+                        </div>
                         <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
-                            Ketik nama mineral untuk memfilter daftar material yang ditampilkan.
+                            Ketik nama mineral lalu pilih hasilnya dari dropdown untuk memfokuskan daftar material.
                         </p>
                     </div>
                     <div class="mineral-list">
                         @foreach($mineralItems as $item)
-                            <div class="mineral-row" data-mineral-label="{{ strtolower($item->nama_mineral . ' ' . $item->satuan) }}">
+                            <div class="mineral-row"
+                                id="mineralRow{{ $item->id }}"
+                                data-mineral-id="{{ $item->id }}"
+                                data-mineral-label="{{ strtolower($item->nama_mineral . ' ' . $item->satuan) }}"
+                                data-mineral-display="{{ $item->nama_mineral }}"
+                                data-mineral-meta="Harga patokan Rp {{ number_format((float) $item->harga_patokan, 0, ',', '.') }}/{{ strtoupper($item->satuan) }}">
                                 <div>
                                     <div class="mineral-name">{{ $item->nama_mineral }}</div>
                                     <div class="mineral-meta">Harga patokan Rp {{ number_format((float) $item->harga_patokan, 0, ',', '.') }}/{{ $item->satuan }}</div>
@@ -1000,6 +1110,7 @@
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="margin-bottom:4px;">Volume (m3)</label>
                                     <input type="text" class="form-control mineral-volume-input"
+                                        id="inputVolumeMineral{{ $item->id }}"
                                         name="volumes[{{ $item->id }}]"
                                         value="{{ old('volumes.' . $item->id) }}"
                                         inputmode="decimal"
@@ -1089,9 +1200,7 @@
                 </div>
                 <div class="form-group">
                     <label>Instansi Terkait</label>
-                    <input type="search" class="form-control" id="inputInstansiSearch"
-                        placeholder="Cari instansi / lembaga..." autocomplete="off" style="margin-bottom: 10px;">
-                    <select class="form-control" name="instansi_id" id="inputInstansiId">
+                    <select class="portal-combobox-native" name="instansi_id" id="inputInstansiId">
                         <option value="">-- Opsional, pilih instansi --</option>
                         @foreach($instansiOptions as $instansi)
                             <option value="{{ $instansi->id }}" @selected(old('instansi_id') == $instansi->id)>
@@ -1099,9 +1208,19 @@
                             </option>
                         @endforeach
                     </select>
-                    <p id="instansiSearchEmptyState" style="display:none; font-size:0.78rem; color: var(--text-secondary); margin-top: 8px;">
-                        Tidak ada instansi atau lembaga yang cocok dengan pencarian.
-                    </p>
+                    <div class="portal-combobox" id="instansiCombobox">
+                        <input type="search" class="form-control portal-combobox-input" id="inputInstansiCombobox"
+                            data-combobox-input placeholder="Cari instansi / lembaga..." autocomplete="off">
+                        <button type="button" class="portal-combobox-clear" data-combobox-clear hidden aria-label="Hapus instansi terpilih">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                        <div class="portal-combobox-menu" data-combobox-menu>
+                            <div data-combobox-options></div>
+                            <div class="portal-combobox-empty" data-combobox-empty>
+                                Tidak ada instansi atau lembaga yang cocok dengan pencarian.
+                            </div>
+                        </div>
+                    </div>
                     <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
                         Isi bila pengajuan ini terkait OPD, instansi, atau lembaga tertentu.
                     </p>
@@ -1230,14 +1349,11 @@
             const calcBoxPpjPln = document.getElementById('calcBoxPpjPln');
             const calcBoxPpjNonPln = document.getElementById('calcBoxPpjNonPln');
 
-            const inputMineralSearch = document.getElementById('inputMineralSearch');
             const mineralRows = Array.from(document.querySelectorAll('.mineral-row'));
             const mineralInputs = Array.from(document.querySelectorAll('.mineral-volume-input'));
             const mineralSearchEmptyState = document.getElementById('mineralSearchEmptyState');
             const calcBoxMblb = document.getElementById('calcBoxMblb');
-            const inputInstansiSearch = document.getElementById('inputInstansiSearch');
             const inputInstansiId = document.getElementById('inputInstansiId');
-            const instansiSearchEmptyState = document.getElementById('instansiSearchEmptyState');
 
             function getSelectedTarif() {
                 const checked = document.querySelector('input[name="tax_object_id"]:checked');
@@ -1293,12 +1409,12 @@
                 return String(value ?? '').trim().toLowerCase();
             }
 
-            function filterMineralRows() {
-                if (!inputMineralSearch || mineralRows.length === 0) {
+            function filterMineralRows(query) {
+                if (mineralRows.length === 0) {
                     return;
                 }
 
-                const keyword = normalizeSearchKeyword(inputMineralSearch.value);
+                const keyword = normalizeSearchKeyword(query);
                 let visibleCount = 0;
 
                 mineralRows.forEach(function (row) {
@@ -1317,35 +1433,280 @@
                 }
             }
 
-            function filterInstansiOptions() {
-                if (!inputInstansiSearch || !inputInstansiId) {
+            function focusMineralInput(mineralId) {
+                const input = document.getElementById('inputVolumeMineral' + mineralId);
+
+                if (!input) {
                     return;
                 }
 
-                const keyword = normalizeSearchKeyword(inputInstansiSearch.value);
-                let visibleCount = 0;
+                input.focus();
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
 
-                Array.from(inputInstansiId.options).forEach(function (option) {
-                    if (option.value === '') {
-                        option.hidden = false;
+            function buildComboboxOption(label, meta, isActive) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'portal-combobox-option' + (isActive ? ' is-active' : '');
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'portal-combobox-option-label';
+                labelSpan.textContent = label;
+                button.appendChild(labelSpan);
+
+                if (meta) {
+                    const metaSpan = document.createElement('span');
+                    metaSpan.className = 'portal-combobox-option-meta';
+                    metaSpan.textContent = meta;
+                    button.appendChild(metaSpan);
+                }
+
+                return button;
+            }
+
+            function setupPortalCombobox(config) {
+                const root = document.getElementById(config.rootId);
+
+                if (!root) {
+                    return null;
+                }
+
+                const input = root.querySelector('[data-combobox-input]');
+                const clearButton = root.querySelector('[data-combobox-clear]');
+                const optionsContainer = root.querySelector('[data-combobox-options]');
+                const emptyState = root.querySelector('[data-combobox-empty]');
+                const hiddenSelect = config.hiddenSelectId ? document.getElementById(config.hiddenSelectId) : null;
+                let selectedValue = hiddenSelect ? String(hiddenSelect.value || '') : '';
+
+                function getSelectedOption() {
+                    return config.options.find(function (option) {
+                        return option.value === selectedValue;
+                    }) || null;
+                }
+
+                function syncInputFromSelection() {
+                    if (!hiddenSelect) {
                         return;
                     }
 
-                    const isSelected = option.selected;
-                    const label = normalizeSearchKeyword(option.textContent);
-                    const isMatch = keyword === '' || label.includes(keyword) || isSelected;
+                    const selectedOption = getSelectedOption();
+                    input.value = selectedOption ? selectedOption.label : '';
+                }
 
-                    option.hidden = !isMatch;
+                function updateClearButton() {
+                    if (!clearButton) {
+                        return;
+                    }
 
-                    if (isMatch) {
-                        visibleCount++;
+                    clearButton.hidden = normalizeSearchKeyword(input.value) === '' && (!hiddenSelect || selectedValue === '');
+                }
+
+                function renderOptions() {
+                    const keyword = normalizeSearchKeyword(input.value);
+                    const filteredOptions = config.options
+                        .filter(function (option) {
+                            return keyword === '' || option.searchLabel.includes(keyword);
+                        })
+                        .slice(0, config.resultLimit || config.options.length);
+
+                    optionsContainer.innerHTML = '';
+
+                    if (config.resetLabel) {
+                        const resetButton = buildComboboxOption(config.resetLabel, null, !selectedValue && keyword === '');
+                        resetButton.addEventListener('mousedown', function (event) {
+                            event.preventDefault();
+                            selectedValue = '';
+
+                            if (hiddenSelect) {
+                                hiddenSelect.value = '';
+                            }
+
+                            input.value = '';
+
+                            if (typeof config.onReset === 'function') {
+                                config.onReset();
+                            }
+
+                            renderOptions();
+                            updateClearButton();
+                            root.classList.remove('is-open');
+                        });
+                        optionsContainer.appendChild(resetButton);
+                    }
+
+                    filteredOptions.forEach(function (option) {
+                        const optionButton = buildComboboxOption(option.label, option.meta, option.value !== '' && option.value === selectedValue);
+
+                        optionButton.addEventListener('mousedown', function (event) {
+                            event.preventDefault();
+
+                            if (hiddenSelect) {
+                                hiddenSelect.value = option.value;
+                                selectedValue = option.value;
+                            }
+
+                            input.value = option.label;
+
+                            if (typeof config.onQueryChange === 'function') {
+                                config.onQueryChange(option.label);
+                            }
+
+                            if (typeof config.onSelect === 'function') {
+                                config.onSelect(option);
+                            }
+
+                            renderOptions();
+                            updateClearButton();
+                            root.classList.remove('is-open');
+                        });
+
+                        optionsContainer.appendChild(optionButton);
+                    });
+
+                    if (emptyState) {
+                        emptyState.style.display = filteredOptions.length === 0 ? 'block' : 'none';
+                    }
+                }
+
+                input.addEventListener('focus', function () {
+                    root.classList.add('is-open');
+                    renderOptions();
+                });
+
+                input.addEventListener('input', function () {
+                    if (hiddenSelect) {
+                        selectedValue = '';
+                        hiddenSelect.value = '';
+                    }
+
+                    if (typeof config.onQueryChange === 'function') {
+                        config.onQueryChange(input.value);
+                    }
+
+                    root.classList.add('is-open');
+                    renderOptions();
+                    updateClearButton();
+                });
+
+                input.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        root.classList.remove('is-open');
+
+                        if (!config.preserveQuery) {
+                            syncInputFromSelection();
+                        }
+
+                        updateClearButton();
+                    }
+
+                    if (event.key === 'Enter') {
+                        const firstOption = optionsContainer.querySelector('.portal-combobox-option');
+
+                        if (firstOption) {
+                            event.preventDefault();
+                            firstOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        }
                     }
                 });
 
-                if (instansiSearchEmptyState) {
-                    instansiSearchEmptyState.style.display = keyword !== '' && visibleCount === 0 ? 'block' : 'none';
+                if (clearButton) {
+                    clearButton.addEventListener('click', function () {
+                        selectedValue = '';
+
+                        if (hiddenSelect) {
+                            hiddenSelect.value = '';
+                        }
+
+                        input.value = '';
+
+                        if (typeof config.onReset === 'function') {
+                            config.onReset();
+                        }
+
+                        renderOptions();
+                        updateClearButton();
+                        input.focus();
+                        root.classList.add('is-open');
+                    });
                 }
+
+                document.addEventListener('click', function (event) {
+                    if (root.contains(event.target)) {
+                        return;
+                    }
+
+                    root.classList.remove('is-open');
+
+                    if (!config.preserveQuery) {
+                        syncInputFromSelection();
+                    }
+
+                    updateClearButton();
+                });
+
+                if (hiddenSelect && selectedValue !== '') {
+                    syncInputFromSelection();
+                }
+
+                if (typeof config.onQueryChange === 'function') {
+                    config.onQueryChange(input.value);
+                }
+
+                renderOptions();
+                updateClearButton();
+
+                return {
+                    input,
+                    renderOptions,
+                };
             }
+
+            const mineralOptions = mineralRows.map(function (row) {
+                return {
+                    value: String(row.dataset.mineralId || ''),
+                    label: row.dataset.mineralDisplay || '',
+                    meta: row.dataset.mineralMeta || '',
+                    searchLabel: row.dataset.mineralLabel || '',
+                };
+            });
+
+            const instansiOptions = inputInstansiId
+                ? Array.from(inputInstansiId.options)
+                    .filter(function (option) {
+                        return option.value !== '';
+                    })
+                    .map(function (option) {
+                        return {
+                            value: String(option.value),
+                            label: option.textContent.trim(),
+                            meta: '',
+                            searchLabel: normalizeSearchKeyword(option.textContent),
+                        };
+                    })
+                : [];
+
+            setupPortalCombobox({
+                rootId: 'mineralCombobox',
+                options: mineralOptions,
+                preserveQuery: true,
+                resetLabel: 'Tampilkan semua material',
+                onQueryChange: filterMineralRows,
+                onSelect: function (option) {
+                    focusMineralInput(option.value);
+                },
+                onReset: function () {
+                    filterMineralRows('');
+                },
+            });
+
+            setupPortalCombobox({
+                rootId: 'instansiCombobox',
+                hiddenSelectId: 'inputInstansiId',
+                options: instansiOptions,
+                resultLimit: 50,
+                resetLabel: '-- Opsional, pilih instansi --',
+            });
 
             function parseDecimalInput(value) {
                 const parsed = Number.parseFloat(normalizeDecimalString(value));
@@ -1884,12 +2245,6 @@
             mineralInputs.forEach(function(input) {
                 input.addEventListener('input', recalcMblb);
             });
-            if (inputMineralSearch) {
-                inputMineralSearch.addEventListener('input', filterMineralRows);
-            }
-            if (inputInstansiSearch) {
-                inputInstansiSearch.addEventListener('input', filterInstansiOptions);
-            }
 
             // --- Standard omzet calculation ---
             if (omzetInput) {
@@ -2060,8 +2415,7 @@
                 omzetInput.dispatchEvent(new Event('input'));
             }
             // Trigger initial calc for sarang walet if old values exist
-            filterMineralRows();
-            filterInstansiOptions();
+            filterMineralRows('');
             if (isSarangWalet) recalcSarangWalet();
             if (isPpj) recalcPpj();
             if (isMblb) recalcMblb();
