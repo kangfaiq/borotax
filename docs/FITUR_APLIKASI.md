@@ -918,6 +918,38 @@ Perhitungan dilakukan per-tier: volume dipecah sesuai bracket dan dikalikan NPA 
 - Permohonan yang ditolak/expired mengembalikan status aset ke `tersedia`.
 - Setelah masa sewa berakhir, status aset kembali `tersedia` melalui scheduler `SyncKetersediaanAsetReklame`.
 
+**Narasi rinci alur permohonan sampai pembayaran:**
+- Publik hanya dapat mengajukan sewa pada aset reklame Pemkab yang masih berstatus `tersedia`.
+- Pemohon memilih aset, lalu mengisi identitas, `jenis_reklame_dipasang`, durasi sewa, satuan sewa (`minggu`, `bulan`, atau `tahun`), tanggal mulai yang diinginkan, nomor registrasi izin, catatan tambahan, serta mengunggah dokumen pendukung termasuk desain materi reklame.
+- Sistem memvalidasi ketersediaan aset, batas maksimal durasi per satuan, dan mencegah duplikasi permohonan aktif untuk kombinasi aset yang sama dan NIK yang sama.
+- Jika lolos validasi, sistem membuat `PermohonanSewaReklame` dengan nomor tiket otomatis dan status awal `diajukan`.
+- Petugas atau admin mengambil permohonan untuk diproses sehingga status berubah menjadi `diproses`, `tanggal_diproses` terisi, dan identitas petugas penangan tersimpan.
+- Pada tahap review, petugas memastikan pemohon sudah memiliki NPWPD. Jika belum ada, petugas dapat membuat NPWPD baru dari data permohonan. Jika sudah ada, petugas dapat menautkan NPWPD yang ditemukan ke permohonan.
+- Jika data atau dokumen belum lengkap, petugas dapat mengembalikan permohonan ke status `perlu_revisi` dengan `catatan_petugas`. Pemohon kemudian memperbaiki data dan mengajukan ulang, sehingga status kembali ke `diajukan`.
+- Jika permohonan tidak dapat dilanjutkan, petugas dapat menolak permohonan. Status berubah menjadi `ditolak`, `tanggal_selesai` diisi, alasan penolakan disimpan, dan alur berhenti tanpa SKPD maupun billing.
+- Jika permohonan dinyatakan layak dan NPWPD sudah tersedia, petugas membuat draft `SKPD Reklame` dari data permohonan dan aset yang dipilih.
+- Pada pembuatan draft SKPD sewa aset Pemkab, sistem memetakan jenis aset ke master reklame, menentukan satuan waktu, menghitung durasi dan masa berlaku, lalu menyimpan draft SKPD dengan relasi ke `permohonan_sewa_id`.
+- Untuk SKPD sewa aset Pemkab, `nama_reklame` tetap memakai nama aset reklame Pemkab, sedangkan materi iklan yang diajukan publik disimpan terpisah di field `isi_materi_reklame` dari nilai `jenis_reklame_dipasang`.
+- Setelah draft SKPD terbentuk, permohonan tetap berstatus `diproses` sambil menunggu verifikasi SKPD oleh verifikator.
+- Verifikator meninjau draft SKPD. Jika draft ditolak, status SKPD menjadi `ditolak` dan permohonan yang terhubung ikut diperbarui menjadi `ditolak`.
+- Jika draft SKPD disetujui, sistem menerbitkan nomor SKPD final, menghasilkan `kode_billing`, menghitung `jatuh_tempo`, dan mengubah status SKPD menjadi `disetujui`.
+- Pada saat SKPD reklame hasil permohonan sewa disetujui, sistem otomatis membuat record `Tax` sebagai billing resmi dengan status awal `verified`. Status ini berarti tagihan sudah terbit dan menunggu pembayaran.
+- Pada saat yang sama, observer SKPD juga memperbarui `PermohonanSewaReklame` menjadi `disetujui`, mengisi `tanggal_selesai`, dan menautkan `skpd_id` ke permohonan tersebut.
+- Sinkronisasi ketersediaan aset berjalan otomatis. Karena aset sudah memiliki SKPD aktif hasil sewa, status aset berubah dari `tersedia` menjadi `disewa`.
+- Setelah billing terbit, wajib pajak dapat melihat detail billing, kode billing, nominal tagihan, dan status pembayaran melalui kanal yang tersedia di sistem.
+- Pelunasan dilakukan melalui flow `Lunas Bayar Manual` oleh admin. Admin mencari billing berdasarkan kode billing atau NPWPD, lalu menginput jumlah pembayaran, tanggal bayar, lokasi, referensi, dan bukti bayar.
+- Sistem membuat record `TaxPayment` untuk setiap pembayaran yang masuk dan menghitung sisa kewajiban secara otomatis.
+- Jika nominal pembayaran menutup seluruh tagihan, status billing berubah dari `verified` menjadi `paid`.
+- Jika nominal pembayaran baru menutup sebagian tagihan, status billing berubah menjadi `partially_paid`.
+- Billing yang sudah melewati jatuh tempo dapat berubah menjadi `expired`, tetapi tetap dapat dilunasi selama masih ada sisa kewajiban.
+- Untuk alur permohonan sewa reklame Pemkab, titik akhir proses pengajuan berada pada status permohonan `disetujui` saat SKPD resmi diterbitkan, sedangkan titik akhir proses keuangan berada pada status billing `paid` saat seluruh tagihan sudah lunas dibayarkan.
+
+**Ringkasan status per entitas:**
+- `PermohonanSewaReklame`: `diajukan` → `diproses` → `perlu_revisi` atau `ditolak` atau `disetujui`
+- `SKPD Reklame`: `draft` → `disetujui` atau `ditolak`
+- `Billing/Tax`: `verified` → `paid` atau `partially_paid` atau `expired`
+- `Aset Reklame Pemkab`: `tersedia` → `disewa` → kembali `tersedia` setelah masa sewa berakhir dan sinkronisasi ketersediaan dijalankan
+
 ### 5.26 Alur Buat Billing Self-Assessment Backoffice
 
 ```
