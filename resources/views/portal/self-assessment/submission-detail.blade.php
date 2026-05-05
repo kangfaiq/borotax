@@ -279,7 +279,7 @@
                 <div class="mblb-detail-item">
                     <span class="label">Lampiran</span>
                     @if($submission->attachment_url)
-                        <a href="{{ $submission->attachment_url }}" target="_blank" class="mblb-detail-btn secondary" style="display:inline-flex; margin-top: 4px;">
+                        <a href="{{ route('portal.mblb-submissions.attachment', $submission->id) }}" target="_blank" class="mblb-detail-btn secondary" style="display:inline-flex; margin-top: 4px;">
                             <i class="bi bi-paperclip"></i> Buka Lampiran
                         </a>
                     @else

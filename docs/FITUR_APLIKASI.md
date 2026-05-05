@@ -218,6 +218,7 @@ Total Tagihan   = Pokok Pajak + Opsen
 - **Master instansi terkait:** admin dapat mengelola daftar OPD/instansi/lembaga beserta kategori dan alamat/lokasi dari menu Master Data
 - **Portal wajib pajak:** pengajuan MBLB tidak langsung menerbitkan billing code; data mineral dan lampiran masuk ke antrean verifikasi admin/verifikator terlebih dahulu
 - **Lampiran portal MBLB:** wajib gambar atau PDF; PDF maksimal 1 MB, gambar otomatis dikompres ke <= 1 MB saat disimpan
+- **Akses lampiran portal MBLB:** lampiran pada detail atau form revisi pengajuan dibuka melalui route portal yang tervalidasi kepemilikannya, sehingga tidak bergantung pada URL `/storage` publik server
 - **Instansi opsional:** billing MBLB `MBLB_WAPU` di backoffice maupun portal dapat menyimpan instansi terkait sebagai snapshot histori (`instansi_id`, nama, kategori)
 - **Pencarian portal MBLB:** instansi/lembaga memakai searchable combobox tunggal, sedangkan jenis material memakai filter langsung yang otomatis menyaring daftar material saat diketik
 - **Menu portal Pengajuan MBLB:** wajib pajak memiliki halaman khusus untuk melihat submission MBLB portal berdasarkan status `menunggu verifikasi`, `disetujui`, atau `ditolak`; halaman detail menampilkan catatan verifikator, dan submission yang ditolak dapat diperbaiki lalu dikirim ulang

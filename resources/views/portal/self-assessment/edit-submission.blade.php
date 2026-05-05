@@ -377,7 +377,7 @@
                         Upload hanya jika ingin mengganti lampiran sebelumnya.
                         @if($submission->attachment_url)
                             Lampiran saat ini bisa dibuka melalui
-                            <a href="{{ $submission->attachment_url }}" target="_blank">tautan ini</a>.
+                            <a href="{{ route('portal.mblb-submissions.attachment', $submission->id) }}" target="_blank">tautan ini</a>.
                         @endif
                     </p>
                     @error('attachment')

@@ -127,6 +127,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
             // Pengajuan MBLB
             Route::get('/pengajuan-mblb', [SelfAssessmentController::class, 'submissionIndex'])->name('mblb-submissions.index');
             Route::get('/pengajuan-mblb/{submissionId}', [SelfAssessmentController::class, 'submissionShow'])->name('mblb-submissions.show');
+            Route::get('/pengajuan-mblb/{submissionId}/lampiran', [SelfAssessmentController::class, 'submissionAttachment'])->name('mblb-submissions.attachment');
             Route::get('/pengajuan-mblb/{submissionId}/perbaiki', [SelfAssessmentController::class, 'submissionEdit'])->name('mblb-submissions.edit');
             Route::post('/pengajuan-mblb/{submissionId}/perbaiki', [SelfAssessmentController::class, 'submissionUpdate'])->name('mblb-submissions.update');
 
