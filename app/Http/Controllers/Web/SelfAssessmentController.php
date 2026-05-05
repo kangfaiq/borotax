@@ -23,9 +23,7 @@ use App\Domain\WajibPajak\Models\WajibPajak;
 use App\Enums\TaxStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SelfAssessmentController extends Controller
 {
@@ -684,18 +682,6 @@ class SelfAssessmentController extends Controller
         ]);
 
         return view('portal.self-assessment.submission-detail', compact('submission'));
-    }
-
-    public function submissionAttachment(string $submissionId): BinaryFileResponse
-    {
-        $submission = $this->resolveOwnedPortalSubmission($submissionId);
-
-        abort_unless(
-            filled($submission->attachment_path) && Storage::disk('public')->exists($submission->attachment_path),
-            404,
-        );
-
-        return response()->file(Storage::disk('public')->path($submission->attachment_path));
     }
 
     public function submissionEdit(string $submissionId)

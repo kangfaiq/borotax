@@ -103,6 +103,41 @@ it('serves portal mblb attachments through the portal route', function (): void 
         ->assertOk();
 });
 
+it('serves portal mblb attachments for admin review in filament detail', function (): void {
+    Storage::disk('public')->put('portal-mblb-submissions/attachments/admin-detail.pdf', 'attachment');
+
+    $admin = createPortalMblbReviewer();
+    $portalUser = createPortalMblbSubmissionUser('admin-attachment');
+    [$jenisPajak, $subJenisPajak, $taxObject] = createPortalMblbSubmissionTaxObject($portalUser, 'Tambang Attachment Admin');
+
+    $submission = PortalMblbSubmission::create([
+        'jenis_pajak_id' => $jenisPajak->id,
+        'sub_jenis_pajak_id' => $subJenisPajak->id,
+        'tax_object_id' => $taxObject->id,
+        'user_id' => $portalUser->id,
+        'masa_pajak_bulan' => 5,
+        'masa_pajak_tahun' => 2026,
+        'tarif_persen' => 20,
+        'opsen_persen' => 25,
+        'total_dpp' => 500000,
+        'pokok_pajak' => 100000,
+        'opsen' => 25000,
+        'detail_items' => [[
+            'harga_patokan_mblb_id' => 'mineral-1',
+            'jenis_mblb' => 'Batu Gamping',
+            'volume' => 5,
+            'harga_patokan' => 100000,
+        ]],
+        'attachment_path' => 'portal-mblb-submissions/attachments/admin-detail.pdf',
+        'notes' => 'Catatan lampiran admin',
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('portal.mblb-submissions.attachment', $submission->id))
+        ->assertOk();
+});
+
 it('allows the owner to revise a rejected portal mblb submission and send it back for verification', function (): void {
     $portalUser = createPortalMblbSubmissionUser('revise');
     $reviewer = createPortalMblbReviewer();

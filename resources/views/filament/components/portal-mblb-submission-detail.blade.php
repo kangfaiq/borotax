@@ -1,6 +1,8 @@
 @php
     $detailItems = collect($record->detail_items ?? []);
-    $attachmentUrl = $record->attachment_url;
+    $attachmentUrl = $record->attachment_path
+        ? route('portal.mblb-submissions.attachment', $record)
+        : null;
     $isPdf = str_ends_with(strtolower($record->attachment_path ?? ''), '.pdf');
 @endphp
 

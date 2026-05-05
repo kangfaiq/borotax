@@ -18,6 +18,7 @@ use App\Http\Controllers\StpdManualDocumentController;
 use App\Http\Controllers\TaxAssessmentLetterDocumentController;
 use App\Http\Controllers\ActivityLogFilePreviewController;
 use App\Http\Controllers\HistoriPajakDocumentController;
+use App\Http\Controllers\PortalMblbSubmissionAttachmentController;
 
 use App\Http\Controllers\Web\PembetulanController;
 
@@ -91,6 +92,10 @@ Route::post('/logout', [WebAuthController::class, 'logout'])
     ->middleware(['auth:portal', 'single.session'])
     ->name('portal.logout');
 
+Route::middleware(['auth:web,portal', 'single.session'])
+    ->get('/portal/pengajuan-mblb/{submissionId}/lampiran', PortalMblbSubmissionAttachmentController::class)
+    ->name('portal.mblb-submissions.attachment');
+
 if (app()->environment(['local', 'testing'])) {
     Route::middleware(['auth:web,portal', 'single.session'])->group(function () {
         Route::get('/document-previews', [DocumentPreviewController::class, 'index'])->name('document-previews.index');
@@ -127,7 +132,6 @@ Route::prefix('portal')->name('portal.')->group(function () {
             // Pengajuan MBLB
             Route::get('/pengajuan-mblb', [SelfAssessmentController::class, 'submissionIndex'])->name('mblb-submissions.index');
             Route::get('/pengajuan-mblb/{submissionId}', [SelfAssessmentController::class, 'submissionShow'])->name('mblb-submissions.show');
-            Route::get('/pengajuan-mblb/{submissionId}/lampiran', [SelfAssessmentController::class, 'submissionAttachment'])->name('mblb-submissions.attachment');
             Route::get('/pengajuan-mblb/{submissionId}/perbaiki', [SelfAssessmentController::class, 'submissionEdit'])->name('mblb-submissions.edit');
             Route::post('/pengajuan-mblb/{submissionId}/perbaiki', [SelfAssessmentController::class, 'submissionUpdate'])->name('mblb-submissions.update');
 
