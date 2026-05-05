@@ -982,9 +982,17 @@
                             sebelum kode billing diterbitkan.
                         </div>
                     </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label for="inputMineralSearch">Cari Jenis Material</label>
+                        <input type="search" class="form-control" id="inputMineralSearch"
+                            placeholder="Cari jenis material MBLB..." autocomplete="off">
+                        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
+                            Ketik nama mineral untuk memfilter daftar material yang ditampilkan.
+                        </p>
+                    </div>
                     <div class="mineral-list">
                         @foreach($mineralItems as $item)
-                            <div class="mineral-row">
+                            <div class="mineral-row" data-mineral-label="{{ strtolower($item->nama_mineral . ' ' . $item->satuan) }}">
                                 <div>
                                     <div class="mineral-name">{{ $item->nama_mineral }}</div>
                                     <div class="mineral-meta">Harga patokan Rp {{ number_format((float) $item->harga_patokan, 0, ',', '.') }}/{{ $item->satuan }}</div>
@@ -1005,6 +1013,9 @@
                             </div>
                         @endforeach
                     </div>
+                    <p id="mineralSearchEmptyState" style="display:none; font-size:0.78rem; color: var(--text-secondary); margin-top: 10px;">
+                        Tidak ada jenis material yang cocok dengan pencarian.
+                    </p>
                     @error('volumes')
                         <div class="form-error">{{ $message }}</div>
                     @enderror
@@ -1078,6 +1089,8 @@
                 </div>
                 <div class="form-group">
                     <label>Instansi Terkait</label>
+                    <input type="search" class="form-control" id="inputInstansiSearch"
+                        placeholder="Cari instansi / lembaga..." autocomplete="off" style="margin-bottom: 10px;">
                     <select class="form-control" name="instansi_id" id="inputInstansiId">
                         <option value="">-- Opsional, pilih instansi --</option>
                         @foreach($instansiOptions as $instansi)
@@ -1086,6 +1099,9 @@
                             </option>
                         @endforeach
                     </select>
+                    <p id="instansiSearchEmptyState" style="display:none; font-size:0.78rem; color: var(--text-secondary); margin-top: 8px;">
+                        Tidak ada instansi atau lembaga yang cocok dengan pencarian.
+                    </p>
                     <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
                         Isi bila pengajuan ini terkait OPD, instansi, atau lembaga tertentu.
                     </p>
@@ -1214,8 +1230,14 @@
             const calcBoxPpjPln = document.getElementById('calcBoxPpjPln');
             const calcBoxPpjNonPln = document.getElementById('calcBoxPpjNonPln');
 
+            const inputMineralSearch = document.getElementById('inputMineralSearch');
+            const mineralRows = Array.from(document.querySelectorAll('.mineral-row'));
             const mineralInputs = Array.from(document.querySelectorAll('.mineral-volume-input'));
+            const mineralSearchEmptyState = document.getElementById('mineralSearchEmptyState');
             const calcBoxMblb = document.getElementById('calcBoxMblb');
+            const inputInstansiSearch = document.getElementById('inputInstansiSearch');
+            const inputInstansiId = document.getElementById('inputInstansiId');
+            const instansiSearchEmptyState = document.getElementById('instansiSearchEmptyState');
 
             function getSelectedTarif() {
                 const checked = document.querySelector('input[name="tax_object_id"]:checked');
@@ -1265,6 +1287,64 @@
                 }
 
                 return normalized;
+            }
+
+            function normalizeSearchKeyword(value) {
+                return String(value ?? '').trim().toLowerCase();
+            }
+
+            function filterMineralRows() {
+                if (!inputMineralSearch || mineralRows.length === 0) {
+                    return;
+                }
+
+                const keyword = normalizeSearchKeyword(inputMineralSearch.value);
+                let visibleCount = 0;
+
+                mineralRows.forEach(function (row) {
+                    const label = row.dataset.mineralLabel || '';
+                    const isMatch = keyword === '' || label.includes(keyword);
+
+                    row.style.display = isMatch ? '' : 'none';
+
+                    if (isMatch) {
+                        visibleCount++;
+                    }
+                });
+
+                if (mineralSearchEmptyState) {
+                    mineralSearchEmptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
+            }
+
+            function filterInstansiOptions() {
+                if (!inputInstansiSearch || !inputInstansiId) {
+                    return;
+                }
+
+                const keyword = normalizeSearchKeyword(inputInstansiSearch.value);
+                let visibleCount = 0;
+
+                Array.from(inputInstansiId.options).forEach(function (option) {
+                    if (option.value === '') {
+                        option.hidden = false;
+                        return;
+                    }
+
+                    const isSelected = option.selected;
+                    const label = normalizeSearchKeyword(option.textContent);
+                    const isMatch = keyword === '' || label.includes(keyword) || isSelected;
+
+                    option.hidden = !isMatch;
+
+                    if (isMatch) {
+                        visibleCount++;
+                    }
+                });
+
+                if (instansiSearchEmptyState) {
+                    instansiSearchEmptyState.style.display = keyword !== '' && visibleCount === 0 ? 'block' : 'none';
+                }
             }
 
             function parseDecimalInput(value) {
@@ -1804,6 +1884,12 @@
             mineralInputs.forEach(function(input) {
                 input.addEventListener('input', recalcMblb);
             });
+            if (inputMineralSearch) {
+                inputMineralSearch.addEventListener('input', filterMineralRows);
+            }
+            if (inputInstansiSearch) {
+                inputInstansiSearch.addEventListener('input', filterInstansiOptions);
+            }
 
             // --- Standard omzet calculation ---
             if (omzetInput) {
@@ -1974,6 +2060,8 @@
                 omzetInput.dispatchEvent(new Event('input'));
             }
             // Trigger initial calc for sarang walet if old values exist
+            filterMineralRows();
+            filterInstansiOptions();
             if (isSarangWalet) recalcSarangWalet();
             if (isPpj) recalcPpj();
             if (isMblb) recalcMblb();
