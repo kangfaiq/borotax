@@ -96,6 +96,7 @@ class BuatSkpdReklame extends Page implements HasForms
     public ?int    $jumlahReklame      = 1;
     public string  $lokasiPenempatan   = 'luar_ruangan';
     public string  $jenisProduk        = 'non_rokok';
+    public ?string $isiMateriReklame   = null;
     public ?string $masaBerlakuMulai   = null;
     public ?string $masaBerlakuSampai  = null;
 
@@ -534,6 +535,7 @@ class BuatSkpdReklame extends Page implements HasForms
         $this->lokasiPenempatan = 'luar_ruangan';
         $this->jenisProduk    = 'non_rokok';
         $this->satuanWaktu    = null;
+        $this->isiMateriReklame = null;
         $this->masaBerlakuMulai = now()->format('Y-m-d');
         $this->masaBerlakuSampai = null;
 
@@ -571,6 +573,7 @@ class BuatSkpdReklame extends Page implements HasForms
         $this->lokasiPenempatan = 'luar_ruangan';
         $this->jenisProduk      = 'non_rokok';
         $this->satuanWaktu      = null;
+        $this->isiMateriReklame = null;
         $this->masaBerlakuMulai = now()->format('Y-m-d');
         $this->masaBerlakuSampai = null;
 
@@ -592,6 +595,20 @@ class BuatSkpdReklame extends Page implements HasForms
                 ];
             }
         }
+    }
+
+    protected function resolveIsiMateriReklameObjekWp(): ?string
+    {
+        $materi = trim((string) ($this->isiMateriReklame ?? ''));
+
+        return $materi !== '' ? $materi : null;
+    }
+
+    protected function resolveIsiMateriReklameAsetPemkab(): ?string
+    {
+        $materiPermohonan = trim((string) data_get($this->permohonanData, 'jenis_reklame_dipasang', ''));
+
+        return $materiPermohonan !== '' ? $materiPermohonan : null;
     }
 
     // ── Form Options ────────────────────────────────────────────────────────
@@ -844,6 +861,7 @@ class BuatSkpdReklame extends Page implements HasForms
                 'nama_wajib_pajak'        => $this->selectedWpData['nama_lengkap'],
                 'alamat_wajib_pajak'      => $this->selectedWpData['alamat'] ?? '-',
                 'nama_reklame'            => $asetData['nama'],
+                'isi_materi_reklame'      => $this->resolveIsiMateriReklameAsetPemkab(),
                 'alamat_reklame'          => $asetData['lokasi'] ?? '-',
                 'bentuk'                  => 'persegi',
                 'panjang'                 => $asetData['panjang'] ?? null,
@@ -876,7 +894,8 @@ class BuatSkpdReklame extends Page implements HasForms
             $this->skpdResult = [
                 'nomor_skpd'      => $skpd->nomor_skpd,
                 'nama_wp'         => $this->selectedWpData['nama_lengkap'],
-                'nama_reklame'    => $asetData['nama'],
+                'nama_reklame'    => $skpd->nama_reklame,
+                'isi_materi_reklame' => $skpd->isi_materi_reklame,
                 'alamat_reklame'  => $asetData['lokasi'] ?? '-',
                 'jumlah_pajak'    => $preview['jumlah_pajak'] ?? 0,
                 'jatuh_tempo'     => $preview['jatuh_tempo'] ?? '-',
@@ -991,6 +1010,7 @@ class BuatSkpdReklame extends Page implements HasForms
                 'nama_wajib_pajak'   => $this->wajibPajakData['nama_lengkap'],
                 'alamat_wajib_pajak' => $this->wajibPajakData['alamat'] ?? '-',
                 'nama_reklame'       => $this->selectedReklameObjectData['nama'],
+                'isi_materi_reklame' => $this->resolveIsiMateriReklameObjekWp(),
                 'alamat_reklame'     => $this->selectedReklameObjectData['alamat'] ?? '-',
                 'bentuk'             => $this->selectedReklameObjectData['bentuk'] ?? null,
                 'panjang'            => $this->selectedReklameObjectData['panjang'] ?? null,
@@ -1026,7 +1046,8 @@ class BuatSkpdReklame extends Page implements HasForms
             $this->skpdResult = [
                 'nomor_skpd'      => $skpd->nomor_skpd,
                 'nama_wp'         => $this->wajibPajakData['nama_lengkap'],
-                'nama_reklame'    => $this->selectedReklameObjectData['nama'],
+                'nama_reklame'    => $skpd->nama_reklame,
+                'isi_materi_reklame' => $skpd->isi_materi_reklame,
                 'alamat_reklame'  => $this->selectedReklameObjectData['alamat'] ?? '-',
                 'jumlah_pajak'    => $preview['jumlah_pajak'] ?? 0,
                 'jatuh_tempo'     => $preview['jatuh_tempo'] ?? '-',

@@ -701,6 +701,21 @@
                     </label>
                 </div>
             </div>
+
+            <div>
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-500"></span>
+                    Isi Materi Reklame
+                    <span class="text-[10px] font-medium text-slate-400">Opsional</span>
+                </label>
+                <input type="text" wire:model.live.debounce.400ms="isiMateriReklame"
+                       placeholder="Contoh: Promo Grand Opening Toko ABC"
+                       class="rkl-ring block w-full py-2 px-3 border border-slate-200 dark:border-slate-700
+                              rounded-lg bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white">
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Jika dikosongkan, sistem memakai nama objek reklame yang dipilih.
+                </p>
+            </div>
             @endif
 
             {{-- Masa Berlaku --}}
@@ -933,6 +948,12 @@
                     <p class="font-semibold text-slate-900 dark:text-white mt-0.5 truncate">{{ $skpdResult['nama_reklame'] }}</p>
                 </div>
             </div>
+            @if(!empty($skpdResult['isi_materi_reklame']))
+            <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-sm">
+                <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Isi Materi Reklame</p>
+                <p class="font-semibold text-slate-900 dark:text-white mt-0.5">{{ $skpdResult['isi_materi_reklame'] }}</p>
+            </div>
+            @endif
             <div class="space-y-1.5">
                 <div class="flex justify-between text-sm">
                     <span class="text-slate-500 dark:text-slate-400">Total Pajak</span>

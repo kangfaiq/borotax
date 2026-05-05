@@ -1082,7 +1082,7 @@ Dashboard menampilkan:
 
 #### Buat SKPD Reklame
 - **Dua mode:** berbasis objek WP atau aset Pemkab
-- **Mode Objek WP:** Pilih sub-jenis pajak (tetap/insidentil), kelompok lokasi, satuan waktu, dimensi, jumlah, lokasi penempatan, jenis produk, perhitungan tarif dinamis + nilai strategis + penyesuaian
+- **Mode Objek WP:** Pilih sub-jenis pajak (tetap/insidentil), kelompok lokasi, satuan waktu, dimensi, jumlah, lokasi penempatan, jenis produk, isi materi reklame opsional, perhitungan tarif dinamis + nilai strategis + penyesuaian. Nilai ini disimpan terpisah sebagai data tambahan SKPD, tidak menggantikan nama reklame objek.
 - **Mode Aset Pemkab (Simplified):**
   - Step 1: Cari & pilih aset reklame milik Pemkab
   - Step 2: Cari & pilih wajib pajak (penyewa) berdasarkan NPWPD, NIK, atau nama
@@ -1091,7 +1091,7 @@ Dashboard menampilkan:
   - Perhitungan: Harga sewa × durasi (tarif tetap, tanpa lookup tarif/penyesuaian)
   - Field yang di-hide: sub jenis pajak, kelompok lokasi, lokasi penempatan, jenis produk, jumlah reklame, luas, jumlah muka
   - Preview: Menampilkan harga sewa per periode, durasi, dan total pajak
-- **Permohonan sewa online:** Data WP dan aset diisi otomatis dari permohonan, perhitungan tetap menggunakan metode harga tetap
+- **Permohonan sewa online:** Data WP dan aset diisi otomatis dari permohonan, materi reklame pada SKPD disimpan ke field tambahan `isi_materi_reklame` dari `jenis_reklame_dipasang` permohonan online, perhitungan tetap menggunakan metode harga tetap
 
 ### 6.4 Verifikasi
 

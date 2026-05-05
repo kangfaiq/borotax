@@ -602,6 +602,7 @@ class PermohonanSewaReklameResource extends Resource
                                 'nama_wajib_pajak'       => $record->nama,
                                 'alamat_wajib_pajak'     => $record->alamat ?? '-',
                                 'nama_reklame'           => $aset->nama,
+                                'isi_materi_reklame'     => $record->jenis_reklame_dipasang,
                                 'alamat_reklame'         => $aset->lokasi ?? '-',
                                 'bentuk'                 => 'persegi',
                                 'panjang'                => $aset->panjang,

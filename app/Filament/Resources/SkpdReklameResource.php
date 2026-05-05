@@ -70,6 +70,7 @@ class SkpdReklameResource extends Resource
                         Forms\Components\TextInput::make('nomor_skpd')->disabled(),
                         Forms\Components\TextInput::make('nama_wajib_pajak')->disabled(),
                         Forms\Components\TextInput::make('nama_reklame')->disabled(),
+                        Forms\Components\TextInput::make('isi_materi_reklame')->disabled(),
                         Forms\Components\TextInput::make('alamat_reklame')->disabled(),
 
                         Forms\Components\TextInput::make('luas_m2')->label('Luas (m²)')->disabled(),
