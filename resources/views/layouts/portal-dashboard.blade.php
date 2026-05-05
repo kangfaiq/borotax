@@ -876,6 +876,11 @@
                     <i class="bi bi-file-earmark-text"></i>
                     Self Assessment
                 </a>
+                <a href="{{ route('portal.mblb-submissions.index') }}"
+                   class="nav-item {{ request()->routeIs('portal.mblb-submissions.*') ? 'active' : '' }}">
+                    <i class="bi bi-hourglass-split"></i>
+                    Pengajuan MBLB
+                </a>
                 <a href="{{ route('portal.pembetulan.index') }}"
                    class="nav-item {{ request()->routeIs('portal.pembetulan.*') ? 'active' : '' }}">
                     <i class="bi bi-pencil-square"></i>

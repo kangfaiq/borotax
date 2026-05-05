@@ -647,15 +647,157 @@ class SelfAssessmentController extends Controller
         return view('portal.self-assessment.success', compact('tax', 'taxObject'));
     }
 
-    public function submissionSuccess(string $submissionId)
+    public function submissionIndex(Request $request)
     {
         $user = auth()->user();
-        $submission = PortalMblbSubmission::with(['taxObject', 'jenisPajak'])->findOrFail($submissionId);
+        $activeStatus = in_array($request->query('status'), ['pending', 'approved', 'rejected'], true)
+            ? $request->query('status')
+            : 'pending';
 
-        if ($submission->user_id !== $user->id) {
+        $statusCounts = PortalMblbSubmission::query()
+            ->where('user_id', $user->id)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $submissions = PortalMblbSubmission::query()
+            ->where('user_id', $user->id)
+            ->where('status', $activeStatus)
+            ->with(['taxObject', 'instansi', 'approvedTax'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('portal.self-assessment.submissions', compact('submissions', 'activeStatus', 'statusCounts'));
+    }
+
+    public function submissionShow(string $submissionId)
+    {
+        $submission = $this->resolveOwnedPortalSubmission($submissionId, [
+            'taxObject',
+            'jenisPajak',
+            'subJenisPajak',
+            'instansi',
+            'reviewer',
+            'approvedTax.children:id,parent_tax_id',
+        ]);
+
+        return view('portal.self-assessment.submission-detail', compact('submission'));
+    }
+
+    public function submissionEdit(string $submissionId)
+    {
+        $submission = $this->resolveOwnedPortalSubmission($submissionId, ['taxObject.subJenisPajak', 'taxObject.jenisPajak', 'instansi']);
+
+        if (! $submission->canBeRevised()) {
             abort(403);
         }
 
+        $taxObject = $submission->taxObject;
+
+        if (! $taxObject || ($taxObject->jenisPajak?->kode ?? null) !== '41106') {
+            abort(404);
+        }
+
+        $mineralItems = app(MblbService::class)->getAllMineralItems();
+        $instansiOptions = Instansi::query()
+            ->where('is_active', true)
+            ->orderBy('nama')
+            ->get();
+        $submissionVolumeMap = collect($submission->detail_items ?? [])
+            ->mapWithKeys(fn (array $item) => [
+                (string) ($item['harga_patokan_mblb_id'] ?? '') => $item['volume'] ?? null,
+            ])
+            ->all();
+
+        return view('portal.self-assessment.edit-submission', compact(
+            'submission',
+            'taxObject',
+            'mineralItems',
+            'instansiOptions',
+            'submissionVolumeMap',
+        ));
+    }
+
+    public function submissionUpdate(Request $request, string $submissionId)
+    {
+        $user = auth()->user();
+        $submission = $this->resolveOwnedPortalSubmission($submissionId, ['taxObject.subJenisPajak', 'taxObject.jenisPajak']);
+
+        if (! $submission->canBeRevised()) {
+            abort(403);
+        }
+
+        $taxObject = $submission->taxObject;
+
+        if (! $taxObject || ($taxObject->jenisPajak?->kode ?? null) !== '41106') {
+            abort(404);
+        }
+
+        $request->validate([
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:8192',
+            'volumes' => 'required|array',
+            'instansi_id' => 'nullable|exists:instansi,id',
+        ], [
+            'attachment.mimes' => 'Lampiran harus berupa JPG, PNG, atau PDF.',
+            'volumes.required' => 'Masukkan volume mineral MBLB.',
+        ]);
+
+        $this->normalizeDecimalArrayRequestInputs($request, 'volumes');
+
+        foreach ($request->input('volumes', []) as $volume) {
+            $volumeString = trim((string) $volume);
+
+            if ($volumeString === '') {
+                continue;
+            }
+
+            if (! preg_match('/^\d+(\.\d{1,2})?$/', $volumeString)) {
+                return back()->withErrors([
+                    'volumes' => 'Volume mineral maksimal 2 digit desimal.',
+                ])->withInput();
+            }
+        }
+
+        $this->validatePortalBillingNotes($request, $taxObject);
+
+        $instansi = $this->resolvePortalInstansi($request, $taxObject);
+
+        $submission = app(PortalMblbSubmissionService::class)->reviseRejectedSubmission(
+            $submission,
+            $user,
+            $request->input('volumes', []),
+            $request->file('attachment'),
+            $request->input('keterangan'),
+            $instansi,
+        );
+
+        NotificationService::notifyRole(
+            ['admin', 'verifikator'],
+            'Revisi Pengajuan Billing MBLB',
+            'Wajib pajak telah mengirim ulang pengajuan billing MBLB yang sebelumnya ditolak.',
+            actionUrl: \App\Filament\Resources\PortalMblbSubmissionResource::getUrl('index', ['tableSearch' => $submission->id]),
+        );
+
+        return redirect()->route('portal.mblb-submissions.show', $submission->id)
+            ->with('success', 'Pengajuan MBLB berhasil diperbaiki dan dikirim ulang untuk verifikasi.');
+    }
+
+    public function submissionSuccess(string $submissionId)
+    {
+        $submission = $this->resolveOwnedPortalSubmission($submissionId, ['taxObject', 'jenisPajak']);
+
         return view('portal.self-assessment.submission-success', compact('submission'));
+    }
+
+    private function resolveOwnedPortalSubmission(string $submissionId, array $with = []): PortalMblbSubmission
+    {
+        $user = auth()->user();
+        $submission = PortalMblbSubmission::with($with)->findOrFail($submissionId);
+
+        if ((string) $submission->user_id !== (string) $user->id) {
+            abort(403);
+        }
+
+        return $submission;
     }
 }

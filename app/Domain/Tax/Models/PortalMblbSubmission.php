@@ -127,4 +127,29 @@ class PortalMblbSubmission extends Model
     {
         return $this->status === 'rejected';
     }
+
+    public function canBeRevised(): bool
+    {
+        return $this->isRejected();
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'Menunggu Verifikasi',
+            'approved' => 'Disetujui',
+            'rejected' => 'Ditolak',
+            default => str($this->status)->headline()->toString(),
+        };
+    }
+
+    public function getStatusBadgeClassAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'pending',
+            'approved' => 'approved',
+            'rejected' => 'rejected',
+            default => 'default',
+        };
+    }
 }

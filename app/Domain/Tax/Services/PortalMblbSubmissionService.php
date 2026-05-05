@@ -161,6 +161,90 @@ class PortalMblbSubmissionService
         ]);
     }
 
+    public function reviseRejectedSubmission(
+        PortalMblbSubmission $submission,
+        User $user,
+        array $volumes,
+        ?UploadedFile $attachment = null,
+        ?string $notes = null,
+        ?Instansi $instansi = null,
+    ): PortalMblbSubmission {
+        $submission->loadMissing(['taxObject.jenisPajak', 'taxObject.subJenisPajak']);
+
+        if ((string) $submission->user_id !== (string) $user->id) {
+            throw ValidationException::withMessages([
+                'submission' => 'Pengajuan tidak dapat diubah.',
+            ]);
+        }
+
+        if (! $submission->isRejected()) {
+            throw ValidationException::withMessages([
+                'status' => 'Hanya pengajuan yang ditolak yang dapat diperbaiki.',
+            ]);
+        }
+
+        $taxObject = $submission->taxObject;
+
+        if (! $taxObject) {
+            throw ValidationException::withMessages([
+                'tax_object_id' => 'Objek pajak tidak ditemukan.',
+            ]);
+        }
+
+        $details = $this->resolveDetailItems($volumes);
+        $tarifPersen = (float) ($taxObject->tarif_persen ?: ($taxObject->jenisPajak?->tarif_default ?? 20));
+        $opsenPersen = (float) ($taxObject->jenisPajak?->opsen_persen ?? 25);
+        $calculation = $this->mblbService->calculateTax($details, $tarifPersen, $opsenPersen);
+
+        if (empty($calculation['details'])) {
+            throw ValidationException::withMessages([
+                'volumes' => 'Masukkan volume minimal satu jenis mineral.',
+            ]);
+        }
+
+        if (! $taxObject->isMultiBilling() && $this->hasPendingSubmissionForPeriod($taxObject, $submission->masa_pajak_bulan, $submission->masa_pajak_tahun)) {
+            throw ValidationException::withMessages([
+                'tax_object_id' => 'Sudah ada pengajuan MBLB lain yang menunggu verifikasi untuk masa pajak ini.',
+            ]);
+        }
+
+        if (! $taxObject->isMultiBilling() && $this->billingService->billingExistsForPeriod($taxObject->id, $submission->masa_pajak_bulan, $submission->masa_pajak_tahun)) {
+            throw ValidationException::withMessages([
+                'tax_object_id' => 'Billing untuk masa pajak ini sudah terbit sehingga pengajuan tidak dapat diperbaiki lagi.',
+            ]);
+        }
+
+        $attachmentPath = $submission->attachment_path;
+
+        if ($attachment) {
+            $attachmentPath = $this->portalAttachmentService->storeMblbSupportingDocument($attachment);
+        }
+
+        $submission->update([
+            ...($instansi?->toTransactionAttributes() ?? [
+                'instansi_id' => null,
+                'instansi_nama' => null,
+                'instansi_kategori' => null,
+            ]),
+            'tarif_persen' => $tarifPersen,
+            'opsen_persen' => $opsenPersen,
+            'total_dpp' => $calculation['total_dpp'],
+            'pokok_pajak' => $calculation['pokok_pajak'],
+            'opsen' => $calculation['opsen'],
+            'detail_items' => $calculation['details'],
+            'attachment_path' => $attachmentPath,
+            'notes' => $notes,
+            'status' => 'pending',
+            'processed_by' => null,
+            'processed_at' => null,
+            'review_notes' => null,
+            'rejection_reason' => null,
+            'approved_tax_id' => null,
+        ]);
+
+        return $submission->fresh(['taxObject', 'jenisPajak', 'instansi']);
+    }
+
     public function hasPendingSubmissionForPeriod(TaxObject $taxObject, int $bulan, int $tahun): bool
     {
         return $this->pendingSubmissionQuery($taxObject, $bulan, $tahun)->exists();

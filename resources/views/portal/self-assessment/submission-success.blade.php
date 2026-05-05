@@ -133,6 +133,12 @@
             <a href="{{ route('portal.self-assessment.index') }}" class="submission-btn primary">
                 <i class="bi bi-grid"></i> Kembali ke Self Assessment
             </a>
+            <a href="{{ route('portal.mblb-submissions.show', $submission->id) }}" class="submission-btn secondary">
+                <i class="bi bi-eye"></i> Detail Pengajuan
+            </a>
+            <a href="{{ route('portal.mblb-submissions.index') }}" class="submission-btn secondary">
+                <i class="bi bi-hourglass-split"></i> Daftar Pengajuan MBLB
+            </a>
             <a href="{{ route('portal.dashboard') }}" class="submission-btn secondary">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>

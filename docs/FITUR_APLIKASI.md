@@ -220,6 +220,7 @@ Total Tagihan   = Pokok Pajak + Opsen
 - **Lampiran portal MBLB:** wajib gambar atau PDF; PDF maksimal 1 MB, gambar otomatis dikompres ke <= 1 MB saat disimpan
 - **Instansi opsional:** billing MBLB `MBLB_WAPU` di backoffice maupun portal dapat menyimpan instansi terkait sebagai snapshot histori (`instansi_id`, nama, kategori)
 - **Pencarian portal MBLB:** instansi/lembaga memakai searchable combobox tunggal, sedangkan jenis material memakai filter langsung yang otomatis menyaring daftar material saat diketik
+- **Menu portal Pengajuan MBLB:** wajib pajak memiliki halaman khusus untuk melihat submission MBLB portal berdasarkan status `menunggu verifikasi`, `disetujui`, atau `ditolak`; halaman detail menampilkan catatan verifikator, dan submission yang ditolak dapat diperbaiki lalu dikirim ulang
 - **Prefill masa pajak billing:**
   - `MBLB_WAPU` → selalu prefill **bulan berjalan**
   - `MBLB_WP` → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`
@@ -1270,6 +1271,9 @@ Catatan implementasi saat ini:
 
 ### 7.2 Self-Assessment (Wizard 4 Langkah)
 - **Route utama:** `/portal/self-assessment`
+- **Route daftar pengajuan MBLB:** `/portal/pengajuan-mblb`
+- **Route detail pengajuan MBLB:** `/portal/pengajuan-mblb/{submissionId}`
+- **Route perbaiki pengajuan MBLB ditolak:** `/portal/pengajuan-mblb/{submissionId}/perbaiki`
 - **Route form per jenis pajak:** `/portal/self-assessment/{jenisPajakId}/create`
 - **Route hasil sukses:** `/portal/self-assessment/{taxId}/success`
 - **Route hasil sukses pengajuan MBLB:** `/portal/self-assessment/mblb-submissions/{submissionId}/success`

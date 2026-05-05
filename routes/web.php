@@ -124,6 +124,12 @@ Route::prefix('portal')->name('portal.')->group(function () {
             // Cek Billing (portal — sidebar layout)
             Route::get('/cek-billing', [BillingController::class, 'portalCheck'])->name('billing');
 
+            // Pengajuan MBLB
+            Route::get('/pengajuan-mblb', [SelfAssessmentController::class, 'submissionIndex'])->name('mblb-submissions.index');
+            Route::get('/pengajuan-mblb/{submissionId}', [SelfAssessmentController::class, 'submissionShow'])->name('mblb-submissions.show');
+            Route::get('/pengajuan-mblb/{submissionId}/perbaiki', [SelfAssessmentController::class, 'submissionEdit'])->name('mblb-submissions.edit');
+            Route::post('/pengajuan-mblb/{submissionId}/perbaiki', [SelfAssessmentController::class, 'submissionUpdate'])->name('mblb-submissions.update');
+
             // Self Assessment
             Route::get('/self-assessment', [SelfAssessmentController::class, 'index'])->name('self-assessment.index');
             Route::get('/self-assessment/{jenisPajakId}/create', [SelfAssessmentController::class, 'create'])->name('self-assessment.create');
