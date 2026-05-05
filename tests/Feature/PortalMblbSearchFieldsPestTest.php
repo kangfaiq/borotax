@@ -77,12 +77,11 @@ it('shows searchable material and instansi fields on portal mblb create page', f
         ->get(route('portal.self-assessment.create', $jenisPajak->id));
 
     $response->assertOk()
-        ->assertSee('id="inputMineralCombobox"', false)
-        ->assertSee('id="mineralCombobox"', false)
+        ->assertSee('id="inputMineralSearch"', false)
         ->assertSee('data-mineral-label="batu gamping search m3"', false)
         ->assertSee('id="inputInstansiCombobox"', false)
         ->assertSee('id="instansiCombobox"', false)
         ->assertSee('Cari instansi / lembaga...', false)
-        ->assertDontSee('id="inputMineralSearch"', false)
+        ->assertDontSee('id="mineralCombobox"', false)
         ->assertDontSee('id="inputInstansiSearch"', false);
 });

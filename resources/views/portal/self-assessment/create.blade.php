@@ -1077,22 +1077,11 @@
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:16px;">
-                        <label for="inputMineralCombobox">Cari Jenis Material</label>
-                        <div class="portal-combobox" id="mineralCombobox">
-                            <input type="search" class="form-control portal-combobox-input" id="inputMineralCombobox"
-                                data-combobox-input placeholder="Cari jenis material MBLB..." autocomplete="off">
-                            <button type="button" class="portal-combobox-clear" data-combobox-clear hidden aria-label="Tampilkan semua material">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                            <div class="portal-combobox-menu" data-combobox-menu>
-                                <div data-combobox-options></div>
-                                <div class="portal-combobox-empty" data-combobox-empty>
-                                    Tidak ada jenis material yang cocok dengan pencarian.
-                                </div>
-                            </div>
-                        </div>
+                        <label for="inputMineralSearch">Cari Jenis Material</label>
+                        <input type="text" class="form-control" id="inputMineralSearch"
+                            placeholder="Cari jenis material MBLB..." autocomplete="off">
                         <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
-                            Ketik nama mineral lalu pilih hasilnya dari dropdown untuk memfokuskan daftar material.
+                            Ketik nama mineral dan daftar material akan langsung terfilter otomatis.
                         </p>
                     </div>
                     <div class="mineral-list">
@@ -1209,7 +1198,7 @@
                         @endforeach
                     </select>
                     <div class="portal-combobox" id="instansiCombobox">
-                        <input type="search" class="form-control portal-combobox-input" id="inputInstansiCombobox"
+                        <input type="text" class="form-control portal-combobox-input" id="inputInstansiCombobox"
                             data-combobox-input placeholder="Cari instansi / lembaga..." autocomplete="off">
                         <button type="button" class="portal-combobox-clear" data-combobox-clear hidden aria-label="Hapus instansi terpilih">
                             <i class="bi bi-x-lg"></i>
@@ -1349,6 +1338,7 @@
             const calcBoxPpjPln = document.getElementById('calcBoxPpjPln');
             const calcBoxPpjNonPln = document.getElementById('calcBoxPpjNonPln');
 
+            const inputMineralSearch = document.getElementById('inputMineralSearch');
             const mineralRows = Array.from(document.querySelectorAll('.mineral-row'));
             const mineralInputs = Array.from(document.querySelectorAll('.mineral-volume-input'));
             const mineralSearchEmptyState = document.getElementById('mineralSearchEmptyState');
@@ -1431,17 +1421,6 @@
                 if (mineralSearchEmptyState) {
                     mineralSearchEmptyState.style.display = visibleCount === 0 ? 'block' : 'none';
                 }
-            }
-
-            function focusMineralInput(mineralId) {
-                const input = document.getElementById('inputVolumeMineral' + mineralId);
-
-                if (!input) {
-                    return;
-                }
-
-                input.focus();
-                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
             function buildComboboxOption(label, meta, isActive) {
@@ -1662,15 +1641,6 @@
                 };
             }
 
-            const mineralOptions = mineralRows.map(function (row) {
-                return {
-                    value: String(row.dataset.mineralId || ''),
-                    label: row.dataset.mineralDisplay || '',
-                    meta: row.dataset.mineralMeta || '',
-                    searchLabel: row.dataset.mineralLabel || '',
-                };
-            });
-
             const instansiOptions = inputInstansiId
                 ? Array.from(inputInstansiId.options)
                     .filter(function (option) {
@@ -1685,20 +1655,6 @@
                         };
                     })
                 : [];
-
-            setupPortalCombobox({
-                rootId: 'mineralCombobox',
-                options: mineralOptions,
-                preserveQuery: true,
-                resetLabel: 'Tampilkan semua material',
-                onQueryChange: filterMineralRows,
-                onSelect: function (option) {
-                    focusMineralInput(option.value);
-                },
-                onReset: function () {
-                    filterMineralRows('');
-                },
-            });
 
             setupPortalCombobox({
                 rootId: 'instansiCombobox',
@@ -2242,6 +2198,9 @@
             if (inputTingkatPenggunaan) inputTingkatPenggunaan.addEventListener('input', recalcPpj);
             if (inputJangkaWaktuJam) inputJangkaWaktuJam.addEventListener('input', recalcPpj);
             if (inputHargaSatuanListrik) inputHargaSatuanListrik.addEventListener('change', recalcPpj);
+            if (inputMineralSearch) inputMineralSearch.addEventListener('input', function () {
+                filterMineralRows(this.value);
+            });
             mineralInputs.forEach(function(input) {
                 input.addEventListener('input', recalcMblb);
             });

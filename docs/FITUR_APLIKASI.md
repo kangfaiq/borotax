@@ -219,7 +219,7 @@ Total Tagihan   = Pokok Pajak + Opsen
 - **Portal wajib pajak:** pengajuan MBLB tidak langsung menerbitkan billing code; data mineral dan lampiran masuk ke antrean verifikasi admin/verifikator terlebih dahulu
 - **Lampiran portal MBLB:** wajib gambar atau PDF; PDF maksimal 1 MB, gambar otomatis dikompres ke <= 1 MB saat disimpan
 - **Instansi opsional:** billing MBLB `MBLB_WAPU` di backoffice maupun portal dapat menyimpan instansi terkait sebagai snapshot histori (`instansi_id`, nama, kategori)
-- **Combobox pencarian di portal:** form pengajuan MBLB portal memakai searchable combobox tunggal untuk jenis material dan instansi/lembaga agar input lebih cepat saat data master banyak
+- **Pencarian portal MBLB:** instansi/lembaga memakai searchable combobox tunggal, sedangkan jenis material memakai filter langsung yang otomatis menyaring daftar material saat diketik
 - **Prefill masa pajak billing:**
   - `MBLB_WAPU` → selalu prefill **bulan berjalan**
   - `MBLB_WP` → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`
