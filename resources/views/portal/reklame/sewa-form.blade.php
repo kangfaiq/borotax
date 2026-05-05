@@ -144,6 +144,28 @@
         color: #2E7D32;
     }
 
+    .aset-map-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-radius: var(--radius-full);
+        background: #E0F2FE;
+        border: 1px solid #BAE6FD;
+        color: #0369A1;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all var(--transition);
+    }
+
+    .aset-map-link:hover {
+        background: #BAE6FD;
+        border-color: #7DD3FC;
+        color: #075985;
+    }
+
     /* Form body */
     .form-body {
         padding: 28px;
@@ -344,6 +366,16 @@
                     <div class="adi-value">{{ ucfirst($aset->kawasan ?? '-') }}</div>
                 </div>
             </div>
+            @if($aset->latitude && $aset->longitude)
+                <a
+                    href="https://www.google.com/maps?q={{ $aset->latitude }},{{ $aset->longitude }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="aset-map-link"
+                >
+                    <i class="bi bi-geo-alt-fill"></i> Buka lokasi aset di Google Maps
+                </a>
+            @endif
         </div>
 
         {{-- Pricing --}}

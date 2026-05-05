@@ -77,6 +77,30 @@
 
 .asset-price { font-size: 0.75rem; color: var(--text-tertiary); }
 .asset-price strong { font-size: 0.95rem; color: var(--text-primary); font-weight: 800; }
+.asset-rate-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.asset-rate-chip {
+    display: inline-flex; align-items: baseline; gap: 4px;
+    padding: 6px 10px; border-radius: var(--radius-full);
+    background: var(--primary-50); color: var(--primary-dark);
+    font-size: 0.78rem; font-weight: 700;
+}
+.asset-rate-chip small { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); }
+.asset-actions { display: flex; gap: 8px; margin-top: 12px; }
+.asset-action-link {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 12px; border-radius: var(--radius-full);
+    font-size: 0.78rem; font-weight: 700; text-decoration: none;
+    transition: all var(--transition);
+}
+.asset-action-link.map {
+    background: #E0F2FE;
+    color: #0369A1;
+    border: 1px solid #BAE6FD;
+}
+.asset-action-link.map:hover {
+    background: #BAE6FD;
+    border-color: #7DD3FC;
+}
 
 .asset-tenant {
     margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-md);
@@ -212,6 +236,39 @@ function formatCurrency(amount) {
     return 'Rp ' + Math.round(amount).toLocaleString('id-ID');
 }
 
+function getRentalRates(asset) {
+    const rates = [];
+
+    if (asset.harga_sewa_per_minggu) {
+        rates.push({ label: 'minggu', value: asset.harga_sewa_per_minggu });
+    }
+
+    if (asset.harga_sewa_per_bulan) {
+        rates.push({ label: 'bulan', value: asset.harga_sewa_per_bulan });
+    }
+
+    if (asset.harga_sewa_per_tahun) {
+        rates.push({ label: 'tahun', value: asset.harga_sewa_per_tahun });
+    }
+
+    return rates;
+}
+
+function renderRateChips(asset) {
+    const rates = getRentalRates(asset);
+
+    if (rates.length === 0) {
+        return '<div class="asset-price">Tarif sewa belum tersedia</div>';
+    }
+
+    return `
+        <div class="asset-price">Tarif sewa</div>
+        <div class="asset-rate-list">
+            ${rates.map((rate) => `<span class="asset-rate-chip">${formatCurrency(rate.value)} <small>/ ${rate.label}</small></span>`).join('')}
+        </div>
+    `;
+}
+
 function getStatusBadge(status, label) {
     const colors = {
         tersedia: { bg: '#DCFCE7', color: '#16A34A', icon: 'check-circle' },
@@ -254,7 +311,13 @@ function renderAssets() {
                 <span class="asset-spec"><i class="bi bi-arrows-fullscreen"></i> ${a.ukuran_formatted}</span>
                 <span class="asset-spec"><i class="bi bi-layers"></i> ${a.jumlah_muka} muka</span>
             </div>
-            <div class="asset-price">Mulai <strong>${a.harga_sewa_per_bulan ? formatCurrency(a.harga_sewa_per_bulan) + ' / bulan' : (a.harga_sewa_per_tahun ? formatCurrency(a.harga_sewa_per_tahun) + ' / tahun' : '-')}</strong></div>
+            ${renderRateChips(a)}
+            ${a.lat && a.lng ? `
+            <div class="asset-actions">
+                <a href="https://www.google.com/maps?q=${a.lat},${a.lng}" target="_blank" rel="noopener noreferrer" class="asset-action-link map" onclick="event.stopPropagation()">
+                    <i class="bi bi-geo-alt-fill"></i> Buka Google Maps
+                </a>
+            </div>` : ''}
             ${a.penyewa_aktif ? `
             <div class="asset-tenant">
                 <div class="at-label"><i class="bi bi-megaphone"></i> Materi Terpasang</div>
@@ -293,14 +356,12 @@ function showDetail(tab, idx) {
     }
 
     html += `<div class="detail-pricing"><h4><i class="bi bi-tag"></i> Tarif Sewa</h4>`;
-    if (asset.harga_sewa_per_tahun) html += `<div class="detail-price-row"><span class="label">Per Tahun</span><span class="value">${formatCurrency(asset.harga_sewa_per_tahun)}</span></div>`;
+    if (asset.harga_sewa_per_minggu) html += `<div class="detail-price-row"><span class="label">Per Minggu</span><span class="value">${formatCurrency(asset.harga_sewa_per_minggu)}</span></div>`;
     if (asset.harga_sewa_per_bulan) html += `<div class="detail-price-row"><span class="label">Per Bulan</span><span class="value">${formatCurrency(asset.harga_sewa_per_bulan)}</span></div>`;
+    if (asset.harga_sewa_per_tahun) html += `<div class="detail-price-row"><span class="label">Per Tahun</span><span class="value">${formatCurrency(asset.harga_sewa_per_tahun)}</span></div>`;
     html += `</div>`;
 
     html += `<div class="detail-actions">`;
-    if (asset.lat && asset.lng) {
-        html += `<a href="https://www.google.com/maps?q=${asset.lat},${asset.lng}" target="_blank" rel="noopener noreferrer" class="detail-map"><i class="bi bi-map"></i> Lihat di Peta</a>`;
-    }
     if (asset.status_ketersediaan === 'tersedia') {
         html += `<a href="{{ url('/sewa-reklame/ajukan') }}/${asset.id}" class="detail-map" style="background:#16A34A;"><i class="bi bi-pencil-square"></i> Ajukan Sewa</a>`;
     }

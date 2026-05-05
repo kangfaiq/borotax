@@ -1465,7 +1465,7 @@ Wajib pajak dapat melihat dan mengunduh:
 
 | Fitur | URL | Deskripsi |
 |-------|-----|-----------|
-| Info & Peta | `/sewa-reklame` | Daftar aset reklame Pemkab tersedia + peta |
+| Info & Peta | `/sewa-reklame` | Daftar aset reklame Pemkab tersedia + peta + tarif sewa mingguan/bulanan/tahunan per aset, termasuk tautan langsung ke Google Maps untuk aset yang memiliki koordinat |
 | Ajukan Sewa | `/sewa-reklame/ajukan/{asetId}` | Form permohonan sewa (NIK, file KTP dan desain wajib, NPWP opsional) |
 | Cek Tiket | `/sewa-reklame/cek` | Cek status permohonan by nomor tiket |
 | Detail Permohonan | `/sewa-reklame/detail/{nomorTiket}` | Detail status permohonan |
