@@ -1273,6 +1273,7 @@ Catatan implementasi saat ini:
 - **Route form per jenis pajak:** `/portal/self-assessment/{jenisPajakId}/create`
 - **Route hasil sukses:** `/portal/self-assessment/{taxId}/success`
 - **Route hasil sukses pengajuan MBLB:** `/portal/self-assessment/mblb-submissions/{submissionId}/success`
+- **Judul halaman browser:** mengikuti jenis pajak yang sedang dibuka pada form self-assessment portal
 1. **Pilih Jenis Pajak** — daftar pajak self-assessment yang dimiliki WP
 2. **Isi Formulir:**
   - Pilih objek pajak

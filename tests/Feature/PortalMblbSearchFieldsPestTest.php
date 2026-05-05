@@ -77,6 +77,8 @@ it('shows searchable material and instansi fields on portal mblb create page', f
         ->get(route('portal.self-assessment.create', $jenisPajak->id));
 
     $response->assertOk()
+        ->assertSee('Self Assessment - ' . $jenisPajak->nama . ' - Borotax Portal', false)
+        ->assertDontSee('<?php echo', false)
         ->assertSee('id="inputMineralSearch"', false)
         ->assertSee('data-mineral-label="batu gamping search m3"', false)
         ->assertSee('id="inputInstansiCombobox"', false)

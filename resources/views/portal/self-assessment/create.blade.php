@@ -1,6 +1,6 @@
 @extends('layouts.portal-dashboard')
 
-@section('title', 'Self Assessment - {{ $jenisPajak->nama }} - Borotax Portal')
+@section('title', 'Self Assessment - ' . $jenisPajak->nama . ' - Borotax Portal')
 @section('page-title', 'Self Assessment')
 
 @section('styles')
