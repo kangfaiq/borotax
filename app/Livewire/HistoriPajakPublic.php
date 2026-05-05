@@ -13,7 +13,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class HistoriPajakPublic extends Component
@@ -42,12 +41,6 @@ class HistoriPajakPublic extends Component
     public function mount(): void
     {
         $this->tahun = (int) now()->year;
-    }
-
-    #[On('turnstile-success')]
-    public function setTurnstileToken(string $token): void
-    {
-        $this->turnstileToken = $token;
     }
 
     /**

@@ -132,7 +132,21 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 @endif
 <script>
+    function setHistoriPajakTurnstileToken(token) {
+        const input = document.getElementById('hp-turnstile-token');
+
+        if (!input) {
+            return;
+        }
+
+        input.value = token ?? '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     window.addEventListener('turnstile-reset', () => {
+        setHistoriPajakTurnstileToken('');
+
         if (window.turnstile) { try { window.turnstile.reset(); } catch (e) {} }
     });
 
@@ -197,7 +211,7 @@
     });
 
     function onTurnstileSuccess(token) {
-        if (window.Livewire) { window.Livewire.dispatch('turnstile-success', { token }); }
+        setHistoriPajakTurnstileToken(token);
     }
 </script>
 @endsection

@@ -1,6 +1,8 @@
 <div class="histori-box">
 
                 <form wire:submit.prevent="cari" novalidate>
+                    <input id="hp-turnstile-token" type="hidden" wire:model.defer="turnstileToken">
+
                     <div class="form-grid">
                         <div>
                             <label class="form-label" for="hp-npwpd">NPWPD (P1/P2 + 11 digit)</label>
