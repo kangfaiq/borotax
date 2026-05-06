@@ -58,6 +58,7 @@ class NotificationService
                     Action::make('view')
                         ->label($label)
                         ->button()
+                        ->markAsRead()
                         ->url($url),
                 ]);
             }
@@ -93,6 +94,7 @@ class NotificationService
                 Action::make('view')
                     ->label('Lihat')
                     ->button()
+                    ->markAsRead()
                     ->url($url),
             ]);
         }

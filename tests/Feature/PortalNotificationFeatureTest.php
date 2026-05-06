@@ -147,5 +147,6 @@ it('renders the portal notification dropdown hooks in the shared layout', functi
         ->assertSee('function loadNotifications()', false)
         ->assertSee('function loadUnreadCount()', false)
         ->assertSee('function markAllRead()', false)
+        ->assertSee('if (dd.classList.contains(\'show\')) loadNotifications();', false)
         ->assertSee("const targetUrl = n.url || n.action_url || n.data_payload?.url || ''", false);
 });

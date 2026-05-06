@@ -33,6 +33,7 @@ it('persists url in portal payload and filament action when notify user both is 
     expect($actions)->not->toBeEmpty();
     expect($actions[0]['url'] ?? null)->toBe('/portal/riwayat');
     expect($actions[0]['label'] ?? null)->toBe('Lihat');
+    expect($actions[0]['shouldMarkAsRead'] ?? null)->toBeTrue();
 });
 
 it('attaches action button when notify role receives a url', function () {
@@ -51,6 +52,7 @@ it('attaches action button when notify role receives a url', function () {
     expect($notif)->not->toBeNull();
     expect($actions)->not->toBeEmpty();
     expect($actions[0]['url'] ?? null)->toBe('/admin/pengajuan/123');
+    expect($actions[0]['shouldMarkAsRead'] ?? null)->toBeTrue();
 });
 
 it('does not attach action button when notify role has no url', function () {
