@@ -34,8 +34,20 @@ it('returns only portal user notifications from the portal endpoint', function (
         'email' => 'notif-list-other@example.test',
     ]);
 
-    $olderNotification = Notification::send($owner->user->id, 'Notifikasi lama', 'Milik owner yang lama.', 'info');
-    $latestNotification = Notification::send($owner->user->id, 'Notifikasi terbaru', 'Milik owner yang terbaru.', 'payment');
+    $olderNotification = Notification::send(
+        $owner->user->id,
+        'Notifikasi lama',
+        'Milik owner yang lama.',
+        'info',
+        ['url' => route('portal.dashboard')],
+    );
+    $latestNotification = Notification::send(
+        $owner->user->id,
+        'Notifikasi terbaru',
+        'Milik owner yang terbaru.',
+        'payment',
+        ['url' => route('portal.billing')],
+    );
     Notification::send($other->user->id, 'Notifikasi orang lain', 'Harus tersembunyi.', 'info');
 
     $response = $this->actingAs($owner->user)
@@ -47,12 +59,15 @@ it('returns only portal user notifications from the portal endpoint', function (
         ->assertJsonCount(2, 'data.data');
 
     $notificationIds = collect($response->json('data.data'))->pluck('id');
+    $latestPayload = collect($response->json('data.data'))->firstWhere('id', $latestNotification->id);
 
     expect($notificationIds->all())
         ->toMatchArray([$olderNotification->id, $latestNotification->id])
         ->and($notificationIds)->not->toContain(
             Notification::where('user_id', $other->user->id)->value('id')
-        );
+        )
+        ->and($latestPayload['url'] ?? null)->toBe(route('portal.billing'))
+        ->and($latestPayload['action_url'] ?? null)->toBe(route('portal.billing'));
 });
 
 it('marks only the portal user notifications as read and rejects foreign notifications', function () {
@@ -131,5 +146,6 @@ it('renders the portal notification dropdown hooks in the shared layout', functi
         ->assertSee("const notifApiBase = '/portal/notifications';", false)
         ->assertSee('function loadNotifications()', false)
         ->assertSee('function loadUnreadCount()', false)
-        ->assertSee('function markAllRead()', false);
+        ->assertSee('function markAllRead()', false)
+        ->assertSee("const targetUrl = n.url || n.action_url || n.data_payload?.url || ''", false);
 });

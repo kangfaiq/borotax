@@ -1055,10 +1055,11 @@
                         return;
                     }
                     list.innerHTML = items.map(n => {
-                        const hasUrl = n.url && typeof n.url === 'string' && n.url.length > 0;
+                        const targetUrl = n.url || n.action_url || n.data_payload?.url || '';
+                        const hasUrl = typeof targetUrl === 'string' && targetUrl.length > 0;
                         const cursor = hasUrl ? 'cursor:pointer;' : '';
                         const handler = hasUrl
-                            ? `onclick=\"openNotif('${n.id}', this, ${JSON.stringify(n.url)})\"`
+                            ? `onclick=\"openNotif('${n.id}', this, ${JSON.stringify(targetUrl)})\"`
                             : `onclick=\"markRead('${n.id}', this)\"`;
                         return `
                         <div class="notif-item ${n.is_read ? '' : 'unread'}" style="${cursor}" ${handler}>

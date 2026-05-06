@@ -1269,6 +1269,7 @@ Catatan implementasi saat ini:
 - Jumlah objek pajak aktif mengikuti data WP yang login melalui NPWPD portalnya
 - Transaksi terbaru (5 terakhir)
 - Kupon undian Gebyar
+- Bell notifikasi portal memuat notifikasi milik user login saja; item yang membawa target URL dapat langsung diklik untuk menandai sudah dibaca lalu mengarah ke halaman konteks terkait seperti histori, daftar billing, atau detail pengajuan
 
 ### 7.2 Self-Assessment (Wizard 4 Langkah)
 - **Route utama:** `/portal/self-assessment`

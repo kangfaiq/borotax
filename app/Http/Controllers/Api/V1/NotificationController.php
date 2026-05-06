@@ -7,6 +7,22 @@ use Illuminate\Http\Request;
 
 class NotificationController extends BaseController
 {
+    private function transformNotification(Notification $notification): array
+    {
+        return [
+            'id' => $notification->id,
+            'title' => $notification->title,
+            'body' => $notification->body,
+            'type' => $notification->type,
+            'is_read' => (bool) $notification->is_read,
+            'created_at' => $notification->created_at?->toIso8601String(),
+            'updated_at' => $notification->updated_at?->toIso8601String(),
+            'data_payload' => $notification->data_payload,
+            'url' => $notification->url,
+            'action_url' => $notification->url,
+        ];
+    }
+
     /**
      * List notifikasi user (paginated).
      */
@@ -17,6 +33,10 @@ class NotificationController extends BaseController
         $notifications = Notification::where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->paginate(20);
+
+        $notifications->setCollection(
+            $notifications->getCollection()->map(fn (Notification $notification) => $this->transformNotification($notification))
+        );
 
         return $this->sendResponse($notifications, 'Daftar notifikasi.');
     }
@@ -48,7 +68,7 @@ class NotificationController extends BaseController
 
         $notification->markAsRead();
 
-        return $this->sendResponse($notification, 'Notifikasi ditandai sudah dibaca.');
+        return $this->sendResponse($this->transformNotification($notification->fresh()), 'Notifikasi ditandai sudah dibaca.');
     }
 
     /**
