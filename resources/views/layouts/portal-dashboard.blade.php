@@ -1068,22 +1068,65 @@
                     list.innerHTML = items.map(n => {
                         const targetUrl = n.url || n.action_url || n.data_payload?.url || '';
                         const hasUrl = typeof targetUrl === 'string' && targetUrl.length > 0;
-                        const cursor = hasUrl ? 'cursor:pointer;' : '';
-                        const handler = hasUrl
-                            ? `onclick=\"openNotif('${n.id}', this, ${JSON.stringify(targetUrl)})\"`
-                            : `onclick=\"markRead('${n.id}', this)\"`;
+                        const encodedTargetUrl = hasUrl ? encodeURIComponent(targetUrl) : '';
                         return `
-                        <div class="notif-item ${n.is_read ? '' : 'unread'}" style="${cursor}" ${handler}>
+                        <div
+                            class="notif-item ${n.is_read ? '' : 'unread'}"
+                            data-notification-id="${n.id}"
+                            data-notification-url="${encodedTargetUrl}"
+                            role="button"
+                            tabindex="0"
+                        >
                             <div class="notif-title">${escapeHtml(n.title)}</div>
                             <div class="notif-body">${escapeHtml(n.body)}</div>
                             <div class="notif-time">${timeAgo(n.created_at)}</div>
                         </div>
                     `;
                     }).join('');
+
+                    bindNotificationActions(list);
                 })
                 .catch(() => {
                     document.getElementById('notifList').innerHTML = '<div class="notif-empty">Gagal memuat notifikasi</div>';
                 });
+        }
+
+        function bindNotificationActions(container) {
+            container.querySelectorAll('.notif-item').forEach(el => {
+                if (el.dataset.bound === 'true') {
+                    return;
+                }
+
+                const runAction = () => {
+                    const notificationId = el.dataset.notificationId;
+                    const targetUrl = el.dataset.notificationUrl
+                        ? decodeURIComponent(el.dataset.notificationUrl)
+                        : '';
+
+                    if (!notificationId) {
+                        return;
+                    }
+
+                    if (targetUrl) {
+                        openNotif(notificationId, el, targetUrl);
+
+                        return;
+                    }
+
+                    markRead(notificationId, el);
+                };
+
+                el.dataset.bound = 'true';
+                el.addEventListener('click', runAction);
+                el.addEventListener('keydown', event => {
+                    if (event.key !== 'Enter' && event.key !== ' ') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    runAction();
+                });
+            });
         }
 
         function loadUnreadCount() {
