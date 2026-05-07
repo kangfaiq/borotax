@@ -8,6 +8,8 @@ use InvalidArgumentException;
 use Throwable;
 use App\Domain\Auth\Models\User;
 use App\Domain\Shared\Services\NotificationService;
+use App\Domain\Shared\Services\VerificationStatusHistoryService;
+use App\Domain\Shared\Traits\HasVerificationStatusHistories;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 class DataChangeRequest extends Model
 {
-    use SoftDeletes, HasFactory, HasUuids;
+    use SoftDeletes, HasFactory, HasUuids, HasVerificationStatusHistories;
 
     protected $table = 'data_change_requests';
 
@@ -38,6 +40,21 @@ class DataChangeRequest extends Model
     protected $casts = [
         'reviewed_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (self $request): void {
+            $request->recordInitialVerificationHistory();
+        });
+
+        static::updated(function (self $request): void {
+            if (! $request->wasChanged('status')) {
+                return;
+            }
+
+            $request->recordStatusTransitionVerificationHistory();
+        });
+    }
 
     // ─── Encrypted JSON accessor untuk field_changes ─────────────
 
@@ -301,5 +318,40 @@ class DataChangeRequest extends Model
             ->where('entity_id', $entity->getKey())
             ->where('status', 'pending')
             ->exists();
+    }
+
+    private function recordInitialVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            null,
+            $this->status,
+            'submitted',
+            $this->requester,
+            $this->alasan_perubahan,
+        );
+    }
+
+    private function recordStatusTransitionVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            $this->getOriginal('status'),
+            $this->status,
+            match ($this->status) {
+                'approved' => 'approved',
+                'rejected' => 'rejected',
+                default => 'status_updated',
+            },
+            $this->resolveVerificationHistoryActor(),
+            $this->catatan_review,
+        );
+    }
+
+    private function resolveVerificationHistoryActor(): ?User
+    {
+        $actor = $this->reviewer ?? auth()->user();
+
+        return $actor instanceof User ? $actor : null;
     }
 }

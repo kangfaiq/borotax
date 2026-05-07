@@ -116,7 +116,7 @@ class PortalMblbSubmissionResource extends Resource
                     ->color('gray')
                     ->modalHeading('Detail Pengajuan MBLB Portal')
                     ->modalContent(fn(PortalMblbSubmission $record) => view('filament.components.portal-mblb-submission-detail', [
-                        'record' => $record,
+                        'record' => $record->loadMissing(['verificationStatusHistories.actor']),
                     ]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup'),

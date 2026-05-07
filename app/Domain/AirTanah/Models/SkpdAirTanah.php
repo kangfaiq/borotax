@@ -7,7 +7,9 @@ use App\Domain\Auth\Models\User;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\Pimpinan;
 use App\Domain\Master\Models\SubJenisPajak;
+use App\Domain\Shared\Services\VerificationStatusHistoryService;
 use App\Domain\Shared\Traits\CalculatesJatuhTempo;
+use App\Domain\Shared\Traits\HasVerificationStatusHistories;
 use App\Domain\Shared\Traits\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -61,7 +63,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class SkpdAirTanah extends Model
 {
-    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes, CalculatesJatuhTempo;
+    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes, CalculatesJatuhTempo, HasVerificationStatusHistories;
     protected $table = 'skpd_air_tanah';
 
     /**
@@ -140,6 +142,21 @@ class SkpdAirTanah extends Model
         'tanggal_verifikasi' => 'datetime',
         'is_legacy' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (self $skpd): void {
+            $skpd->recordInitialVerificationHistory();
+        });
+
+        static::updated(function (self $skpd): void {
+            if (! $skpd->wasChanged('status')) {
+                return;
+            }
+
+            $skpd->recordStatusTransitionVerificationHistory();
+        });
+    }
 
     public function getLampiranUrlAttribute(): ?string
     {
@@ -268,5 +285,40 @@ class SkpdAirTanah extends Model
     public function isOverdue(): bool
     {
         return $this->jatuh_tempo && now()->gt($this->jatuh_tempo);
+    }
+
+    private function recordInitialVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            null,
+            $this->status,
+            $this->status === 'draft' ? 'draft_created' : 'submitted',
+            $this->petugas,
+        );
+    }
+
+    private function recordStatusTransitionVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            $this->getOriginal('status'),
+            $this->status,
+            match ($this->status) {
+                'disetujui' => 'approved',
+                'ditolak' => 'rejected',
+                'menungguVerifikasi' => 'submitted',
+                default => 'status_updated',
+            },
+            $this->resolveVerificationHistoryActor(),
+            $this->catatan_verifikasi,
+        );
+    }
+
+    private function resolveVerificationHistoryActor(): ?User
+    {
+        $actor = $this->verifikator ?? auth()->user();
+
+        return $actor instanceof User ? $actor : null;
     }
 }

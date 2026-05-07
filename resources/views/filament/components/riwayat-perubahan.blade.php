@@ -108,8 +108,9 @@
                                                     @php
                                                         $newVal = $log->new_values[$field] ?? null;
                                                         $isPreviewable = array_key_exists($field, $previewableFields);
-                                                        $oldUrl = $oldVal ? route('activity-logs.file-preview', ['activityLog' => $log, 'version' => 'old', 'field' => $field]) : null;
-                                                        $newUrl = $newVal ? route('activity-logs.file-preview', ['activityLog' => $log, 'version' => 'new', 'field' => $field]) : null;
+                                                        $canPreviewFile = $isPreviewable && $log->exists && filled($log->getKey());
+                                                        $oldUrl = $canPreviewFile && $oldVal ? route('activity-logs.file-preview', ['activityLog' => $log, 'version' => 'old', 'field' => $field]) : null;
+                                                        $newUrl = $canPreviewFile && $newVal ? route('activity-logs.file-preview', ['activityLog' => $log, 'version' => 'new', 'field' => $field]) : null;
                                                         $oldExt = strtolower(pathinfo((string) $oldVal, PATHINFO_EXTENSION));
                                                         $newExt = strtolower(pathinfo((string) $newVal, PATHINFO_EXTENSION));
                                                     @endphp

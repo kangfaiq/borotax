@@ -4,13 +4,11 @@ namespace Tests\Feature;
 
 use App\Domain\Auth\Models\User;
 use App\Domain\Shared\Models\DataChangeRequest;
-use App\Domain\Tax\Models\TaxObject;
 use App\Filament\Resources\DataChangeRequestResource;
 use Database\Seeders\JenisPajakSeeder;
 use Database\Seeders\ReklameSubJenisPajakSeeder;
 use Database\Seeders\SubJenisPajakSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -59,7 +57,8 @@ class DataChangeRequestViewPageTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Nama Baru')
-            ->assertSee('Lama');
+            ->assertSee('Lama')
+            ->assertSee('Riwayat Verifikasi');
     }
 
     public function test_view_page_renders_for_normal_encrypted_payload(): void
@@ -91,7 +90,9 @@ class DataChangeRequestViewPageTest extends TestCase
 
         $response = $this->get(DataChangeRequestResource::getUrl('view', ['record' => $request->id]));
 
-        $response->assertOk()->assertSee('Nama Baru');
+        $response->assertOk()
+            ->assertSee('Nama Baru')
+            ->assertSee('Riwayat Verifikasi');
     }
 
     private function createAdminPanelUser(string $role): User

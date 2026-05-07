@@ -74,7 +74,9 @@ class ReklameController extends Controller
 
         $object = ReklameObject::where('nik_hash', $nikHash)
             ->with([
-                'reklameRequests' => fn ($q) => $q->orderBy('tanggal_pengajuan', 'desc'),
+                'reklameRequests' => fn ($q) => $q
+                    ->with(['verificationStatusHistories.actor'])
+                    ->orderBy('tanggal_pengajuan', 'desc'),
                 'skpdReklame' => fn ($q) => $q->orderBy('created_at', 'desc')->limit(3),
             ])
             ->findOrFail($objectId);

@@ -75,7 +75,7 @@ it('sends one expired billing notification per tax type', function () {
     expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '3 billing') && str_contains($body, '41102')))->toBeTrue();
     expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '2 billing') && str_contains($body, '41101')))->toBeTrue();
     expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '1 billing') && str_contains($body, '41103')))->toBeTrue();
-    expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '1 billing') && str_contains($body, '41107')))->toBeTrue();
+    expect(collect($bodies)->contains(fn (string $body): bool => str_contains($body, '+1 jenis lain')))->toBeTrue();
 
     expect($actionUrls)->each->toBe(
         \App\Filament\Resources\ActivityLogResource::getAutoExpireHistoryUrl(),

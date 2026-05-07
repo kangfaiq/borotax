@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Tax\Models\Tax;
+use App\Domain\Tax\Models\TaxPayment;
 use App\Enums\TaxStatus;
 use Database\Seeders\JenisPajakSeeder;
 use Database\Seeders\SubJenisPajakSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class BillingQrStatusResolutionTest extends TestCase
@@ -23,6 +26,7 @@ class BillingQrStatusResolutionTest extends TestCase
             'billing_code' => '352210100000260001',
             'sptpd_number' => '352210100000260001',
         ]);
+        $this->createPrincipalPayment($tax);
 
         $this->actingAs($wajibPajak->user);
 
@@ -138,6 +142,7 @@ class BillingQrStatusResolutionTest extends TestCase
             'pembetulan_ke' => 2,
             'parent_tax_id' => $firstPembetulan->id,
         ]);
+        $this->createPrincipalPayment($latestPembetulan);
 
         $this->actingAs($wajibPajak->user);
 
@@ -212,5 +217,20 @@ class BillingQrStatusResolutionTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('application/pdf', $response->headers->get('content-type', ''));
+    }
+
+    private function createPrincipalPayment(Tax $tax): TaxPayment
+    {
+        return TaxPayment::create([
+            'tax_id' => $tax->id,
+            'external_ref' => 'QR-STATUS-' . Str::random(6),
+            'amount_paid' => (float) $tax->amount,
+            'principal_paid' => (float) $tax->amount,
+            'penalty_paid' => 0,
+            'payment_channel' => 'MANUAL',
+            'paid_at' => now()->subMinute(),
+            'description' => 'Fixture pembayaran pokok untuk uji QR status billing',
+            'raw_response' => ['note' => 'Generated in BillingQrStatusResolutionTest'],
+        ]);
     }
 }

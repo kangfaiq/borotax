@@ -57,7 +57,7 @@ class TaxResourceHeaderActionTest extends TestCase
                 $content = base64_decode(data_get($component->effects, 'download.content', ''), true);
 
                 $this->assertIsString($content);
-                $this->assertStringContainsString('"Tanggal Transaksi","Kode Pembayaran Aktif",Pembetulan,"Objek Pajak","Masa Pajak","Jumlah Pajak",Status,"Metode Bayar","Tanggal Bayar","Jatuh Tempo"', $content);
+                $this->assertStringContainsString('"Tanggal Transaksi","Kode Pembayaran Aktif",Pembetulan,"Objek Pajak",Instansi,"Masa Pajak","Jumlah Pajak",Status,"Metode Bayar","Tanggal Bayar","Jatuh Tempo"', $content);
                 $this->assertStringContainsString($tax->billing_code, $content);
                 $this->assertStringContainsString('Menunggu Pembayaran', $content);
                 $this->assertStringContainsString('Tahun 2026', $content);

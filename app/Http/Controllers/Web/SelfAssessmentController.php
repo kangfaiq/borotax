@@ -679,6 +679,7 @@ class SelfAssessmentController extends Controller
             'instansi',
             'reviewer',
             'approvedTax.children:id,parent_tax_id',
+            'verificationStatusHistories.actor',
         ]);
 
         return view('portal.self-assessment.submission-detail', compact('submission'));

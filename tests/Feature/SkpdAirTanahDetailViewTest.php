@@ -29,7 +29,8 @@ class SkpdAirTanahDetailViewTest extends TestCase
             ->assertOk()
             ->assertSee('Jenis Objek Air Tanah')
             ->assertSee('Objek Non Meter Air')
-            ->assertSee('Penggunaan Langsung');
+            ->assertSee('Penggunaan Langsung')
+            ->assertSee('Riwayat Verifikasi');
     }
 
     public function test_backoffice_skpd_air_tanah_view_shows_meter_object_information(): void
@@ -43,7 +44,8 @@ class SkpdAirTanahDetailViewTest extends TestCase
             ->assertSee('Jenis Objek Air Tanah')
             ->assertSee('Objek Meter Air')
             ->assertSee('Meter Awal')
-            ->assertSee('Meter Akhir');
+            ->assertSee('Meter Akhir')
+            ->assertSee('Riwayat Verifikasi');
     }
 
     private function createSkpdAirTanahFixture(bool $usesMeter): array

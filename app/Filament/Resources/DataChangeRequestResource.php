@@ -15,8 +15,6 @@ use Filament\Schemas\Components\Section;
 use Illuminate\Support\HtmlString;
 use App\Domain\Shared\Services\NotificationService;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -189,6 +187,14 @@ class DataChangeRequestResource extends Resource
                             ->label('Catatan Review')
                             ->placeholder('Tidak ada catatan')
                             ->columnSpanFull(),
+                    ])->columns(3),
+
+                Section::make('Riwayat Verifikasi')
+                    ->columnSpanFull()
+                    ->schema([
+                        Infolists\Components\ViewEntry::make('verification_status_history')
+                            ->hiddenLabel()
+                            ->view('filament.components.verification-status-history-entry'),
                     ])->columns(3),
             ]);
     }

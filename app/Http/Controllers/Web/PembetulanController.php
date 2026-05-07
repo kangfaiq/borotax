@@ -45,11 +45,30 @@ class PembetulanController extends Controller
             ->pluck('tax_id')
             ->all();
 
+        $recentRequests = PembetulanRequest::query()
+            ->where('user_id', $user->id)
+            ->with(['tax.jenisPajak', 'tax.taxObject', 'processor', 'verificationStatusHistories.actor'])
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get();
+
         return view('portal.pembetulan.index', [
             'taxes' => $taxes,
             'pendingRequestTaxIds' => $pendingRequestTaxIds,
+            'recentRequests' => $recentRequests,
             'search' => $search,
         ]);
+    }
+
+    public function show(string $requestId)
+    {
+        $pembetulanRequest = PembetulanRequest::query()
+            ->where('id', $requestId)
+            ->where('user_id', auth()->id())
+            ->with(['tax.jenisPajak', 'tax.taxObject', 'processor', 'verificationStatusHistories.actor'])
+            ->firstOrFail();
+
+        return view('portal.pembetulan.detail', compact('pembetulanRequest'));
     }
 
     /**

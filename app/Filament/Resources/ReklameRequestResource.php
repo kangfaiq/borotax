@@ -121,6 +121,18 @@ class ReklameRequestResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('detail')
+                    ->label('Detail')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->modalHeading('Detail Pengajuan Reklame')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('4xl')
+                    ->visible(fn (ReklameRequest $record): bool => auth()->user()?->can('view', $record) ?? false)
+                    ->modalContent(fn (ReklameRequest $record) => view('filament.components.reklame-request-detail', [
+                        'record' => $record->loadMissing(['reklameObject', 'user', 'verificationStatusHistories.actor']),
+                    ])),
                 Action::make('proses')
                     ->label('Proses')
                     ->icon('heroicon-o-play')

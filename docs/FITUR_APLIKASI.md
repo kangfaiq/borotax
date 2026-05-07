@@ -222,6 +222,46 @@ Total Tagihan   = Pokok Pajak + Opsen
 - **Instansi opsional:** billing MBLB `MBLB_WAPU` di backoffice maupun portal dapat menyimpan instansi terkait sebagai snapshot histori (`instansi_id`, nama, kategori)
 - **Pencarian portal MBLB:** instansi/lembaga memakai searchable combobox tunggal, sedangkan jenis material memakai filter langsung yang otomatis menyaring daftar material saat diketik
 - **Menu portal Pengajuan MBLB:** wajib pajak memiliki halaman khusus untuk melihat submission MBLB portal berdasarkan status `menunggu verifikasi`, `disetujui`, atau `ditolak`; halaman detail menampilkan catatan verifikator, dan submission yang ditolak dapat diperbaiki lalu dikirim ulang
+- **Riwayat status pengajuan MBLB:** setiap pengajuan baru, penolakan, persetujuan, dan pengiriman ulang setelah perbaikan dicatat sebagai histori status yang dapat dilihat pada detail pengajuan portal maupun detail verifikator di admin
+- **Riwayat verifikasi lintas modul:** perubahan status baru pada Pembetulan, Perubahan Data, Pengajuan Reklame Portal, SKPD Air Tanah, STPD Manual, dan Gebyar juga dicatat sebagai histori verifikasi; histori ditampilkan di surface admin yang sudah ada, serta di portal untuk modul yang memang sudah memiliki halaman detail pemilik
+- **Portal owner-facing histori verifikasi:** wajib pajak kini memiliki halaman atau detail khusus untuk memantau histori verifikasi Pembetulan, Perubahan Data, STPD Manual, Gebyar, selain detail portal yang sudah ada untuk MBLB, Reklame, dan Air Tanah
+
+#### Panduan Melihat Riwayat Verifikasi
+
+Bagian ini dibuat untuk memudahkan wajib pajak maupun petugas saat ingin mengecek posisi proses verifikasi terbaru pada setiap modul.
+
+**Portal**
+
+1. **Pengajuan MBLB**: buka menu `Layanan Pajak > Pengajuan MBLB`, lalu pilih salah satu pengajuan untuk melihat detail dan bagian **Riwayat Verifikasi**.
+2. **Pembetulan**: buka `Layanan Pajak > Ajukan Pembetulan`, lalu buka detail permohonan pada daftar riwayat pembetulan.
+3. **Perubahan Data**: buka `Layanan Pajak > Perubahan Data`, lalu pilih salah satu permintaan untuk melihat detail dan riwayat verifikasinya.
+4. **Air Tanah**: buka `Layanan Pajak > Air Tanah`, masuk ke daftar SKPD Air Tanah, lalu buka detail SKPD.
+5. **Reklame**: buka `Layanan Pajak > Reklame`, lalu buka detail objek reklame. Riwayat verifikasi pengajuan atau perpanjangan tampil pada halaman detail objek.
+6. **STPD Manual**: buka `Layanan Pajak > STPD Manual`, lalu pilih salah satu STPD untuk melihat detail dan riwayat verifikasinya.
+7. **Gebyar Pajak**: buka `Layanan Pajak > Gebyar Pajak`, lalu pilih salah satu pengajuan untuk melihat detail dan riwayat verifikasinya.
+
+**Admin**
+
+1. **Portal MBLB Submission**: buka resource Portal MBLB Submission, lalu klik aksi **Detail** pada baris data.
+2. **Permintaan Pembetulan**: buka resource Permintaan Pembetulan, lalu klik aksi **Detail**.
+3. **Perubahan Data**: buka resource Perubahan Data, lalu buka halaman view record. Bagian **Riwayat Verifikasi** tampil di halaman view.
+4. **SKPD Air Tanah**: buka resource SKPD Air Tanah, lalu buka halaman view record. Bagian **Riwayat Verifikasi** tampil di halaman view.
+5. **Reklame Request**: buka resource Reklame Request, lalu klik aksi **Detail**.
+6. **STPD Manual**: buka resource STPD Manual, lalu klik aksi **Detail**.
+7. **Gebyar Sadar Pajak**: buka resource Gebyar Sadar Pajak, lalu klik aksi **Detail**.
+
+**URL Penting Halaman Verifikasi**
+
+- Portal MBLB: `/portal/pengajuan-mblb`, lalu detail `/portal/pengajuan-mblb/{submissionId}`
+- Portal Pembetulan: `/portal/pembetulan`, lalu detail `/portal/pembetulan/permohonan/{requestId}`
+- Portal Perubahan Data: `/portal/perubahan-data`, lalu detail `/portal/perubahan-data/{requestId}`
+- Portal Air Tanah: `/portal/air-tanah/skpd`, lalu detail `/portal/air-tanah/skpd/{skpdId}`
+- Portal Reklame: `/portal/reklame/objek`, lalu detail `/portal/reklame/objek/{objectId}`
+- Portal STPD Manual: `/portal/stpd-manual`, lalu detail `/portal/stpd-manual/{stpdId}`
+- Portal Gebyar Pajak: `/portal/gebyar`, lalu detail `/portal/gebyar/{submissionId}`
+- Admin Perubahan Data: `/admin/data-change-requests/{record}`
+- Admin SKPD Air Tanah: `/admin/skpd-air-tanahs/{record}`
+- Beberapa halaman admin lain seperti Portal MBLB Submission, Permintaan Pembetulan, Reklame Request, STPD Manual, dan Gebyar memakai aksi **Detail** di tabel list, sehingga histori verifikasi dibuka lewat modal, bukan halaman detail URL terpisah.
 - **Prefill masa pajak billing:**
   - `MBLB_WAPU` → selalu prefill **bulan berjalan**
   - `MBLB_WP` → prefill **bulan setelah billing aktif terakhir** berdasarkan `nopd`

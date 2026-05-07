@@ -886,6 +886,11 @@
                     <i class="bi bi-pencil-square"></i>
                     Ajukan Pembetulan
                 </a>
+                <a href="{{ route('portal.data-change-requests.index') }}"
+                   class="nav-item {{ request()->routeIs('portal.data-change-requests.*') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-left-right"></i>
+                    Perubahan Data
+                </a>
                 <a href="{{ route('portal.air-tanah.index') }}"
                    class="nav-item {{ request()->routeIs('portal.air-tanah.*') ? 'active' : '' }}">
                     <i class="bi bi-droplet"></i>
@@ -896,7 +901,13 @@
                     <i class="bi bi-signpost-2"></i>
                     Reklame
                 </a>
-                <a href="#" class="nav-item">
+                <a href="{{ route('portal.stpd-manual.index') }}"
+                   class="nav-item {{ request()->routeIs('portal.stpd-manual.*') ? 'active' : '' }}">
+                    <i class="bi bi-file-earmark-ruled"></i>
+                    STPD Manual
+                </a>
+                <a href="{{ route('portal.gebyar.index') }}"
+                   class="nav-item {{ request()->routeIs('portal.gebyar.*') ? 'active' : '' }}">
                     <i class="bi bi-gift"></i>
                     Gebyar Pajak
                 </a>

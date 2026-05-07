@@ -5,6 +5,7 @@ namespace App\Domain\Tax\Services;
 use App\Domain\Auth\Models\User;
 use App\Domain\Master\Models\Instansi;
 use App\Domain\Shared\Services\PortalAttachmentService;
+use App\Domain\Shared\Services\VerificationStatusHistoryService;
 use App\Domain\Tax\Models\PortalMblbSubmission;
 use App\Domain\Tax\Models\Tax;
 use App\Domain\Tax\Models\TaxObject;
@@ -18,6 +19,7 @@ class PortalMblbSubmissionService
         private readonly BillingService $billingService,
         private readonly MblbService $mblbService,
         private readonly PortalAttachmentService $portalAttachmentService,
+        private readonly VerificationStatusHistoryService $verificationStatusHistoryService,
     ) {
     }
 
@@ -50,30 +52,45 @@ class PortalMblbSubmissionService
 
         $attachmentPath = $this->portalAttachmentService->storeMblbSupportingDocument($attachment);
 
-        return PortalMblbSubmission::create([
-            'jenis_pajak_id' => $taxObject->jenis_pajak_id,
-            'sub_jenis_pajak_id' => $taxObject->sub_jenis_pajak_id,
-            'tax_object_id' => $taxObject->id,
-            'user_id' => $user->id,
-            ...($instansi?->toTransactionAttributes() ?? []),
-            'masa_pajak_bulan' => $bulan,
-            'masa_pajak_tahun' => $tahun,
-            'tarif_persen' => $tarifPersen,
-            'opsen_persen' => $opsenPersen,
-            'total_dpp' => $calculation['total_dpp'],
-            'pokok_pajak' => $calculation['pokok_pajak'],
-            'opsen' => $calculation['opsen'],
-            'detail_items' => $calculation['details'],
-            'attachment_path' => $attachmentPath,
-            'notes' => $notes,
-            'status' => 'pending',
-        ]);
+        return DB::transaction(function () use ($attachmentPath, $bulan, $calculation, $instansi, $notes, $opsenPersen, $tarifPersen, $taxObject, $tahun, $user) {
+            $submission = PortalMblbSubmission::create([
+                'jenis_pajak_id' => $taxObject->jenis_pajak_id,
+                'sub_jenis_pajak_id' => $taxObject->sub_jenis_pajak_id,
+                'tax_object_id' => $taxObject->id,
+                'user_id' => $user->id,
+                ...($instansi?->toTransactionAttributes() ?? []),
+                'masa_pajak_bulan' => $bulan,
+                'masa_pajak_tahun' => $tahun,
+                'tarif_persen' => $tarifPersen,
+                'opsen_persen' => $opsenPersen,
+                'total_dpp' => $calculation['total_dpp'],
+                'pokok_pajak' => $calculation['pokok_pajak'],
+                'opsen' => $calculation['opsen'],
+                'detail_items' => $calculation['details'],
+                'attachment_path' => $attachmentPath,
+                'notes' => $notes,
+                'status' => 'pending',
+            ]);
+
+            $this->verificationStatusHistoryService->record(
+                $submission,
+                null,
+                'pending',
+                'submitted',
+                $user,
+                $notes,
+                happenedAt: $submission->created_at,
+            );
+
+            return $submission;
+        });
     }
 
     public function approveSubmission(PortalMblbSubmission $submission, User $reviewer, ?string $reviewNotes = null): Tax
     {
         return DB::transaction(function () use ($submission, $reviewer, $reviewNotes) {
             $submission->loadMissing(['taxObject.jenisPajak', 'taxObject.subJenisPajak', 'user']);
+            $fromStatus = $submission->status;
 
             if (! $submission->isPending()) {
                 throw ValidationException::withMessages([
@@ -140,25 +157,49 @@ class PortalMblbSubmissionService
                 'rejection_reason' => null,
             ]);
 
+            $this->verificationStatusHistoryService->record(
+                $submission,
+                $fromStatus,
+                'approved',
+                'approved',
+                $reviewer,
+                $reviewNotes,
+                happenedAt: $submission->processed_at,
+            );
+
             return $tax;
         });
     }
 
     public function rejectSubmission(PortalMblbSubmission $submission, User $reviewer, string $reason): void
     {
-        if (! $submission->isPending()) {
-            throw ValidationException::withMessages([
-                'status' => 'Pengajuan ini sudah diproses.',
-            ]);
-        }
+        DB::transaction(function () use ($reason, $reviewer, $submission) {
+            if (! $submission->isPending()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Pengajuan ini sudah diproses.',
+                ]);
+            }
 
-        $submission->update([
-            'status' => 'rejected',
-            'processed_by' => $reviewer->id,
-            'processed_at' => now(),
-            'rejection_reason' => $reason,
-            'review_notes' => null,
-        ]);
+            $fromStatus = $submission->status;
+
+            $submission->update([
+                'status' => 'rejected',
+                'processed_by' => $reviewer->id,
+                'processed_at' => now(),
+                'rejection_reason' => $reason,
+                'review_notes' => null,
+            ]);
+
+            $this->verificationStatusHistoryService->record(
+                $submission,
+                $fromStatus,
+                'rejected',
+                'rejected',
+                $reviewer,
+                $reason,
+                happenedAt: $submission->processed_at,
+            );
+        });
     }
 
     public function reviseRejectedSubmission(
@@ -170,6 +211,7 @@ class PortalMblbSubmissionService
         ?Instansi $instansi = null,
     ): PortalMblbSubmission {
         $submission->loadMissing(['taxObject.jenisPajak', 'taxObject.subJenisPajak']);
+        $fromStatus = $submission->status;
 
         if ((string) $submission->user_id !== (string) $user->id) {
             throw ValidationException::withMessages([
@@ -220,29 +262,40 @@ class PortalMblbSubmissionService
             $attachmentPath = $this->portalAttachmentService->storeMblbSupportingDocument($attachment);
         }
 
-        $submission->update([
-            ...($instansi?->toTransactionAttributes() ?? [
-                'instansi_id' => null,
-                'instansi_nama' => null,
-                'instansi_kategori' => null,
-            ]),
-            'tarif_persen' => $tarifPersen,
-            'opsen_persen' => $opsenPersen,
-            'total_dpp' => $calculation['total_dpp'],
-            'pokok_pajak' => $calculation['pokok_pajak'],
-            'opsen' => $calculation['opsen'],
-            'detail_items' => $calculation['details'],
-            'attachment_path' => $attachmentPath,
-            'notes' => $notes,
-            'status' => 'pending',
-            'processed_by' => null,
-            'processed_at' => null,
-            'review_notes' => null,
-            'rejection_reason' => null,
-            'approved_tax_id' => null,
-        ]);
+        return DB::transaction(function () use ($attachmentPath, $calculation, $fromStatus, $instansi, $notes, $opsenPersen, $submission, $tarifPersen, $user) {
+            $submission->update([
+                ...($instansi?->toTransactionAttributes() ?? [
+                    'instansi_id' => null,
+                    'instansi_nama' => null,
+                    'instansi_kategori' => null,
+                ]),
+                'tarif_persen' => $tarifPersen,
+                'opsen_persen' => $opsenPersen,
+                'total_dpp' => $calculation['total_dpp'],
+                'pokok_pajak' => $calculation['pokok_pajak'],
+                'opsen' => $calculation['opsen'],
+                'detail_items' => $calculation['details'],
+                'attachment_path' => $attachmentPath,
+                'notes' => $notes,
+                'status' => 'pending',
+                'processed_by' => null,
+                'processed_at' => null,
+                'review_notes' => null,
+                'rejection_reason' => null,
+                'approved_tax_id' => null,
+            ]);
 
-        return $submission->fresh(['taxObject', 'jenisPajak', 'instansi']);
+            $this->verificationStatusHistoryService->record(
+                $submission,
+                $fromStatus,
+                'pending',
+                'resubmitted',
+                $user,
+                $notes,
+            );
+
+            return $submission->fresh(['taxObject', 'jenisPajak', 'instansi', 'verificationStatusHistories.actor']);
+        });
     }
 
     public function hasPendingSubmissionForPeriod(TaxObject $taxObject, int $bulan, int $tahun): bool

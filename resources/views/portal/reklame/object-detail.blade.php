@@ -604,6 +604,13 @@
                                 {{ $req->catatan_pengajuan }}
                             </div>
                         @endif
+                        <div style="margin-top: 16px; --verification-timeline-bg: #ffffff; --verification-timeline-border: #e2e8f0; --verification-timeline-heading: #0f172a; --verification-timeline-muted: #64748b; --verification-timeline-dot: #1565c0; --verification-timeline-card-bg: #f8fafc; --verification-timeline-card-border: #e2e8f0; --verification-timeline-card-heading: #0f172a; --verification-timeline-badge-bg: #e3f2fd; --verification-timeline-badge-text: #1565c0;">
+                            <x-verification-status-timeline
+                                :histories="$req->verificationStatusHistories->where('is_owner_visible', true)->values()"
+                                heading="Riwayat Verifikasi"
+                                empty-message="Belum ada riwayat verifikasi untuk pengajuan ini."
+                            />
+                        </div>
                     </div>
                 @endforeach
             </div>

@@ -27,7 +27,7 @@ beforeEach(function () {
 
 it('renders historical object photo previews on the portal object detail page', function () {
     $fixture = createPortalReklameObjectFixture();
-    $admin = createAdminPanelUserFixture('admin');
+    $admin = createReklameAdminPanelUserFixture('admin');
 
     $oldPath = 'reklame-history/foto-objek-lama.jpg';
     $newPath = 'reklame-history/foto-objek-baru.jpg';
@@ -65,7 +65,7 @@ it('renders historical object photo previews on the portal object detail page', 
 
 it('renders historical reklame material previews on the portal skpd detail page', function () {
     $fixture = createPortalSkpdFixture();
-    $petugas = createAdminPanelUserFixture('petugas');
+    $petugas = createReklameAdminPanelUserFixture('petugas');
 
     $oldPath = 'reklame-history/materi-lama.pdf';
     $newPath = 'reklame-history/materi-baru.pdf';
@@ -158,7 +158,7 @@ it('logs old and new reklame material files when a public sewa revision uploads 
 it('limits historical file preview access to the permohonan owner or backoffice roles', function () {
     $owner = createPortalUserFixtureForHistory('3522011234567992');
     $otherUser = createPortalUserFixtureForHistory('3522011234567993');
-    $admin = createAdminPanelUserFixture('admin');
+    $admin = createReklameAdminPanelUserFixture('admin');
     $aset = createAsetReklameFixture(['kode_aset' => 'NB202']);
     $filePath = 'reklame-history/preview-materi.pdf';
 
@@ -247,8 +247,8 @@ function createPortalSkpdFixture(): array
         'must_change_password' => false,
     ]);
 
-    $petugas = createAdminPanelUserFixture('petugas');
-    $verifikator = createAdminPanelUserFixture('verifikator', Pimpinan::firstOrFail()->id);
+    $petugas = createReklameAdminPanelUserFixture('petugas');
+    $verifikator = createReklameAdminPanelUserFixture('verifikator', Pimpinan::firstOrFail()->id);
     $object = test()->createTaxObjectFixture($wajibPajak, '41104', [
         'nama_objek_pajak' => 'Reklame Koridor Kota',
         'alamat_objek' => 'Jl. Panglima Sudirman No. 8',
@@ -354,7 +354,7 @@ function createPortalUserFixtureForHistory(string $nik): User
     ]);
 }
 
-function createAdminPanelUserFixture(string $role, ?string $pimpinanId = null): User
+function createReklameAdminPanelUserFixture(string $role, ?string $pimpinanId = null): User
 {
     return User::create([
         'name' => Str::headline($role) . ' User',

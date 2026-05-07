@@ -4,7 +4,9 @@ namespace App\Domain\Tax\Models;
 
 use App\Domain\Auth\Models\User;
 use App\Domain\Master\Models\Pimpinan;
+use App\Domain\Shared\Services\VerificationStatusHistoryService;
 use App\Domain\Shared\Traits\CalculatesJatuhTempo;
+use App\Domain\Shared\Traits\HasVerificationStatusHistories;
 use App\Domain\Shared\Traits\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StpdManual extends Model
 {
-    use HasFactory, HasUuids, HasEncryptedAttributes, CalculatesJatuhTempo, SoftDeletes;
+    use HasFactory, HasUuids, HasEncryptedAttributes, CalculatesJatuhTempo, SoftDeletes, HasVerificationStatusHistories;
 
     protected $table = 'stpd_manuals';
 
@@ -49,6 +51,21 @@ class StpdManual extends Model
         'tanggal_verifikasi' => 'datetime',
         'bulan_terlambat' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (self $stpd): void {
+            $stpd->recordInitialVerificationHistory();
+        });
+
+        static::updated(function (self $stpd): void {
+            if (! $stpd->wasChanged('status')) {
+                return;
+            }
+
+            $stpd->recordStatusTransitionVerificationHistory();
+        });
+    }
 
     // ── Relationships ─────────────────────────────────────────────────────
 
@@ -109,5 +126,40 @@ class StpdManual extends Model
     public function isTipeSanksi(): bool
     {
         return $this->tipe === 'sanksi_saja';
+    }
+
+    private function recordInitialVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            null,
+            $this->status,
+            'draft_created',
+            $this->petugas,
+            $this->catatan_petugas,
+        );
+    }
+
+    private function recordStatusTransitionVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            $this->getOriginal('status'),
+            $this->status,
+            match ($this->status) {
+                'disetujui' => 'approved',
+                'ditolak' => 'rejected',
+                default => 'status_updated',
+            },
+            $this->resolveVerificationHistoryActor(),
+            $this->catatan_verifikasi,
+        );
+    }
+
+    private function resolveVerificationHistoryActor(): ?User
+    {
+        $actor = $this->verifikator ?? auth()->user();
+
+        return $actor instanceof User ? $actor : null;
     }
 }

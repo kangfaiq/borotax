@@ -41,6 +41,10 @@ it('returns only portal user notifications from the portal endpoint', function (
         'info',
         ['url' => route('portal.dashboard')],
     );
+    $olderNotification->forceFill([
+        'created_at' => now()->subMinute(),
+        'updated_at' => now()->subMinute(),
+    ])->saveQuietly();
     $latestNotification = Notification::send(
         $owner->user->id,
         'Notifikasi terbaru',
@@ -62,7 +66,7 @@ it('returns only portal user notifications from the portal endpoint', function (
     $latestPayload = collect($response->json('data.data'))->firstWhere('id', $latestNotification->id);
 
     expect($notificationIds->all())
-        ->toMatchArray([$olderNotification->id, $latestNotification->id])
+        ->toBe([$latestNotification->id, $olderNotification->id])
         ->and($notificationIds)->not->toContain(
             Notification::where('user_id', $other->user->id)->value('id')
         )

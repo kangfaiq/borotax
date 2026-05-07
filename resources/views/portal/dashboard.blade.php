@@ -288,7 +288,7 @@
             <span class="qa-icon"><i class="bi bi-clock-history"></i></span>
             <span class="qa-label">Riwayat Pajak</span>
         </a>
-        <a href="#" class="qa-btn">
+        <a href="{{ route('portal.gebyar.index') }}" class="qa-btn">
             <span class="qa-icon"><i class="bi bi-gift-fill"></i></span>
             <span class="qa-label">Gebyar Pajak</span>
         </a>

@@ -1,9 +1,11 @@
 <?php
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Shared\Models\VerificationStatusHistory;
 use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
+use App\Domain\Tax\Services\PortalMblbSubmissionService;
 use App\Domain\Tax\Models\HargaPatokanMblb;
 use App\Domain\Tax\Models\PortalMblbSubmission;
 use App\Domain\Tax\Models\TaxObject;
@@ -56,6 +58,34 @@ it('shows a neutral portal mblb detail page with verifier notes and revise actio
         'rejection_reason' => 'Lampiran kurang jelas, mohon perbaiki volume dan unggah dokumen yang benar.',
     ]);
 
+    VerificationStatusHistory::create([
+        'subject_type' => PortalMblbSubmission::class,
+        'subject_id' => $submission->id,
+        'actor_id' => $portalUser->id,
+        'actor_name' => $portalUser->nama_lengkap,
+        'actor_role' => $portalUser->role,
+        'action' => 'submitted',
+        'from_status' => null,
+        'to_status' => 'pending',
+        'note' => 'Catatan awal pemohon',
+        'is_owner_visible' => true,
+        'happened_at' => now()->subHour(),
+    ]);
+
+    VerificationStatusHistory::create([
+        'subject_type' => PortalMblbSubmission::class,
+        'subject_id' => $submission->id,
+        'actor_id' => $reviewer->id,
+        'actor_name' => $reviewer->nama_lengkap,
+        'actor_role' => $reviewer->role,
+        'action' => 'rejected',
+        'from_status' => 'pending',
+        'to_status' => 'rejected',
+        'note' => 'Lampiran kurang jelas, mohon perbaiki volume dan unggah dokumen yang benar.',
+        'is_owner_visible' => true,
+        'happened_at' => now(),
+    ]);
+
     $response = $this->actingAs($portalUser)
         ->get(route('portal.mblb-submissions.show', $submission->id));
 
@@ -63,10 +93,44 @@ it('shows a neutral portal mblb detail page with verifier notes and revise actio
         ->assertSee('Detail Pengajuan MBLB')
         ->assertSee('Ditolak')
         ->assertSee('Lampiran kurang jelas, mohon perbaiki volume dan unggah dokumen yang benar.')
+        ->assertSee('Riwayat Status Verifikasi')
+        ->assertSee('Pengajuan dibuat')
+        ->assertSee('Pengajuan ditolak')
         ->assertSee(route('portal.mblb-submissions.edit', $submission->id), false)
         ->assertSee(route('portal.mblb-submissions.attachment', $submission->id), false)
         ->assertSee('Tambang Detail Rejected')
         ->assertSee('Batu Gamping');
+});
+
+it('stores verification history when a portal mblb submission is created', function (): void {
+    Storage::fake('public');
+
+    $portalUser = createPortalMblbSubmissionUser('history-create');
+    [$jenisPajak, $subJenisPajak, $taxObject] = createPortalMblbSubmissionTaxObject($portalUser, 'Tambang Histori Portal');
+    $hargaPatokan = HargaPatokanMblb::create([
+        'sub_jenis_pajak_id' => $subJenisPajak->id,
+        'nama_mineral' => 'Batu Andesit',
+        'harga_patokan' => '120000',
+        'satuan' => 'm3',
+        'dasar_hukum' => 'Peraturan Histori',
+        'nama_alternatif' => [],
+        'is_active' => true,
+    ]);
+
+    $submission = app(PortalMblbSubmissionService::class)->createSubmission(
+        $portalUser,
+        $taxObject,
+        5,
+        2026,
+        [$hargaPatokan->id => 6],
+        UploadedFile::fake()->create('histori.pdf', 300, 'application/pdf'),
+        'Mohon diverifikasi untuk masa pajak Mei 2026.',
+    );
+
+    expect($submission->verificationStatusHistories)->toHaveCount(1)
+        ->and($submission->verificationStatusHistories->first()->action)->toBe('submitted')
+        ->and($submission->verificationStatusHistories->first()->to_status)->toBe('pending')
+        ->and($submission->verificationStatusHistories->first()->note)->toBe('Mohon diverifikasi untuk masa pajak Mei 2026.');
 });
 
 it('serves portal mblb attachments through the portal route', function (): void {
@@ -207,7 +271,11 @@ it('allows the owner to revise a rejected portal mblb submission and send it bac
         ->and($submission->processed_by)->toBeNull()
         ->and($submission->notes)->toBe('Data sudah diperbaiki sesuai arahan verifikator')
         ->and($submission->instansi_id)->toBe($instansi->id)
-        ->and((float) $submission->detail_items[0]['volume'])->toBe(7.5);
+        ->and((float) $submission->detail_items[0]['volume'])->toBe(7.5)
+        ->and($submission->verificationStatusHistories)->toHaveCount(1)
+        ->and($submission->verificationStatusHistories->first()->action)->toBe('resubmitted')
+        ->and($submission->verificationStatusHistories->first()->from_status)->toBe('rejected')
+        ->and($submission->verificationStatusHistories->first()->to_status)->toBe('pending');
 });
 
 function createPortalMblbSubmissionUser(string $prefix): User

@@ -338,6 +338,75 @@
         $pendingRequestTaxLookup = array_flip($pendingRequestTaxIds);
     @endphp
 
+    @if($recentRequests->isNotEmpty())
+        <div class="pemb-index-copy" style="margin-bottom:14px;">
+            <h2>Riwayat Permohonan Pembetulan</h2>
+            <p>Permohonan terakhir Anda tetap bisa dipantau dari sini meskipun billing asalnya sudah tidak tampil di daftar pengajuan baru.</p>
+        </div>
+
+        <div class="pemb-grid" style="margin-bottom:24px;">
+            @foreach($recentRequests as $requestRecord)
+                @php
+                    $requestStatusClass = match ($requestRecord->status) {
+                        'selesai' => 'verified',
+                        'ditolak' => 'rejected',
+                        default => 'pending',
+                    };
+
+                    $requestStatusLabel = match ($requestRecord->status) {
+                        'pending' => 'Menunggu Review',
+                        'diproses' => 'Sedang Diproses',
+                        'selesai' => 'Selesai',
+                        'ditolak' => 'Ditolak',
+                        default => str($requestRecord->status)->headline()->toString(),
+                    };
+                @endphp
+
+                <div class="pemb-item">
+                    <div class="pemb-item-head">
+                        <div>
+                            <span class="pemb-billing-code">
+                                <i class="bi bi-hourglass-split"></i>
+                                {{ $requestRecord->tax?->billing_code ?? 'Pembetulan' }}
+                            </span>
+                            <div class="pemb-item-title">{{ $requestRecord->tax?->jenisPajak?->nama ?? 'Permohonan Pembetulan' }}</div>
+                            <div class="pemb-item-subtitle">{{ $requestRecord->tax?->taxObject?->nama_objek_pajak ?? '-' }}</div>
+                        </div>
+
+                        <span class="pemb-status {{ $requestStatusClass }}">{{ $requestStatusLabel }}</span>
+                    </div>
+
+                    <div class="pemb-meta">
+                        <div class="pemb-meta-item">
+                            <div class="pemb-meta-label">Diajukan</div>
+                            <div class="pemb-meta-value">{{ $requestRecord->created_at?->translatedFormat('d M Y H:i') ?? '-' }}</div>
+                        </div>
+                        <div class="pemb-meta-item">
+                            <div class="pemb-meta-label">Omzet Baru</div>
+                            <div class="pemb-meta-value">{{ $requestRecord->omzet_baru ? 'Rp ' . number_format((float) $requestRecord->omzet_baru, 0, ',', '.') : '-' }}</div>
+                        </div>
+                        <div class="pemb-meta-item">
+                            <div class="pemb-meta-label">Diproses Oleh</div>
+                            <div class="pemb-meta-value">{{ $requestRecord->processor?->nama_lengkap ?? $requestRecord->processor?->name ?? 'Belum diproses' }}</div>
+                        </div>
+                        <div class="pemb-meta-item">
+                            <div class="pemb-meta-label">Update Terakhir</div>
+                            <div class="pemb-meta-value">{{ $requestRecord->updated_at?->translatedFormat('d M Y H:i') ?? '-' }}</div>
+                        </div>
+                    </div>
+
+                    <div class="pemb-item-actions">
+                        <p>{{ \Illuminate\Support\Str::limit($requestRecord->alasan, 120) }}</p>
+                        <a href="{{ route('portal.pembetulan.show', $requestRecord->id) }}" class="pemb-action-link">
+                            <i class="bi bi-arrow-right-circle"></i>
+                            Lihat Detail Permohonan
+                        </a>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     @forelse($taxes as $tax)
         @php
             $displayStatus = $tax->display_status;

@@ -108,4 +108,12 @@
             <div style="padding:12px 14px; border:1px solid var(--portal-mblb-detail-border); border-radius:10px; color:var(--portal-mblb-detail-text-muted);">Lampiran tidak tersedia.</div>
         @endif
     </div>
+
+    <div style="--verification-history-border: var(--portal-mblb-detail-border); --verification-history-bg: transparent; --verification-history-heading: var(--portal-mblb-detail-heading); --verification-history-text: var(--portal-mblb-detail-text); --verification-history-muted: var(--portal-mblb-detail-text-muted); --verification-history-accent: var(--portal-mblb-detail-link); --verification-history-line: var(--portal-mblb-detail-border);">
+        <x-verification-status-timeline
+            :histories="$record->verificationStatusHistories"
+            heading="Riwayat Status Verifikasi"
+            empty-message="Belum ada riwayat status untuk pengajuan ini."
+        />
+    </div>
 </div>

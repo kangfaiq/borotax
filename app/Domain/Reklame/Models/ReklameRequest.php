@@ -3,6 +3,8 @@
 namespace App\Domain\Reklame\Models;
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Shared\Services\VerificationStatusHistoryService;
+use App\Domain\Shared\Traits\HasVerificationStatusHistories;
 use App\Domain\Shared\Traits\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ReklameRequest extends Model
 {
-    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes;
+    use SoftDeletes, HasFactory, HasUuids, HasEncryptedAttributes, HasVerificationStatusHistories;
     protected $table = 'reklame_requests';
 
     /**
@@ -47,6 +49,21 @@ class ReklameRequest extends Model
         'tanggal_selesai' => 'datetime',
         'durasi_perpanjangan_hari' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (self $request): void {
+            $request->recordInitialVerificationHistory();
+        });
+
+        static::updated(function (self $request): void {
+            if (! $request->wasChanged('status')) {
+                return;
+            }
+
+            $request->recordStatusTransitionVerificationHistory();
+        });
+    }
 
     /**
      * Get reklame object (tax_objects via ReklameObject scope)
@@ -109,5 +126,41 @@ class ReklameRequest extends Model
             'ditolak' => 'Ditolak',
             default => $this->status,
         };
+    }
+
+    private function recordInitialVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            null,
+            $this->status,
+            'submitted',
+            $this->user,
+            $this->catatan_pengajuan,
+        );
+    }
+
+    private function recordStatusTransitionVerificationHistory(): void
+    {
+        app(VerificationStatusHistoryService::class)->record(
+            $this,
+            $this->getOriginal('status'),
+            $this->status,
+            match ($this->status) {
+                'diproses' => 'processing_started',
+                'disetujui' => 'approved',
+                'ditolak' => 'rejected',
+                default => 'status_updated',
+            },
+            $this->resolveVerificationHistoryActor(),
+            $this->catatan_petugas,
+        );
+    }
+
+    private function resolveVerificationHistoryActor(): ?User
+    {
+        $actor = $this->petugas ?? auth()->user();
+
+        return $actor instanceof User ? $actor : null;
     }
 }

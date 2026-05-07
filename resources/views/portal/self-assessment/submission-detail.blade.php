@@ -321,6 +321,12 @@
             </div>
         </section>
 
+        <x-verification-status-timeline
+            :histories="$submission->verificationStatusHistories->where('is_owner_visible', true)"
+            heading="Riwayat Status Verifikasi"
+            empty-message="Riwayat status akan tampil setelah pengajuan ini mengalami proses verifikasi."
+        />
+
         <div class="mblb-detail-actions">
             <a href="{{ route('portal.mblb-submissions.index', ['status' => $submission->status]) }}" class="mblb-detail-btn secondary">
                 <i class="bi bi-list-ul"></i> Kembali ke Daftar

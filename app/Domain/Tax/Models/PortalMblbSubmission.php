@@ -3,6 +3,7 @@
 namespace App\Domain\Tax\Models;
 
 use App\Domain\Auth\Models\User;
+use App\Domain\Shared\Traits\HasVerificationStatusHistories;
 use App\Domain\Master\Models\Instansi;
 use App\Domain\Master\Models\JenisPajak;
 use App\Domain\Master\Models\SubJenisPajak;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 class PortalMblbSubmission extends Model
 {
-    use SoftDeletes, HasFactory, HasUuids;
+    use SoftDeletes, HasFactory, HasUuids, HasVerificationStatusHistories;
     protected $table = 'portal_mblb_submissions';
 
     protected $fillable = [

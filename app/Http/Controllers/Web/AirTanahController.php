@@ -86,7 +86,7 @@ class AirTanahController extends Controller
 
         $skpd = SkpdAirTanah::whereHas('waterObject', function ($q) use ($nikHash) {
             $q->where('nik_hash', $nikHash);
-        })->with(['waterObject', 'meterReport'])
+                })->with(['waterObject', 'meterReport', 'verificationStatusHistories.actor'])
           ->findOrFail($skpdId);
 
         return view('portal.air-tanah.skpd-detail', compact('skpd'));

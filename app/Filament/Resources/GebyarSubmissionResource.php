@@ -22,8 +22,6 @@ use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use App\Domain\Shared\Services\NotificationService;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -136,6 +134,18 @@ class GebyarSubmissionResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('detail')
+                    ->label('Detail')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->modalHeading('Detail Pengajuan Gebyar')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('4xl')
+                    ->visible(fn(GebyarSubmission $record) => auth()->user()?->can('view', $record) ?? false)
+                    ->modalContent(fn(GebyarSubmission $record) => view('filament.components.gebyar-submission-detail', [
+                        'record' => $record->loadMissing(['user', 'jenisPajak', 'verificationStatusHistories.actor']),
+                    ])),
                 Action::make('verify')
                     ->label('Sah')
                     ->icon('heroicon-o-check')

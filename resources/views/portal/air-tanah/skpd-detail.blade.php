@@ -312,6 +312,7 @@
         };
         $usesMeter = (bool) ($skpd->waterObject?->uses_meter ?? (($skpd->meter_reading_before ?? 0) > 0 || ($skpd->meter_reading_after ?? 0) > 0));
         $objectTypeLabel = $usesMeter ? 'Objek Meter Air' : 'Objek Non Meter Air';
+        $ownerVisibleHistories = $skpd->verificationStatusHistories->where('is_owner_visible', true)->values();
     @endphp
 
     <div class="doc-wrapper">
@@ -541,6 +542,16 @@
                 </div>
             </div>
         @endif
+
+        <div class="doc-section">
+            <div style="--verification-timeline-bg: transparent; --verification-timeline-border: transparent; --verification-timeline-heading: var(--text-primary); --verification-timeline-muted: var(--text-tertiary); --verification-timeline-dot: #00838f; --verification-timeline-card-bg: #f8fafc; --verification-timeline-card-border: #e2e8f0; --verification-timeline-card-heading: #0f172a; --verification-timeline-badge-bg: #e0f7fa; --verification-timeline-badge-text: #00838f;">
+                <x-verification-status-timeline
+                    :histories="$ownerVisibleHistories"
+                    heading="Riwayat Verifikasi"
+                    empty-message="Belum ada riwayat verifikasi untuk SKPD ini."
+                />
+            </div>
+        </div>
     </div>
 @endsection
 

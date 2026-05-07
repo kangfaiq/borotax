@@ -21,6 +21,7 @@ use App\Http\Controllers\HistoriPajakDocumentController;
 use App\Http\Controllers\PortalMblbSubmissionAttachmentController;
 
 use App\Http\Controllers\Web\PembetulanController;
+use App\Http\Controllers\Web\PortalVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,8 +145,17 @@ Route::prefix('portal')->name('portal.')->group(function () {
 
             // Pembetulan (Koreksi Billing)
             Route::get('/pembetulan', [PembetulanController::class, 'index'])->name('pembetulan.index');
+            Route::get('/pembetulan/permohonan/{requestId}', [PembetulanController::class, 'show'])->name('pembetulan.show');
             Route::get('/pembetulan/{taxId}', [PembetulanController::class, 'create'])->name('pembetulan.create');
             Route::post('/pembetulan', [PembetulanController::class, 'store'])->name('pembetulan.store');
+
+            // Owner-facing verification histories
+            Route::get('/perubahan-data', [PortalVerificationController::class, 'dataChangeRequestIndex'])->name('data-change-requests.index');
+            Route::get('/perubahan-data/{requestId}', [PortalVerificationController::class, 'dataChangeRequestShow'])->name('data-change-requests.show');
+            Route::get('/stpd-manual', [PortalVerificationController::class, 'stpdManualIndex'])->name('stpd-manual.index');
+            Route::get('/stpd-manual/{stpdId}', [PortalVerificationController::class, 'stpdManualShow'])->name('stpd-manual.show');
+            Route::get('/gebyar', [PortalVerificationController::class, 'gebyarIndex'])->name('gebyar.index');
+            Route::get('/gebyar/{submissionId}', [PortalVerificationController::class, 'gebyarShow'])->name('gebyar.show');
 
             // Air Tanah
             Route::get('/air-tanah', [AirTanahController::class, 'index'])->name('air-tanah.index');

@@ -1,3 +1,5 @@
+@php($record->loadMissing('verificationStatusHistories.actor'))
+
 <div class="space-y-4 text-sm">
     {{-- Billing Info --}}
     <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 space-y-2">
@@ -93,4 +95,12 @@
         <p class="text-slate-700 dark:text-slate-300">{{ $record->catatan_verifikasi }}</p>
     </div>
     @endif
+
+    <div style="--verification-timeline-bg: #f8fafc; --verification-timeline-border: #e2e8f0; --verification-timeline-heading: #0f172a; --verification-timeline-muted: #64748b; --verification-timeline-dot: #7c3aed; --verification-timeline-card-bg: #ffffff; --verification-timeline-card-border: #e2e8f0; --verification-timeline-card-heading: #0f172a; --verification-timeline-badge-bg: #f3e8ff; --verification-timeline-badge-text: #7c3aed;">
+        <x-verification-status-timeline
+            :histories="$record->verificationStatusHistories"
+            heading="Riwayat Verifikasi"
+            empty-message="Belum ada riwayat verifikasi untuk STPD ini."
+        />
+    </div>
 </div>
